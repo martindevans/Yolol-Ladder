@@ -44,7 +44,7 @@ namespace YololCompetition.Services.Schedule
                     if (next == null)
                     {
                         Console.WriteLine("No challenges available, waiting for a while...");
-                        await Task.Delay(TimeSpan.FromMinutes(30));
+                        await Task.Delay(TimeSpan.FromMinutes(1));
                         continue;
                     }
 

@@ -31,6 +31,7 @@ namespace YololCompetition.Services.Challenge
         public ulong Id { get; }
         public string Name { get; }
         public ChallengeDifficulty Difficulty { get; }
+        public string Description { get; }
 
         public DateTime? EndTime { get; }
 
@@ -38,7 +39,7 @@ namespace YololCompetition.Services.Challenge
         public IReadOnlyList<IReadOnlyDictionary<string, Value>> Inputs { get; }
         public IReadOnlyList<IReadOnlyDictionary<string, Value>> Outputs { get; }
 
-        public Challenge(ulong id, string name, string checkIndicator, IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs, IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs, DateTime? endTime, ChallengeDifficulty difficulty)
+        public Challenge(ulong id, string name, string checkIndicator, IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs, IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs, DateTime? endTime, ChallengeDifficulty difficulty, string description)
         {
             Id = id;
             Name = name;
@@ -47,6 +48,7 @@ namespace YololCompetition.Services.Challenge
             Outputs = outputs;
             EndTime = endTime;
             Difficulty = difficulty;
+            Description = description;
         }
 
         public void Write(DbParameterCollection output)
@@ -54,6 +56,7 @@ namespace YololCompetition.Services.Challenge
             output.Add(new SqliteParameter("@Name", DbType.String) { Value = Name });
             output.Add(new SqliteParameter("@CheckIndicator", DbType.String) { Value = CheckIndicator });
             output.Add(new SqliteParameter("@Difficulty", DbType.Int32) { Value = (int)Difficulty });
+            output.Add(new SqliteParameter("@Description", DbType.String) { Value = Description });
 
             var i = JsonConvert.SerializeObject(Inputs, JsonConfig);
             output.Add(new SqliteParameter("@Inputs", DbType.String) { Value = i });
@@ -82,7 +85,8 @@ namespace YololCompetition.Services.Challenge
                 JsonConvert.DeserializeObject<List<Dictionary<string, Value>>>(reader["Inputs"].ToString()!, JsonConfig)!,
                 JsonConvert.DeserializeObject<List<Dictionary<string, Value>>>(reader["Outputs"].ToString()!, JsonConfig)!,
                 end,
-                (ChallengeDifficulty)int.Parse(reader["Difficulty"].ToString()!)
+                (ChallengeDifficulty)int.Parse(reader["Difficulty"].ToString()!),
+                reader["Description"].ToString()!
             );
         }
     }

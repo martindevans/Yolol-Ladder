@@ -35,6 +35,7 @@ namespace YololCompetition.Services.Challenge
                 _database.Exec("CREATE TABLE IF NOT EXISTS `Challenges` (`Status` INTEGER NOT NULL, " +
                                "`Name` TEXT NOT NULL, Inputs TEXT NOT NULL, Outputs TEXT NOT NULL, " +
                                "`Difficulty` INTEGER NOT NULL, `CheckIndicator` TEXT NOT NULL, " +
+                               "`Description` TEXT NOT NULL, " +
                                "`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, " +
                                "`EndUnixTime` INTEGER);");
 
@@ -48,7 +49,7 @@ namespace YololCompetition.Services.Challenge
         public async Task Create(Challenge challenge)
         {
             await using var cmd = _database.CreateCommand();
-            cmd.CommandText = "INSERT into Challenges (Status, Name, Inputs, Outputs, CheckIndicator) values(1, @Name, @Inputs, @Outputs, @CheckIndicator)";
+            cmd.CommandText = "INSERT into Challenges (Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description) values(1, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description)";
             challenge.Write(cmd.Parameters);
             await cmd.ExecuteNonQueryAsync();
         }

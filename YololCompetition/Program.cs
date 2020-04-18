@@ -21,6 +21,8 @@ namespace YololCompetition
     {
         public static async Task Main(string[] args)
         {
+            Console.WriteLine("Starting...");
+
             var config = Parser.Default.ParseArguments<Configuration?>(args).MapResult(c => c, ArgsNotParsed);
             if (config == null)
                 return;

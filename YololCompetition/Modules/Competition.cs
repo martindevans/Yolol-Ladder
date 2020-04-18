@@ -24,7 +24,7 @@ namespace YololCompetition.Modules
 
         [RequireOwner]
         [Command("create"), Summary("Create a new challenge")]
-        public async Task Create(string title, ChallengeDifficulty difficult, string url)
+        public async Task Create(string title, string description, ChallengeDifficulty difficulty, string url)
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var result))
             {
@@ -74,7 +74,7 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficult);
+            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, description);
             await _challenges.Create(c);
             await ReplyAsync("Challenge added to queue");
         }

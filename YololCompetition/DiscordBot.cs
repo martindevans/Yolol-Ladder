@@ -34,12 +34,9 @@ namespace YololCompetition
             _client.MessageReceived += HandleMessage;
             _commands.CommandExecuted += CommandExecuted;
 
-            if (!File.Exists(_config.TokenPath))
-                throw new FileNotFoundException("Token file does not exist", _config.TokenPath);
-
             // Log the bot in
             await _client.LogoutAsync();
-            await _client.LoginAsync(TokenType.Bot, await File.ReadAllTextAsync(_config.TokenPath));
+            await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable(_config.TokenEnvVar));
             await _client.StartAsync();
 
             // Wait until client is `Ready`
