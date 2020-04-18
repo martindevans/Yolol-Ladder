@@ -6,7 +6,6 @@ using Discord.Commands;
 using Newtonsoft.Json;
 using Yolol.Execution;
 using YololCompetition.Extensions;
-using YololCompetition.Serialization;
 using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
 

@@ -48,7 +48,7 @@ namespace YololCompetition.Modules
                 if (failure != null)
                 {
                     var message = failure.Type switch {
-                        FailureType.ParseFailed => "Code is not valid Yolol code!",
+                        FailureType.ParseFailed => "Code is not valid Yolol code",
                         FailureType.RuntimeTooLong => "Program took too long to produce a result",
                         FailureType.IncorrectResult => "Program produced an incorrect value",
                         FailureType.ProgramTooLarge => "Program is too large - it must be 20 lines by 70 characters per line",
