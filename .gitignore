@@ -1,0 +1,10 @@
+*.suo
+*.ncrunchsolution
+*.user
+*.cache
+launchSettings.json
+
+/.vs
+/YololCompetition/bin
+/YololCompetition/obj
+/_ReSharper.Caches
