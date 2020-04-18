@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -59,6 +60,13 @@ namespace YololCompetition.Modules
         public async Task Shard()
         {
             await ReplyAsync($"Shard ID: {_client.ShardId}");
+        }
+
+        [Command("kill"), RequireOwner]
+        public async Task Kill(int exitCode = 1)
+        {
+            await Task.CompletedTask;
+            Environment.Exit(exitCode);
         }
     }
 }
