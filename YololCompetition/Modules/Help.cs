@@ -31,7 +31,7 @@ namespace YololCompetition.Modules
             embed.WithTitle("Yolol Ladder Help");
             foreach (var (_, commands) in modules)
                 foreach (var command in commands)
-                    embed.AddField($"{_config.Prefix}{command.Name}", command.Summary);
+                    embed.AddField($"{_config.Prefix}{command.Name}", string.IsNullOrWhiteSpace(command.Summary) ? "Unknown? Help summary required" : command.Summary);
 
             await ReplyAsync(embed: embed.Build());
         }

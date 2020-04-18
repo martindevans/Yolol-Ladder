@@ -5,7 +5,7 @@ namespace YololCompetition.Services.Scoring
     public class BasicScoring
         : IScore
     {
-        const int MaxChars = 20 * 70;
+        private const int MaxChars = 20 * 70;
 
         public uint Score(ChallengeDifficulty difficulty, long maxIters, int runtime, int codeChars)
         {
