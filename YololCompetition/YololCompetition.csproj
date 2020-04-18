@@ -18,6 +18,12 @@
     <PackageReference Include="Yolol" Version="2.9.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="token.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <!--<Target Name="ChangeAliasesOfReactiveExtensions" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
     <ItemGroup>
       <ReferencePath Condition="'%(FileName)' == 'System.Interactive.Async'">

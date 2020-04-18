@@ -6,8 +6,8 @@ namespace YololCompetition
 {
     public class Configuration
     {
-        [Option('t', "token", Required = true, HelpText = "Login Token")]
-        public string Token { get; set; }
+        [Option('t', "token-path", Required = true, HelpText = "Path to a file containing the Login Token")]
+        public string TokenPath { get; set; }
 
         [Option('p', "prefix", Required = true, HelpText = "Prefix Character")]
         public char Prefix { get; set; }
