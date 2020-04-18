@@ -1,4 +1,5 @@
-﻿using YololCompetition.Services.Challenge;
+﻿using System;
+using YololCompetition.Services.Challenge;
 
 namespace YololCompetition.Services.Scoring
 {
@@ -9,12 +10,16 @@ namespace YololCompetition.Services.Scoring
 
         public uint Score(ChallengeDifficulty difficulty, long maxIters, int runtime, int codeChars)
         {
-            var itersSpare = maxIters - runtime;
-            var charsSpare = MaxChars - codeChars;
+            checked
+            {
+                var itersSpare = (double)Math.Max(0, maxIters - runtime);
+                var charsSpare = (double)Math.Max(0, MaxChars - codeChars);
 
-            var score = ((double)itersSpare / maxIters) * 100 + ((double)charsSpare / MaxChars) * 100;
+                var score = itersSpare / maxIters * 200
+                            + charsSpare / MaxChars * 100;
 
-            return (uint)(score * (int)difficulty);
+                return (uint)(score * (int)difficulty);
+            }
         }
     }
 }
