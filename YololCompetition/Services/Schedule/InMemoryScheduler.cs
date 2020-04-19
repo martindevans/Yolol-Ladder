@@ -7,6 +7,7 @@ using YololCompetition.Services.Solutions;
 using System.Linq;
 using Discord.WebSocket;
 using YololCompetition.Extensions;
+using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Subscription;
 
 namespace YololCompetition.Services.Schedule
@@ -18,13 +19,15 @@ namespace YololCompetition.Services.Schedule
         private readonly ISolutions _solutions;
         private readonly ISubscription _subscriptions;
         private readonly DiscordSocketClient _client;
+        private readonly ILeaderboard _leaderboard;
 
-        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, ISubscription subscriptions, DiscordSocketClient client)
+        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, ISubscription subscriptions, DiscordSocketClient client, ILeaderboard leaderboard)
         {
             _challenges = challenges;
             _solutions = solutions;
             _subscriptions = subscriptions;
             _client = client;
+            _leaderboard = leaderboard;
         }
 
         public async Task Start()
@@ -69,6 +72,9 @@ namespace YololCompetition.Services.Schedule
                 // Finish the current challenge
                 await _challenges.EndCurrentChallenge();
 
+                // Transfer scores to leaderboard
+                await UpdateLeaderboard(current, _solutions.GetSolutions(current.Id, uint.MaxValue));
+
                 // Get the leaderboard for the challenge that just finished and notify everyone
                 await NotifyEnd(current, _solutions.GetSolutions(current.Id, uint.MaxValue));
             }
@@ -77,6 +83,33 @@ namespace YololCompetition.Services.Schedule
         private string GetName(ulong id)
         {
             return _client.GetUser(id)?.Username ?? $"User{id}";
+        }
+
+        private async Task UpdateLeaderboard(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
+        {
+            const uint maxScore = 10;
+            var score = maxScore;
+
+            // Enumerate through each group of equally ranked users
+            var ranks = solutions.GroupBy(a => a.Rank).OrderBy(a => a.Key);
+            await foreach (var rank in ranks)
+            {
+                // Award all users at the same rank some points
+                var count = 0;
+                await foreach (var solution in rank)
+                {
+                    count++;
+                    await _leaderboard.AddScore(solution.Solution.UserId, score * (uint)challenge.Difficulty);
+                }
+
+                // If there was only one user in the top rank, award them a bonus
+                if (count == 1 && score == maxScore)
+                    await _leaderboard.AddScore((await rank.SingleAsync()).Solution.UserId, (uint)challenge.Difficulty);
+
+                // Award at least one point to every entrant
+                if (score > 1)
+                    score--;
+            }
         }
 
         private async Task NotifyEnd(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)

@@ -35,13 +35,7 @@ namespace YololCompetition.Modules
         }
 
         [Command("leaderboard"), Summary("Display the top Yolol programmers")]
-        public async Task ShowLeaderboard()
-        {
-            await ShowLeaderboard(LeaderboardType.Global);
-        }
-
-        [Command("leaderboard"), Summary("Display the top Yolol programmers")]
-        public async Task ShowLeaderboard(LeaderboardType type)
+        public async Task ShowLeaderboard(LeaderboardType type = LeaderboardType.Global)
         {
             if (type == LeaderboardType.Global)
             {
@@ -57,8 +51,8 @@ namespace YololCompetition.Modules
                     return;
                 }
 
-                // Get the top 5 solutions
-                var top5 = _solutions.GetSolutions(challenge.Id, 5).Select(a => new RankInfo(a.Solution.UserId, a.Rank, a.Solution.Score));
+                // Get the top N solutions
+                var top5 = _solutions.GetSolutions(challenge.Id, 20).Select(a => new RankInfo(a.Solution.UserId, a.Rank, a.Solution.Score));
 
                 // Get your own rank
                 var self = await _solutions.GetRank(challenge.Id, Context.User.Id);
@@ -75,10 +69,33 @@ namespace YololCompetition.Modules
         }
 
         [Command("rank"), Summary("Display your own rank among Yolol programmers")]
-        public async Task Rank()
+        public async Task Rank(LeaderboardType type = LeaderboardType.Global)
         {
-            var nearby = _leaderboard.GetUserNearRanks(Context.User.Id, 5, 5);
-            await ReplyAsync(embed: await FormatLeaderboard(nearby));
+            if (type == LeaderboardType.Global)
+            {
+                var nearby = _leaderboard.GetUserNearRanks(Context.User.Id, 5, 5);
+                await ReplyAsync(embed: await FormatLeaderboard(nearby));
+            }
+            else if (type == LeaderboardType.Current)
+            {
+                var challenge = await _challenges.GetCurrentChallenge();
+                if (challenge == null)
+                {
+                    await ReplyAsync("There is no currently running challenge");
+                    return;
+                }
+
+                var self = await _solutions.GetRank(challenge.Id, Context.User.Id);
+                if (!self.HasValue)
+                {
+                    await ReplyAsync("You do not have a rank for this challenge yet");
+                    return;
+                }
+
+                await ReplyAsync($"You are rank {self.Value.Rank} for the current challenge with a score of {self.Value.Solution.Score}");
+            }
+            else
+                throw new InvalidOperationException("Unknown leaderboard type");
         }
 
         [RequireOwner]

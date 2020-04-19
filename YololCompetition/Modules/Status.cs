@@ -62,7 +62,7 @@ namespace YololCompetition.Modules
             await ReplyAsync($"Shard ID: {_client.ShardId}");
         }
 
-        [Command("kill"), RequireOwner]
+        [Command("kill"), RequireOwner, Summary("Immediately kill the bot")]
         public async Task Kill(int exitCode = 1)
         {
             await Task.CompletedTask;

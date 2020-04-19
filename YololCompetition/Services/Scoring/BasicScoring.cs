@@ -6,17 +6,18 @@ namespace YololCompetition.Services.Scoring
     public class BasicScoring
         : IScore
     {
-        private const int MaxChars = 20 * 70;
+        private const int MaxCharsScore = 20 * 70;
+        private const int MaxRuntimeScore = MaxCharsScore * 10;
 
         public uint Score(ChallengeDifficulty difficulty, long maxIters, int runtime, int codeChars)
         {
             checked
             {
                 var itersSpare = (double)Math.Max(0, maxIters - runtime);
-                var charsSpare = (double)Math.Max(0, MaxChars - codeChars);
+                var charsSpare = (double)Math.Max(0, MaxCharsScore - codeChars);
 
-                var score = itersSpare / maxIters * 200
-                            + charsSpare / MaxChars * 100;
+                var score = (itersSpare / maxIters) * MaxRuntimeScore 
+                          + charsSpare;
 
                 return (uint)(score * (int)difficulty);
             }
