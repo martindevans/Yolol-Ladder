@@ -81,6 +81,16 @@ namespace YololCompetition.Services.Leaderboard
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task SubtractScore(ulong userId, uint score)
+        {
+            await using var cmd = _database.CreateCommand();
+
+            cmd.CommandText = "INSERT INTO Leaderboard(UserId, Score) values(@UserId, 0) ON CONFLICT(UserId) DO UPDATE SET Score = Max(0, Score - @Score)";
+            cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@UserId", System.Data.DbType.String) { Value = userId.ToString() });
+            cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@Score", System.Data.DbType.Int64) { Value = (long)score });
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         private static RankInfo ParseRankInfo(DbDataReader reader)
         {
             return new RankInfo(

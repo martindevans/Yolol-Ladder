@@ -105,11 +105,18 @@ namespace YololCompetition.Modules
             await _leaderboard.AddScore(user.Id, score);
         }
 
+        [RequireOwner]
+        [Command("deduct-points"), Summary("Remove some points from a user")]
+        public async Task SubPoints(IUser user, uint score)
+        {
+            await _leaderboard.SubtractScore(user.Id, score);
+        }
+
         private async Task<Embed> FormatLeaderboard(IAsyncEnumerable<RankInfo> ranks, RankInfo? extra = null)
         {
-            string FormatRankInfo(RankInfo info)
+            async Task<string> FormatRankInfo(RankInfo info)
             {
-                var user = _client.GetUser(info.Id);
+                var user = (IUser)_client.GetUser(info.Id) ?? await _client.Rest.GetUserAsync(info.Id);
                 var name = user?.Username ?? info.Id.ToString();
                 return $"{info.Rank}. **{name}**\n\u2003Score:{info.Score}";
             }
@@ -125,7 +132,7 @@ namespace YololCompetition.Modules
             var builder = new StringBuilder();
             await foreach (var rank in ranks)
             {
-                builder.AppendLine(FormatRankInfo(rank));
+                builder.AppendLine(await FormatRankInfo(rank));
                 seenExtra |= extra.HasValue && rank.Id == extra.Value.Id;
                 count++;
             }
@@ -134,7 +141,7 @@ namespace YololCompetition.Modules
             {
                 if (count > 0)
                     builder.AppendLine("...");
-                builder.AppendLine(FormatRankInfo(extra.Value));
+                builder.AppendLine(await FormatRankInfo(extra.Value));
             }
 
             if (!seenExtra && count == 0)

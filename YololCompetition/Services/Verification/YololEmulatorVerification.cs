@@ -91,7 +91,7 @@ namespace YololCompetition.Services.Verification
                 challenge.Difficulty,
                 _config.MaxTestIters * Math.Min(challenge.Inputs.Count, challenge.Outputs.Count),
                 totalRuntime,
-                yolol.Length
+                yolol.Replace("\n", "").Length
             );
 
             return (new Success((uint)score), null);

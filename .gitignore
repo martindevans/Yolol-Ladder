@@ -7,5 +7,7 @@ launchSettings.json
 /.vs
 /YololCompetition/bin
 /YololCompetition/obj
+/YololCompetitionTests/bin
+/YololCompetitionTests/obj
 /_ReSharper.Caches
 /YololCompetition/token.txt

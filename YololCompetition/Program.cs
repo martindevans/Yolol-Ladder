@@ -61,7 +61,10 @@ namespace YololCompetition
                 DefaultRunMode = RunMode.Async,
                 ThrowOnError = true
             }));
-            di.AddSingleton<DiscordSocketClient>();
+            di.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig {
+                AlwaysDownloadUsers = true,
+                MessageCacheSize = 0,
+            }));
             di.AddSingleton<DiscordBot>();
             di.AddSingleton<IScheduler, InMemoryScheduler>();
 

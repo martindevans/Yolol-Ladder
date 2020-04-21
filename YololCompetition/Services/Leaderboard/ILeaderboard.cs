@@ -24,5 +24,7 @@ namespace YololCompetition.Services.Leaderboard
         IAsyncEnumerable<RankInfo> GetTopRank(byte count);
 
         Task AddScore(ulong userId, uint score);
+
+        Task SubtractScore(ulong userId, uint score);
     }
 }

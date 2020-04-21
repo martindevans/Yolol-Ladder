@@ -80,9 +80,10 @@ namespace YololCompetition.Services.Schedule
             }
         }
 
-        private string GetName(ulong id)
+        private async Task<string> GetName(ulong id)
         {
-            return _client.GetUser(id)?.Username ?? $"User{id}";
+            var user = (IUser)_client.GetUser(id) ?? await _client.Rest.GetUserAsync(id);
+            return user?.Username ?? $"U{id}?";
         }
 
         private async Task UpdateLeaderboard(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
