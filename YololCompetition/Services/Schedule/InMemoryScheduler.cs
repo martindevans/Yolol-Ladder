@@ -5,6 +5,7 @@ using Discord;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Solutions;
 using System.Linq;
+using System.Text;
 using Discord.WebSocket;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Leaderboard;
@@ -131,11 +132,13 @@ namespace YololCompetition.Services.Schedule
             {
                 embed.Description = $"**{GetName(top[0].Solution.UserId)}** is victorious with a score of **{top[0].Solution.Score}**";
 
-                var leaderboardStr = string.Join("\n", top.Select(a => $"{a.Rank}. {GetName(a.Solution.UserId)} **{a.Solution.Score}**"));
+                var leaderboardStr = new StringBuilder();
+                foreach (var item in top)
+                    leaderboardStr.AppendLine($"{item.Rank}. {await GetName(item.Solution.UserId)} **{item.Solution.Score}**");
                 if (othersCount > 0)
-                    leaderboardStr += $"\n{othersCount} other entrants scored {othersScore} combined points.";
+                    leaderboardStr.AppendLine($"\n{othersCount} other entrants scored {othersScore} combined points.");
 
-                embed.AddField("Leaderboard", leaderboardStr);
+                embed.AddField("Leaderboard", leaderboardStr.ToString());
             }
 
             await SendEmbedToSubs(embed.Build());
