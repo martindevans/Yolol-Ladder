@@ -26,21 +26,14 @@ namespace YololCompetition.Modules
 
             var code = match.Groups["code"].Value;
 
-            var tokens = Yolol.Grammar.Tokenizer.TryTokenize(code);
-            if (!tokens.HasValue)
+            var result = Yolol.Grammar.Parser.ParseProgram(code);
+            if (!result.IsOk)
             {
-                await ReplyAsync($"Tokenizer Error: {tokens.FormatErrorMessageFragment()}");
+                await ReplyAsync(result.Err.ToString());
                 return;
             }
 
-            var ast = Yolol.Grammar.Parser.TryParseProgram(tokens.Value);
-            if (!ast.HasValue)
-            {
-                await ReplyAsync($"Parse Error: {ast.FormatErrorMessageFragment()}");
-                return;
-            }
-
-            await ReplyAsync($"Successfully parsed program! ```{ast}```");
+            await ReplyAsync($"Successfully parsed program! ```{result.Ok}```");
         }
     }
 }

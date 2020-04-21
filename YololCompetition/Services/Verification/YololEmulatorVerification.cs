@@ -99,15 +99,11 @@ namespace YololCompetition.Services.Verification
 
         private static Yolol.Grammar.AST.Program? Parse(string code)
         {
-            var tokens = Tokenizer.TryTokenize(code);
-            if (!tokens.HasValue)
+            var result = Parser.ParseProgram(code);
+            if (!result.IsOk)
                 return null;
 
-            var parse = Parser.TryParseProgram(tokens.Value);
-            if (!parse.HasValue)
-                return null;
-
-            return parse.Value;
+            return result.Ok;
         }
 
         private class DeviceNetwork
