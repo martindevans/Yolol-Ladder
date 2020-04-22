@@ -35,7 +35,7 @@ namespace YololCompetition.Services.Verification
                 return (null, new Failure(FailureType.ParseFailed));
 
             // Get the variable which the program uses to indicate it is ready to move to the next round
-            var state = new MachineState(new DeviceNetwork());
+            var state = new MachineState(new DefaultValueDeviceNetwork());
             var done = state.GetVariable($":{challenge.CheckIndicator}");
 
             // Run through test cases one by one
@@ -104,23 +104,6 @@ namespace YololCompetition.Services.Verification
                 return null;
 
             return result.Ok;
-        }
-
-        private class DeviceNetwork
-            : IDeviceNetwork
-        {
-            private readonly Dictionary<string, IVariable> _saved = new Dictionary<string, IVariable>();
-
-            public IVariable Get(string name)
-            {
-                if (!_saved.TryGetValue(name, out var v))
-                {
-                    v = new Variable { Value = 0 };
-                    _saved.Add(name, v);
-                }
-
-                return v;
-            }
         }
     }
 }

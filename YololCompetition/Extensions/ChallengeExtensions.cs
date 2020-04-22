@@ -11,7 +11,7 @@ namespace YololCompetition.Extensions
         public static EmbedBuilder ToEmbed(this Challenge challenge)
         {
             var embed = new EmbedBuilder {
-                Title = $"New Competition: {challenge.Name}",
+                Title = $"{challenge.Name} ({challenge.Difficulty})",
                 Color = Color.Green,
                 Footer = new EmbedFooterBuilder().WithText("A Cylon Project")
             };

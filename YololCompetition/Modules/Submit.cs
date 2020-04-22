@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord.Commands;
+using YololCompetition.Extensions;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Verification;
@@ -25,15 +26,12 @@ namespace YololCompetition.Modules
         [Command("submit"), Summary("Submit a new competition entry. Code must be enclosed in triple backticks.")]
         public async Task SubmitSolution([Remainder] string input)
         {
-            var match = Regex.Match(input, ".*?```(?<code>[^```]*?)```.*");
-
-            if (!match.Success || match.Groups.Count == 0)
+            var code = input.ExtractYololCodeBlock();
+            if (code == null)
             {
                 await ReplyAsync(@"Failed to parse a yolol program from message - ensure you have enclosed your solution in triple backticks \`\`\`like this\`\`\`");
                 return;
             }
-
-            var code = match.Groups["code"].Value;
 
             var challenge = await _challenges.GetCurrentChallenge();
             if (challenge == null)
