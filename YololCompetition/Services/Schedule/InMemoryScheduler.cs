@@ -130,7 +130,7 @@ namespace YololCompetition.Services.Schedule
             }
             else
             {
-                embed.Description = $"**{GetName(top[0].Solution.UserId)}** is victorious with a score of **{top[0].Solution.Score}**";
+                embed.Description = $"**{GetName(top[0].Solution.UserId)}** is victorious with a score of **{top[0].Solution.Score}**\n\n```{top[0].Solution.Yolol}```";
 
                 var leaderboardStr = new StringBuilder();
                 foreach (var item in top)

@@ -20,10 +20,13 @@ namespace YololCompetition.Extensions
                 embed.Description += $"{iters} lines executed. ";
             embed.Description += $"Next line: {pc}";
 
-            var locals = string.Join("\n", state.Select(a => $"`{a.Key}={a.Value.Value.ToHumanString()}`"));
-            embed.AddField("Locals", locals);
+            if (state.Any())
+            {
+                var locals = string.Join("\n", state.Select(a => $"`{a.Key}={a.Value.Value.ToHumanString()}`"));
+                embed.AddField("Locals", locals);
+            }
 
-            if (network != null)
+            if (network != null && network.Any())
             {
                 var globals = string.Join("\n", network.Select(a => $"`:{a.Item1}={a.Item2.ToHumanString()}`"));
                 embed.AddField("Globals", globals);
