@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Yolol.Execution;
 using Yolol.Grammar;
 using YololCompetition.Services.Scoring;
+using MoreLinq;
 
 namespace YololCompetition.Services.Verification
 {
@@ -22,6 +22,10 @@ namespace YololCompetition.Services.Verification
 
         public async Task<(Success?, Failure?)> Verify(Challenge.Challenge challenge, string yolol)
         {
+            var shuffled = challenge.Inputs.Zip(challenge.Outputs).Shuffle();
+            var inputs = shuffled.Select(a => a.First).ToArray();
+            var outputs = shuffled.Select(a => a.Second).ToArray();
+
             await Task.CompletedTask;
 
             // Check input program is 20x70
@@ -41,11 +45,11 @@ namespace YololCompetition.Services.Verification
             // Run through test cases one by one
             var totalRuntime = 0;
             var pc = 0;
-            for (var i = 0; i < Math.Min(challenge.Inputs.Count, challenge.Outputs.Count); i++)
+            for (var i = 0; i < Math.Min(inputs.Length, outputs.Length); i++)
             {
                 // Set inputs
-                var inputs = challenge.Inputs[i];
-                foreach (var (key, value) in inputs)
+                var input = inputs[i];
+                foreach (var (key, value) in input)
                     state.GetVariable($":{key}").Value = value;
 
                 // Clear completion indicator
@@ -78,7 +82,7 @@ namespace YololCompetition.Services.Verification
                 }
 
                 // Check outputs
-                foreach (var (key, value) in challenge.Outputs[i])
+                foreach (var (key, value) in outputs[i])
                 {
                     var v = state.GetVariable($":{key}");
                     if ((v.Value != value).ToBool())
@@ -90,7 +94,7 @@ namespace YololCompetition.Services.Verification
             var codeLength = yolol.Replace("\n", "").Length;
             var score = _score.Score(
                 challenge.Difficulty,
-                _config.MaxTestIters * Math.Min(challenge.Inputs.Count, challenge.Outputs.Count),
+                _config.MaxTestIters * Math.Min(inputs.Length, outputs.Length),
                 totalRuntime,
                 codeLength
             );
