@@ -112,6 +112,11 @@ namespace YololCompetition.Services.Schedule
                 if (score > 1)
                     score--;
             }
+
+            // Find the smallest solution, if there's only one of them (i.e. no tie for smallest) award a bonus point
+            var smallestGroup = await solutions.GroupBy(a => a.Solution.Yolol.Length).AggregateAsync((a, b) => a.Key < b.Key ? a : b);
+            if (await smallestGroup.CountAsync() == 1)
+                await _leaderboard.AddScore((await smallestGroup.FirstAsync()).Solution.UserId, (uint)challenge.Difficulty);
         }
 
         private async Task NotifyEnd(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
@@ -130,7 +135,7 @@ namespace YololCompetition.Services.Schedule
             }
             else
             {
-                embed.Description = $"**{GetName(top[0].Solution.UserId)}** is victorious with a score of **{top[0].Solution.Score}**\n\n```{top[0].Solution.Yolol}```";
+                embed.Description = $"**{await GetName(top[0].Solution.UserId)}** is victorious with a score of **{top[0].Solution.Score}**\n\n```{top[0].Solution.Yolol}```";
 
                 var leaderboardStr = new StringBuilder();
                 foreach (var item in top)

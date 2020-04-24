@@ -87,14 +87,15 @@ namespace YololCompetition.Services.Verification
             }
 
             // Calculate score
+            var codeLength = yolol.Replace("\n", "").Length;
             var score = _score.Score(
                 challenge.Difficulty,
                 _config.MaxTestIters * Math.Min(challenge.Inputs.Count, challenge.Outputs.Count),
                 totalRuntime,
-                yolol.Replace("\n", "").Length
+                codeLength
             );
 
-            return (new Success((uint)score), null);
+            return (new Success((uint)score, (uint)totalRuntime, (uint)codeLength), null);
         }
 
         private static Yolol.Grammar.AST.Program? Parse(string code)

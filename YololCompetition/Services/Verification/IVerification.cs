@@ -11,9 +11,15 @@ namespace YololCompetition.Services.Verification
     {
         public uint Score { get; }
 
-        public Success(uint score)
+        public uint Iterations { get; }
+
+        public uint Length { get; }
+
+        public Success(uint score, uint iterations, uint length)
         {
             Score = score;
+            Iterations = iterations;
+            Length = length;
         }
     }
 
