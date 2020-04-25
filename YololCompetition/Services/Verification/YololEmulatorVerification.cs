@@ -22,7 +22,7 @@ namespace YololCompetition.Services.Verification
 
         public async Task<(Success?, Failure?)> Verify(Challenge.Challenge challenge, string yolol)
         {
-            var shuffled = challenge.Inputs.Zip(challenge.Outputs).Shuffle();
+            var shuffled = challenge.Inputs.Zip(challenge.Outputs).Shuffle().ToArray();
             var inputs = shuffled.Select(a => a.First).ToArray();
             var outputs = shuffled.Select(a => a.Second).ToArray();
 
@@ -31,13 +31,15 @@ namespace YololCompetition.Services.Verification
             // Check input program is 20x70
             var lines = yolol.Split("\n");
             if (lines.Length > 20 || lines.Any(l => l.Length > 70))
-                return (null, new Failure(FailureType.ProgramTooLarge));
+                return (null, new Failure(FailureType.ProgramTooLarge, null));
 
             // parse the entry program
-            var entry = Parse(yolol);
-            if (entry == null)
-                return (null, new Failure(FailureType.ParseFailed));
+            var result = Parser.ParseProgram(yolol);
+            if (!result.IsOk)
+                return (null, new Failure(FailureType.ParseFailed, result.Err.ToString()));
 
+            var entry = result.Ok;
+            
             // Get the variable which the program uses to indicate it is ready to move to the next round
             var state = new MachineState(new DefaultValueDeviceNetwork());
             var done = state.GetVariable($":{challenge.CheckIndicator}");
@@ -60,7 +62,7 @@ namespace YololCompetition.Services.Verification
                 while (!done.Value.ToBool())
                 {
                     if (limit++ > _config.MaxTestIters)
-                        return (null, new Failure(FailureType.RuntimeTooLong));
+                        return (null, new Failure(FailureType.RuntimeTooLong, null));
 
                     totalRuntime++;
                     try
@@ -86,7 +88,12 @@ namespace YololCompetition.Services.Verification
                 {
                     var v = state.GetVariable($":{key}");
                     if ((v.Value != value).ToBool())
-                        return (null, new Failure(FailureType.IncorrectResult));
+                    {
+                        var ii = string.Join(",", input.Select(b => $"`:{b.Key}={b.Value}`"));
+                        var oo = string.Join(",", outputs[i].Select(b => $"`:{b.Key}={b.Value}`"));
+
+                        return (null, new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `{v}` for `:{key}`"));
+                    }
                 }
             }
 

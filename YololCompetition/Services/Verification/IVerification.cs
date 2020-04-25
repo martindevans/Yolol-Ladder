@@ -27,9 +27,12 @@ namespace YololCompetition.Services.Verification
     {
         public FailureType Type { get; }
 
-        public Failure(FailureType type)
+        public string? Hint{ get; }
+
+        public Failure(FailureType type, string? hint)
         {
             Type = type;
+            Hint = hint;
         }
     }
 
