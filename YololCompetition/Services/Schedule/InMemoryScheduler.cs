@@ -7,6 +7,7 @@ using YololCompetition.Services.Solutions;
 using System.Linq;
 using System.Text;
 using Discord.WebSocket;
+using Nito.AsyncEx;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Subscription;
@@ -21,6 +22,8 @@ namespace YololCompetition.Services.Schedule
         private readonly ISubscription _subscriptions;
         private readonly DiscordSocketClient _client;
         private readonly ILeaderboard _leaderboard;
+
+        private readonly AsyncAutoResetEvent _poker = new AsyncAutoResetEvent();
 
         public InMemoryScheduler(IChallenges challenges, ISolutions solutions, ISubscription subscriptions, DiscordSocketClient client, ILeaderboard leaderboard)
         {
@@ -61,14 +64,18 @@ namespace YololCompetition.Services.Schedule
                 else
                     Console.WriteLine($"{current.Name} challenge is currently running");
 
-                //There is a challenge running, wait until the end time
+                //There is a challenge running, wait until the end time or until someone externally pokes us awake
                 var endTime = current.EndTime;
-                if (endTime != null)
+                while (endTime != null && endTime > DateTime.UtcNow)
                 {
                     var delay = endTime.Value - DateTime.UtcNow;
                     if (delay > TimeSpan.Zero)
-                        await Task.Delay(delay);
+                        await Task.WhenAny(_poker.WaitAsync(), Task.Delay(delay));
                 }
+
+                // If endtime is after now then something else poked the scheduler awake, reset scheduler logic
+                if (endTime != null && endTime > DateTime.UtcNow)
+                    continue;
 
                 // Finish the current challenge
                 await _challenges.EndCurrentChallenge();
@@ -78,6 +85,9 @@ namespace YololCompetition.Services.Schedule
 
                 // Get the leaderboard for the challenge that just finished and notify everyone
                 await NotifyEnd(current, _solutions.GetSolutions(current.Id, uint.MaxValue));
+
+                // Wait for a cooldown period
+                await Task.WhenAny(_poker.WaitAsync(), Task.Delay(TimeSpan.FromHours(23)));
             }
         }
 
@@ -165,6 +175,13 @@ namespace YololCompetition.Services.Schedule
                 await channel.SendMessageAsync(embed: embed);
                 await Task.Delay(100);
             }
+        }
+
+        public Task Poke()
+        {
+            _poker.Set();
+
+            return Task.CompletedTask;
         }
     }
 }

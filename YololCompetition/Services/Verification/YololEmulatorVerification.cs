@@ -5,6 +5,7 @@ using Yolol.Execution;
 using Yolol.Grammar;
 using YololCompetition.Services.Scoring;
 using MoreLinq;
+using YololCompetition.Extensions;
 
 namespace YololCompetition.Services.Verification
 {
@@ -89,10 +90,10 @@ namespace YololCompetition.Services.Verification
                     var v = state.GetVariable($":{key}");
                     if ((v.Value != value).ToBool())
                     {
-                        var ii = string.Join(",", input.Select(b => $"`:{b.Key}={b.Value}`"));
-                        var oo = string.Join(",", outputs[i].Select(b => $"`:{b.Key}={b.Value}`"));
+                        var ii = string.Join(",", input.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
+                        var oo = string.Join(",", outputs[i].Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
 
-                        return (null, new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `{v}` for `:{key}`"));
+                        return (null, new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `{v.Value.ToHumanString()}` for `:{key}`"));
                     }
                 }
             }
@@ -107,15 +108,6 @@ namespace YololCompetition.Services.Verification
             );
 
             return (new Success((uint)score, (uint)totalRuntime, (uint)codeLength), null);
-        }
-
-        private static Yolol.Grammar.AST.Program? Parse(string code)
-        {
-            var result = Parser.ParseProgram(code);
-            if (!result.IsOk)
-                return null;
-
-            return result.Ok;
         }
     }
 }

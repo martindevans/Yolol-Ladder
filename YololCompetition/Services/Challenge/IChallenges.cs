@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
+﻿using System.Threading.Tasks;
+
 namespace YololCompetition.Services.Challenge
 {
     public interface IChallenges
@@ -17,5 +13,7 @@ namespace YololCompetition.Services.Challenge
         Task<Challenge?> StartNext();
 
         Task EndCurrentChallenge();
+
+        Task ChangeChallengeDifficulty(Challenge challenge, ChallengeDifficulty difficulty);
     }
 }

@@ -8,6 +8,7 @@ using Yolol.Execution;
 using YololCompetition.Extensions;
 using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
+using YololCompetition.Services.Schedule;
 
 namespace YololCompetition.Modules
 {
@@ -15,10 +16,12 @@ namespace YololCompetition.Modules
         : ModuleBase
     {
         private readonly IChallenges _challenges;
+        private readonly IScheduler _scheduler;
 
-        public Competition(IChallenges challenges)
+        public Competition(IChallenges challenges, IScheduler scheduler)
         {
             _challenges = challenges;
+            _scheduler = scheduler;
         }
 
         [RequireOwner]
@@ -104,6 +107,28 @@ namespace YololCompetition.Modules
                 await ReplyAsync("There is no challenge currently running");
             else
                 await ReplyAsync(embed: current.ToEmbed().Build());
+        }
+
+        [Command("terminate-current-challenge"), RequireOwner, Summary("Immediately terminate current challenge without scoring")]
+        public async Task AbruptEnd()
+        {
+            await _challenges.EndCurrentChallenge();
+            await _scheduler.Poke();
+        }
+
+        [Command("set-current-difficulty"), RequireOwner, Summary("Change difficulty rating of current challenges")]
+        public async Task SetDifficulty(ChallengeDifficulty difficulty)
+        {
+            var current = await _challenges.GetCurrentChallenge();
+            if (current == null)
+            {
+                await ReplyAsync("There is no current challenge");
+            }
+            else
+            {
+                await _challenges.ChangeChallengeDifficulty(current, difficulty);
+                await ReplyAsync($"Changed difficulty from `{current.Difficulty}` to `{difficulty}`");
+            }
         }
     }
 }

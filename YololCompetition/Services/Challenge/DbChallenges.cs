@@ -97,6 +97,16 @@ namespace YololCompetition.Services.Challenge
             await _database.ExecAsync("UPDATE Challenges SET Status = 3 WHERE Status = 2");
         }
 
+        public async Task ChangeChallengeDifficulty(Challenge challenge, ChallengeDifficulty difficulty)
+        {
+            // Set status to "Running" and end time to an appropriate offset from now
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "UPDATE Challenges SET Difficulty = @Difficulty WHERE ID = @ID";
+            cmd.Parameters.Add(new SqliteParameter("@ID", DbType.UInt64) { Value = challenge.Id }); 
+            cmd.Parameters.Add(new SqliteParameter("@Difficulty", DbType.UInt64) { Value = (ulong)difficulty }); 
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         public async Task<Challenge?> GetCurrentChallenge()
         {
             await using var cmd = _database.CreateCommand();
