@@ -32,10 +32,16 @@ namespace YololCompetition.Services.Challenge
 
             try
             {
-                _database.Exec("CREATE TABLE IF NOT EXISTS `Challenges` (`Status` INTEGER NOT NULL, " +
-                               "`Name` TEXT NOT NULL, Inputs TEXT NOT NULL, Outputs TEXT NOT NULL, " +
-                               "`Difficulty` INTEGER NOT NULL, `CheckIndicator` TEXT NOT NULL, " +
+                _database.Exec("CREATE TABLE IF NOT EXISTS `Challenges` (" +
+                               "`Status` INTEGER NOT NULL, " +
+                               "`Name` TEXT NOT NULL, " +
+                               "`Inputs` TEXT NOT NULL, " +
+                               "`Outputs` TEXT NOT NULL, " +
+                               "`Difficulty` INTEGER NOT NULL, " +
+                               "`CheckIndicator` TEXT NOT NULL, " +
                                "`Description` TEXT NOT NULL, " +
+                               "`Shuffle` INTEGER NOT NULL, " +
+                               "`ScoreMode` INTEGER NOT NULL, " +
                                "`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, " +
                                "`EndUnixTime` INTEGER);");
 

@@ -12,10 +12,19 @@ namespace YololCompetition.Services.Challenge
 {
     public enum ChallengeDifficulty
     {
+        Unknown = 0,
+
         Easy = 1,
         Medium = 2,
         Hard = 3,
         Impossible = 4,
+    }
+
+    public enum ScoreMode
+    {
+        Unknown = 0,
+
+        BasicScoring = 1,
     }
 
     public class Challenge
@@ -39,7 +48,10 @@ namespace YololCompetition.Services.Challenge
         public IReadOnlyList<IReadOnlyDictionary<string, Value>> Inputs { get; }
         public IReadOnlyList<IReadOnlyDictionary<string, Value>> Outputs { get; }
 
-        public Challenge(ulong id, string name, string checkIndicator, IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs, IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs, DateTime? endTime, ChallengeDifficulty difficulty, string description)
+        public bool ShuffleTests { get; }
+        public ScoreMode ScoreMode { get; }
+
+        public Challenge(ulong id, string name, string checkIndicator, IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs, IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs, DateTime? endTime, ChallengeDifficulty difficulty, string description, bool shuffle, ScoreMode scoreMode)
         {
             Id = id;
             Name = name;
@@ -49,6 +61,8 @@ namespace YololCompetition.Services.Challenge
             EndTime = endTime;
             Difficulty = difficulty;
             Description = description;
+            ScoreMode = scoreMode;
+            ShuffleTests = shuffle;
         }
 
         public void Write(DbParameterCollection output)
@@ -57,6 +71,8 @@ namespace YololCompetition.Services.Challenge
             output.Add(new SqliteParameter("@CheckIndicator", DbType.String) { Value = CheckIndicator });
             output.Add(new SqliteParameter("@Difficulty", DbType.Int32) { Value = (int)Difficulty });
             output.Add(new SqliteParameter("@Description", DbType.String) { Value = Description });
+            output.Add(new SqliteParameter("@Shuffle", DbType.UInt64) { Value = Convert.ToUInt64(ShuffleTests) });
+            output.Add(new SqliteParameter("@ScoreMode", DbType.UInt64) { Value = (int)ScoreMode });
 
             var i = JsonConvert.SerializeObject(Inputs, JsonConfig);
             output.Add(new SqliteParameter("@Inputs", DbType.String) { Value = i });
@@ -65,6 +81,8 @@ namespace YololCompetition.Services.Challenge
             output.Add(new SqliteParameter("@Outputs", DbType.String) { Value = o });
 
             output.Add(new SqliteParameter("@EndUnixTime", DbType.UInt64) { Value = EndTime?.UnixTimestamp() });
+
+            
         }
 
         public static Challenge Read(DbDataReader reader)
@@ -86,7 +104,9 @@ namespace YololCompetition.Services.Challenge
                 JsonConvert.DeserializeObject<List<Dictionary<string, Value>>>(reader["Outputs"].ToString()!, JsonConfig)!,
                 end,
                 (ChallengeDifficulty)int.Parse(reader["Difficulty"].ToString()!),
-                reader["Description"].ToString()!
+                reader["Description"].ToString()!,
+                Convert.ToBoolean(ulong.Parse(reader["Shuffle"].ToString()!)),
+                (ScoreMode)int.Parse(reader["ScoreMode"].ToString()!)
             );
         }
     }

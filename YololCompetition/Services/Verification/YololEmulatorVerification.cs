@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Yolol.Execution;
@@ -23,11 +24,13 @@ namespace YololCompetition.Services.Verification
 
         public async Task<(Success?, Failure?)> Verify(Challenge.Challenge challenge, string yolol)
         {
-            var shuffled = challenge.Inputs.Zip(challenge.Outputs).Shuffle().ToArray();
-            var inputs = shuffled.Select(a => a.First).ToArray();
-            var outputs = shuffled.Select(a => a.Second).ToArray();
-
             await Task.CompletedTask;
+
+            if (challenge.ScoreMode != Challenge.ScoreMode.BasicScoring)
+                throw new NotImplementedException($"Score mode `{challenge.ScoreMode}` is not implemented");
+
+            // Retrieve the test cases for the challenge
+            var (inputs, outputs) = GetTests(challenge);
 
             // Check input program is 20x70
             var lines = yolol.Split("\n");
@@ -48,7 +51,7 @@ namespace YololCompetition.Services.Verification
             // Run through test cases one by one
             var totalRuntime = 0;
             var pc = 0;
-            for (var i = 0; i < Math.Min(inputs.Length, outputs.Length); i++)
+            for (var i = 0; i < Math.Min(inputs.Count, outputs.Count); i++)
             {
                 // Set inputs
                 var input = inputs[i];
@@ -102,12 +105,28 @@ namespace YololCompetition.Services.Verification
             var codeLength = yolol.Replace("\n", "").Length;
             var score = _score.Score(
                 challenge.Difficulty,
-                _config.MaxTestIters * Math.Min(inputs.Length, outputs.Length),
+                _config.MaxTestIters * Math.Min(inputs.Count, outputs.Count),
                 totalRuntime,
                 codeLength
             );
 
             return (new Success((uint)score, (uint)totalRuntime, (uint)codeLength), null);
+        }
+
+        private (IReadOnlyList<IReadOnlyDictionary<string, Value>>, IReadOnlyList<IReadOnlyDictionary<string, Value>>) GetTests(Challenge.Challenge challenge)
+        {
+            if (challenge.ShuffleTests)
+            {
+                var shuffled = challenge.Inputs.Zip(challenge.Outputs).Shuffle().ToArray();
+                return (
+                    shuffled.Select(a => a.First).ToArray(),
+                    shuffled.Select(a => a.Second).ToArray()
+                );
+            }
+            else
+            {
+                return (challenge.Inputs, challenge.Outputs);
+            }
         }
     }
 }
