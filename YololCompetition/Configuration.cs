@@ -18,7 +18,7 @@ namespace YololCompetition
         [Option("duration", Required = false, HelpText = "Database Connection String", Default = (uint)72)]
         public uint ChallengeDurationHours { get; set; }
 
-        [Option("test_iters", Required = false, HelpText = "Set max lines executed per test case", Default = (uint)100)]
+        [Option("test_iters", Required = false, HelpText = "Set max lines executed per test case", Default = (uint)1000)]
         public uint MaxTestIters { get; set; }
     }
 }
