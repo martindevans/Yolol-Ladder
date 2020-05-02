@@ -80,7 +80,7 @@ namespace YololCompetition.Modules
             }
 
             // Print out the final machine state
-            var embed = state.ToEmbed(network, limit - 1, pc + 1).Build();
+            var embed = state.ToEmbed(network, limit, pc + 1).Build();
             await ReplyAsync(embed: embed);
         }
     }
