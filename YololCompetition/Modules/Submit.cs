@@ -1,8 +1,11 @@
 ﻿using System;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using YololCompetition.Extensions;
+using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Verification;
@@ -15,12 +18,16 @@ namespace YololCompetition.Modules
         private readonly ISolutions _solutions;
         private readonly IChallenges _challenges;
         private readonly IVerification _verification;
+        private readonly IBroadcast _broadcast;
+        private readonly DiscordSocketClient _client;
 
-        public Submit(ISolutions solutions, IChallenges challenges, IVerification verification)
+        public Submit(ISolutions solutions, IChallenges challenges, IVerification verification, IBroadcast broadcast, DiscordSocketClient client)
         {
             _solutions = solutions;
             _challenges = challenges;
             _verification = verification;
+            _broadcast = broadcast;
+            _client = client;
         }
 
         [Command("submit"), Summary("Submit a new competition entry. Code must be enclosed in triple backticks.")]
@@ -62,12 +69,32 @@ namespace YololCompetition.Modules
                 }
                 else
                 {
+                    // Get the current top solution
+                    var topBefore = await _solutions.GetSolutions(challenge.Id, 1).Select(a => (RankedSolution?)a).SingleOrDefaultAsync();
+
+                    // Submit this solution
                     await _solutions.SetSolution(new Solution(challenge.Id, Context.User.Id, success.Score, code));
                     var rank = await _solutions.GetRank(challenge.Id, Context.User.Id);
                     var rankNum = uint.MaxValue;
                     if (rank.HasValue)
                         rankNum = rank.Value.Rank;
                     await ReplyAsync($"Verification complete! You scored {success.Score} points. You are currently rank {rankNum} for this challenge.");
+
+                    // If top rank has changed, alert everyone
+                    if (rankNum == 1 && topBefore.HasValue && topBefore.Value.Solution.UserId != Context.User.Id)
+                    {
+                        var prev = _client.GetUserName(topBefore.Value.Solution.UserId);
+                        var curr = _client.GetUserName(Context.User.Id);
+
+                        var embed = new EmbedBuilder {
+                            Title = "Rank Alert",
+                            Description = $"{curr} takes rank #1 from {prev}!",
+                            Color = Color.Gold,
+                            Footer = new EmbedFooterBuilder().WithText("A Cylon Project")
+                        };
+
+                        await _broadcast.Broadcast(embed.Build());
+                    }
                 }
             }
             else

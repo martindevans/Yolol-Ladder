@@ -6,6 +6,7 @@ using CommandLine;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Database;
 using YololCompetition.Services.Leaderboard;
@@ -68,6 +69,7 @@ namespace YololCompetition
             di.AddSingleton<DiscordBot>();
             di.AddSingleton<IScheduler, InMemoryScheduler>();
 
+            di.AddTransient<IBroadcast, DiscordBroadcast>();
             di.AddTransient<IDatabase, SqliteDatabase>();
             di.AddTransient<ILeaderboard, DbLeaderboard>();
             di.AddTransient<ISolutions, DbSolutions>();

@@ -19,7 +19,7 @@ namespace YololCompetition.Services.Scoring
                 var score = (itersSpare / maxIters) * MaxRuntimeScore 
                           + charsSpare;
 
-                return (uint)(score * (int)difficulty);
+                return (uint)score;
             }
         }
     }

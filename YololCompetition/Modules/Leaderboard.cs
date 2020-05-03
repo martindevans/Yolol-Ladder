@@ -39,7 +39,7 @@ namespace YololCompetition.Modules
         {
             if (type == LeaderboardType.Global)
             {
-                var top = _leaderboard.GetTopRank(20);
+                var top = _leaderboard.GetTopRank(15);
                 await ReplyAsync(embed: await FormatLeaderboard(top));
             }
             else if (type == LeaderboardType.Current)
@@ -73,8 +73,11 @@ namespace YololCompetition.Modules
         {
             if (type == LeaderboardType.Global)
             {
-                var nearby = _leaderboard.GetUserNearRanks(Context.User.Id, 5, 5);
-                await ReplyAsync(embed: await FormatLeaderboard(nearby));
+                var rank = await _leaderboard.GetRank(Context.User.Id);
+                if (rank.HasValue)
+                    await ReplyAsync($"You are rank {rank.Value.Rank} with a score of {rank.Value.Score}");
+                else
+                    await ReplyAsync($"You do not have a rank yet!");
             }
             else if (type == LeaderboardType.Current)
             {

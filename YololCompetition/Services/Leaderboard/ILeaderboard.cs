@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace YololCompetition.Services.Leaderboard
 {
-    public struct RankInfo
+    public readonly struct RankInfo
     {
         public ulong Id { get; }
         public uint Rank { get; }
@@ -19,12 +19,12 @@ namespace YololCompetition.Services.Leaderboard
 
     public interface ILeaderboard
     {
-        IAsyncEnumerable<RankInfo> GetUserNearRanks(ulong userId, byte above, byte below);
-
-        IAsyncEnumerable<RankInfo> GetTopRank(byte count);
+        IAsyncEnumerable<RankInfo> GetTopRank(int count);
 
         Task AddScore(ulong userId, uint score);
 
         Task SubtractScore(ulong userId, uint score);
+
+        Task<RankInfo?> GetRank(ulong userId);
     }
 }

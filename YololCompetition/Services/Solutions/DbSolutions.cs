@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
+using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Database;
 
 namespace YololCompetition.Services.Solutions
@@ -14,7 +15,7 @@ namespace YololCompetition.Services.Solutions
     {
         private readonly IDatabase _database;
 
-        public DbSolutions(IDatabase database)
+        public DbSolutions(IDatabase database, IBroadcast broadcast)
         {
             _database = database;
 

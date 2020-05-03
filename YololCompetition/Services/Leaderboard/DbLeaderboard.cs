@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
 using System.Threading.Tasks;
 using YololCompetition.Services.Database;
+using System.Linq;
+using Microsoft.Data.Sqlite;
 
 namespace YololCompetition.Services.Leaderboard
 {
@@ -26,45 +27,13 @@ namespace YololCompetition.Services.Leaderboard
             }
         }
 
-        public IAsyncEnumerable<RankInfo> GetUserNearRanks(ulong userId, byte above, byte below)
-        {
-            DbCommand PrepareQueryBetter(IDatabase db)
-            {
-                var cmd = db.CreateCommand();
-                cmd.CommandText = "SELECT DENSE_RANK() OVER (ORDER BY -Score) Rank, * FROM Leaderboard " +
-                                  "WHERE (Score >= (SELECT Score FROM Leaderboard WHERE UserId = @UserId)) " +
-                                  "ORDER BY Rank LIMIT @Limit";
-                cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@Limit", System.Data.DbType.Int32) { Value = (int)above });
-                cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@UserId", System.Data.DbType.String) { Value = userId.ToString() });
-                return cmd;
-            }
-
-            DbCommand PrepareQueryWorse(IDatabase db)
-            {
-                var cmd = db.CreateCommand();
-                cmd.CommandText = "SELECT DENSE_RANK() OVER (ORDER BY -Score) Rank, * FROM Leaderboard " +
-                                  "WHERE (Score < (SELECT Score FROM Leaderboard WHERE UserId = @UserId)) " +
-                                  "ORDER BY Rank LIMIT @Limit";
-                cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@Limit", System.Data.DbType.Int32) { Value = (int)below });
-                cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@UserId", System.Data.DbType.String) { Value = userId.ToString() });
-                return cmd;
-            }
-
-            var better = new SqlAsyncResult<RankInfo>(_database, PrepareQueryBetter, ParseRankInfo);
-            var worse = new SqlAsyncResult<RankInfo>(_database, PrepareQueryWorse, ParseRankInfo);
-
-            return from item in better.Concat(worse)
-                   orderby item.Rank
-                   select item;
-        }
-
-        public IAsyncEnumerable<RankInfo> GetTopRank(byte count)
+        public IAsyncEnumerable<RankInfo> GetTopRank(int count)
         {
             DbCommand PrepareQuery(IDatabase db)
             {
                 var cmd = db.CreateCommand();
                 cmd.CommandText = "SELECT DENSE_RANK() OVER (ORDER BY -Score) Rank, * FROM Leaderboard ORDER BY Rank LIMIT @Limit;";
-                cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@Limit", System.Data.DbType.Int32) { Value = (int)count });
+                cmd.Parameters.Add(new SqliteParameter("@Limit", System.Data.DbType.Int32) { Value = (int)count });
                 return cmd;
             }
 
@@ -89,6 +58,19 @@ namespace YololCompetition.Services.Leaderboard
             cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@UserId", System.Data.DbType.String) { Value = userId.ToString() });
             cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@Score", System.Data.DbType.Int64) { Value = (long)score });
             await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task<RankInfo?> GetRank(ulong userId)
+        {
+            DbCommand PrepareQuery(IDatabase db)
+            {
+                var cmd = db.CreateCommand();
+                cmd.CommandText = "SELECT * FROM (SELECT DENSE_RANK() OVER (ORDER BY -Score) Rank, * FROM Leaderboard) WHERE UserId = @UserId";
+                cmd.Parameters.Add(new SqliteParameter("@UserId", System.Data.DbType.UInt64) { Value = userId });
+                return cmd;
+            }
+
+            return await new SqlAsyncResult<RankInfo>(_database, PrepareQuery, ParseRankInfo).Select(a => (RankInfo?)a).SingleOrDefaultAsync();
         }
 
         private static RankInfo ParseRankInfo(DbDataReader reader)

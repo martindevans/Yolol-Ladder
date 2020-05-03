@@ -59,7 +59,7 @@ namespace YololCompetition.Modules
             // Run lines until completion indicator is set or execution time limit is exceeded
             var limit = 0;
             var pc = 0;
-            while (!done.Value.ToBool() && limit++ < 500)
+            while (!done.Value.ToBool() && limit++ < 2000)
             {
                 try
                 {

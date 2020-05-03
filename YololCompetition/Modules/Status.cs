@@ -5,6 +5,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
+using YololCompetition.Services.Schedule;
 
 namespace YololCompetition.Modules
 {
@@ -13,10 +14,12 @@ namespace YololCompetition.Modules
         : ModuleBase
     {
         private readonly DiscordSocketClient _client;
+        private readonly IScheduler _scheduler;
 
-        public Status(DiscordSocketClient client)
+        public Status(DiscordSocketClient client, IScheduler scheduler)
         {
             _client = client;
+            _scheduler = scheduler;
         }
 
         [Command("memory"), RequireOwner, Summary("Print current memory stats")]
@@ -60,6 +63,12 @@ namespace YololCompetition.Modules
         public async Task Shard()
         {
             await ReplyAsync($"Shard ID: {_client.ShardId}");
+        }
+
+        [Command("status"), Summary("Print scheduler status")]
+        public async Task SchedulerStatus()
+        {
+            await ReplyAsync(_scheduler.State.ToString());
         }
     }
 }
