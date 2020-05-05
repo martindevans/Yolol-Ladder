@@ -83,8 +83,8 @@ namespace YololCompetition.Modules
                     // If top rank has changed, alert everyone
                     if (rankNum == 1 && topBefore.HasValue && topBefore.Value.Solution.UserId != Context.User.Id)
                     {
-                        var prev = _client.GetUserName(topBefore.Value.Solution.UserId);
-                        var curr = _client.GetUserName(Context.User.Id);
+                        var prev = await _client.GetUserName(topBefore.Value.Solution.UserId);
+                        var curr = await _client.GetUserName(Context.User.Id);
 
                         var embed = new EmbedBuilder {
                             Title = "Rank Alert",
