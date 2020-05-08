@@ -1,9 +1,14 @@
-﻿using YololCompetition.Services.Challenge;
-
-namespace YololCompetition.Services.Scoring
+﻿namespace YololCompetition.Services.Scoring
 {
     public interface IScore
     {
-        uint Score(ChallengeDifficulty difficulty, long maxIters, int runtime, int codeChars);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="totalTests">Total number of test cases</param>
+        /// <param name="totalTicks">Total ticks used</param>
+        /// <param name="codeChars">Total number of characters used</param>
+        /// <returns></returns>
+        uint Score(uint totalTests, uint totalTicks, int codeChars);
     }
 }

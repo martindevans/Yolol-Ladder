@@ -49,7 +49,7 @@ namespace YololCompetition.Services.Verification
             var done = state.GetVariable($":{challenge.CheckIndicator}");
 
             // Run through test cases one by one
-            var totalRuntime = 0;
+            var totalRuntime = 0u;
             var pc = 0;
             for (var i = 0; i < Math.Min(inputs.Count, outputs.Count); i++)
             {
@@ -104,8 +104,7 @@ namespace YololCompetition.Services.Verification
             // Calculate score
             var codeLength = yolol.Replace("\n", "").Length;
             var score = _score.Score(
-                challenge.Difficulty,
-                _config.MaxTestIters * Math.Min(inputs.Count, outputs.Count),
+                (uint)inputs.Count,
                 totalRuntime,
                 codeLength
             );

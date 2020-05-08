@@ -1,24 +1,36 @@
 ﻿using System;
-using YololCompetition.Services.Challenge;
 
 namespace YololCompetition.Services.Scoring
 {
     public class BasicScoring
         : IScore
     {
-        private const int MaxCharsScore = 20 * 70;
-        private const int MaxRuntimeScore = MaxCharsScore * 10;
+        private const int PointsPerChar = 1;
+        private const int PointsPerTick = 50;
 
-        public uint Score(ChallengeDifficulty difficulty, long maxIters, int runtime, int codeChars)
+        private const int MaxChars = 20 * 70;
+        private const int MaxTicksScore = 1000 * PointsPerTick;
+        private const int MaxScore = MaxChars * PointsPerChar + MaxTicksScore;
+        
+
+        public uint Score(uint totalTests, uint totalTicks, int codeChars)
         {
+            // Throw an exception if any arithmetic inside this block over/underflows
             checked
             {
-                var itersSpare = (double)Math.Max(0, maxIters - runtime);
-                var charsSpare = (double)Math.Max(0, MaxCharsScore - codeChars);
+                // Start with the maximum score
+                var score = (double)MaxScore;
 
-                var score = (itersSpare / maxIters) * MaxRuntimeScore 
-                          + charsSpare;
+                // Lose 1 point per character used
+                score -= Math.Clamp(codeChars, 0, MaxChars) * PointsPerChar;
 
+                // Calculate average number of ticks used per test case
+                var avgTicks = (double)totalTicks / totalTests;
+
+                // Subtract off points per tick used
+                score -= Math.Clamp(avgTicks * PointsPerTick, 0, MaxTicksScore);
+
+                //Truncate to an integer score
                 return (uint)score;
             }
         }
