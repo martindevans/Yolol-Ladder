@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Yolol.Execution;
@@ -47,6 +48,10 @@ namespace YololCompetition.Services.Verification
             // Get the variable which the program uses to indicate it is ready to move to the next round
             var state = new MachineState(new DefaultValueDeviceNetwork());
             var done = state.GetVariable($":{challenge.CheckIndicator}");
+
+            // Begin counting how long it takes to verify
+            var timer = new Stopwatch();
+            timer.Start();
 
             // Run through test cases one by one
             var totalRuntime = 0u;
@@ -100,6 +105,8 @@ namespace YololCompetition.Services.Verification
                     }
                 }
             }
+
+            Console.WriteLine($"Verified {totalRuntime} ticks, {timer.ElapsedMilliseconds}ms runtime");
 
             // Calculate score
             var codeLength = yolol.Replace("\n", "").Length;
