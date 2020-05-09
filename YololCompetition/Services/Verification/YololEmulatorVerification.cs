@@ -54,6 +54,7 @@ namespace YololCompetition.Services.Verification
             timer.Start();
 
             // Run through test cases one by one
+            var overflowIters = _config.MaxItersOverflow;
             var totalRuntime = 0u;
             var pc = 0;
             for (var i = 0; i < Math.Min(inputs.Count, outputs.Count); i++)
@@ -70,8 +71,16 @@ namespace YololCompetition.Services.Verification
                 var limit = 0;
                 while (!done.Value.ToBool())
                 {
+                    // Check if this test has exceed it's time limit
                     if (limit++ > _config.MaxTestIters)
-                        return (null, new Failure(FailureType.RuntimeTooLong, null));
+                    {
+                        //If so use iterations from the overflow pool
+                        overflowIters--;
+
+                        //Once the overflow pool is empty too, fail
+                        if (overflowIters <= 0)
+                            return (null, new Failure(FailureType.RuntimeTooLong, null));
+                    }
 
                     totalRuntime++;
                     try

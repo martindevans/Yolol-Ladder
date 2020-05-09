@@ -9,8 +9,6 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
 using SixLabors.Fonts;
-using YololCompetition.Services.Challenge;
-using YololCompetition.Services.Schedule;
 
 namespace YololCompetition.Modules
 {
@@ -18,15 +16,6 @@ namespace YololCompetition.Modules
     public class Administration
         : ModuleBase
     {
-        private readonly IChallenges _challenges;
-        private readonly IScheduler _scheduler;
-
-        public Administration(IChallenges challenges, IScheduler scheduler)
-        {
-            _challenges = challenges;
-            _scheduler = scheduler;
-        }
-
         [Command("kill"), RequireOwner, Summary("Immediately kill the bot")]
         public async Task Kill(int exitCode = 1)
         {
@@ -105,7 +94,8 @@ namespace YololCompetition.Modules
                 var x = (float)r.NextDouble() * (width - axisSize);
                 var y = (float)r.NextDouble() * (height - axisSize);
 
-                final.Mutate(a => a.DrawText(i.ToString(), outputFont, Color.Red, new PointF(x + axisSize, height - y - axisSize)));
+                var i1 = i;
+                final.Mutate(a => a.DrawText(i1.ToString(), outputFont, Color.Red, new PointF(x + axisSize, height - y - axisSize)));
             }
 
             await using var memory = new MemoryStream(final.PixelType.BitsPerPixel / 8 * final.Width * final.Height);
