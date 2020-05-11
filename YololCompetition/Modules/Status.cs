@@ -56,7 +56,7 @@ namespace YololCompetition.Modules
         public async Task Latency()
         {
             var latency = TimeSpan.FromMilliseconds(_client.Latency);
-            await ReplyAsync($"Latency: {latency.TotalMilliseconds}");
+            await ReplyAsync($"{latency.TotalMilliseconds}ms");
         }
 
         [Command("shard"), Summary("Print Shard ID")]

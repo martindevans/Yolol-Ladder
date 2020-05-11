@@ -12,6 +12,17 @@ namespace YololCompetition.Services.Solutions
         IAsyncEnumerable<RankedSolution> GetSolutions(ulong challengeId, uint limit, uint minScore = uint.MinValue, uint maxScore = uint.MaxValue);
 
         Task<RankedSolution?> GetRank(ulong challengeId, ulong userId);
+
+        async IAsyncEnumerable<RankedSolution> GetTopRank(ulong challengeId)
+        {
+            await foreach (var solution in GetSolutions(challengeId, 100))
+            {
+                if (solution.Rank == 1)
+                    yield return solution;
+                else
+                    break;
+            }
+        }
     }
 
     public readonly struct RankedSolution

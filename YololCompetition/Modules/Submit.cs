@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Humanizer;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Challenge;
@@ -70,7 +71,7 @@ namespace YololCompetition.Modules
                 else
                 {
                     // Get the current top solution
-                    var topBefore = await _solutions.GetSolutions(challenge.Id, 1).Select(a => (RankedSolution?)a).SingleOrDefaultAsync();
+                    var topBefore = await _solutions.GetTopRank(challenge.Id).ToArrayAsync();
 
                     // Submit this solution
                     await _solutions.SetSolution(new Solution(challenge.Id, Context.User.Id, success.Score, code));
@@ -80,18 +81,21 @@ namespace YololCompetition.Modules
                         rankNum = rank.Value.Rank;
                     await ReplyAsync($"Verification complete! You scored {success.Score} points. You are currently rank {rankNum} for this challenge.");
 
-                    // If top rank has changed, alert everyone
-                    if (rankNum == 1 && topBefore.HasValue && topBefore.Value.Solution.UserId != Context.User.Id)
+                    // If this is the top ranking score, and there was a top ranking score before, and it wasn't this user: alert everyone
+                    if (rankNum == 1 && topBefore.Length > 0 && topBefore.All(a => a.Solution.UserId != Context.User.Id))
                     {
-                        var prev = await _client.GetUserName(topBefore.Value.Solution.UserId);
-                        var curr = await _client.GetUserName(Context.User.Id);
-
                         var embed = new EmbedBuilder {
                             Title = "Rank Alert",
-                            Description = $"{curr} takes rank #1 from {prev}!",
                             Color = Color.Gold,
                             Footer = new EmbedFooterBuilder().WithText("A Cylon Project")
                         };
+
+                        var self = await _client.GetUserName(Context.User.Id);
+                        var prev = (await topBefore.ToAsyncEnumerable().SelectAwait(async a => await _client.GetUserName(a.Solution.UserId)).ToArrayAsync()).Humanize("&");
+
+                        embed.Description = success.Score == topBefore[0].Solution.Score
+                            ? $"{self} ties for rank #1"
+                            : $"{self} takes rank #1 from {prev}!";
 
                         await _broadcast.Broadcast(embed.Build());
                     }
