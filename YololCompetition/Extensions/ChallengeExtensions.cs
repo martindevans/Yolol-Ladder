@@ -17,7 +17,12 @@ namespace YololCompetition.Extensions
             };
 
             if (challenge.EndTime.HasValue)
-                embed.AddField("End Date", (challenge.EndTime.Value - DateTime.UtcNow).Humanize(2, minUnit: Humanizer.Localisation.TimeUnit.Second));
+            {
+                if (challenge.EndTime.Value < DateTime.UtcNow)
+                    embed.AddField("End Time", "Completed");
+                else
+                    embed.AddField("End Time", (challenge.EndTime.Value - DateTime.UtcNow).Humanize(2, minUnit: Humanizer.Localisation.TimeUnit.Second));
+            }
 
             var inputs = challenge.Inputs.SelectMany(a => a.Keys).Distinct().Select(a => $"`:{a}`").Humanize("&");
             var outputs = challenge.Outputs.SelectMany(a => a.Keys).Distinct().Select(a => $"`:{a}`").Humanize("&");

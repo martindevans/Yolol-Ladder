@@ -8,6 +8,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Challenge;
+using YololCompetition.Services.Cron;
 using YololCompetition.Services.Database;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Schedule;
@@ -68,6 +69,7 @@ namespace YololCompetition
             }));
             di.AddSingleton<DiscordBot>();
             di.AddSingleton<IScheduler, InMemoryScheduler>();
+            di.AddSingleton<ICron, InMemoryCron>();
 
             di.AddTransient<IBroadcast, DiscordBroadcast>();
             di.AddTransient<IDatabase, SqliteDatabase>();

@@ -8,6 +8,7 @@ using Yolol.Execution;
 using YololCompetition.Extensions;
 using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
+using YololCompetition.Services.Cron;
 using YololCompetition.Services.Schedule;
 
 namespace YololCompetition.Modules
@@ -17,11 +18,13 @@ namespace YololCompetition.Modules
     {
         private readonly IChallenges _challenges;
         private readonly IScheduler _scheduler;
+        private readonly ICron _cron;
 
-        public Competition(IChallenges challenges, IScheduler scheduler)
+        public Competition(IChallenges challenges, IScheduler scheduler, ICron cron)
         {
             _challenges = challenges;
             _scheduler = scheduler;
+            _cron = cron;
         }
 
         [RequireOwner]
@@ -109,7 +112,21 @@ namespace YololCompetition.Modules
             if (current == null)
                 await ReplyAsync("There is no challenge currently running");
             else
-                await ReplyAsync(embed: current.ToEmbed().Build());
+            {
+                var message = await ReplyAsync(embed: current.ToEmbed().Build());
+
+                _cron.Schedule(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1), uint.MaxValue, async () => {
+
+                    // Get current challenge
+                    var c = await _challenges.GetCurrentChallenge();
+
+                    // Update embed
+                    await message.ModifyAsync(a => a.Embed = current.ToEmbed().Build());
+
+                    // Keep running this task while the challenge is the same challenge that was initially scheduled
+                    return c?.Id == current.Id;
+                });
+            }
         }
 
         [Command("terminate-current-challenge"), RequireOwner, Summary("Immediately terminate current challenge without scoring")]
