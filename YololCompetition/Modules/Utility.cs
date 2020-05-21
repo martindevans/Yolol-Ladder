@@ -35,7 +35,8 @@ namespace YololCompetition.Modules
             await ReplyAsync($"Successfully parsed program! ```{result.Ok}```");
         }
 
-        [Command("yolol"), Summary("Run some Yolol code. The program will run for 500 iterations or until `done` is set to a true value.")]
+		int yololIterations = 2000;
+        [Command("yolol"), Summary("Run some Yolol code. The program will run for "+yololIterations+" iterations or until `done` is set to a true value.")]
         public async Task RunYolol([Remainder] string input)
         {
             var code = input.ExtractYololCodeBlock();
@@ -59,7 +60,7 @@ namespace YololCompetition.Modules
             // Run lines until completion indicator is set or execution time limit is exceeded
             var limit = 0;
             var pc = 0;
-            while (!done.Value.ToBool() && limit++ < 2000)
+            while (!done.Value.ToBool() && limit++ < yololIterations)
             {
                 try
                 {
