@@ -35,7 +35,7 @@ namespace YololCompetition.Modules
             await ReplyAsync($"Successfully parsed program! ```{result.Ok}```");
         }
 
-		int yololIterations = 2000;
+        int yololIterations = 2000;
         [Command("yolol"), Summary("Run some Yolol code. The program will run for "+yololIterations+" iterations or until `done` is set to a true value.")]
         public async Task RunYolol([Remainder] string input)
         {
