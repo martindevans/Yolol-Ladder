@@ -15,7 +15,7 @@ namespace YololCompetition
         [Option('d', "db", Required = true, HelpText = "Database Connection String")]
         public string DatabaseConnectionString { get; set; }
 
-        [Option("duration", Required = false, HelpText = "Database Connection String", Default = (uint)72)]
+        [Option("duration", Required = false, HelpText = "How long each challenge should last in hours", Default = (uint)72)]
         public uint ChallengeDurationHours { get; set; }
 
         [Option("test_iters", Required = false, HelpText = "Set max lines executed per test case", Default = (uint)1000)]

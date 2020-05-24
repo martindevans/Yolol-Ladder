@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord.WebSocket;
 using Yolol.Execution;
 using Yolol.Grammar;
 using YololCompetition.Services.Scoring;

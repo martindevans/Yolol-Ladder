@@ -35,7 +35,7 @@ namespace YololCompetition.Modules
             await ReplyAsync($"Successfully parsed program! ```{result.Ok}```");
         }
 
-        [Command("yolol"), Summary("Run some Yolol code. The program will run for 500 iterations or until `done` is set to a true value.")]
+        [Command("yolol"), Summary("Run some Yolol code. The program will run for 2000 iterations or until `done` is set to a true value.")]
         public async Task RunYolol([Remainder] string input)
         {
             var code = input.ExtractYololCodeBlock();
