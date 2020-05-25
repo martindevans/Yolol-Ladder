@@ -66,7 +66,7 @@ namespace YololCompetition.Modules
                 var solution = await _solutions.GetSolution(Context.User.Id, challenge.Id);
                 if (solution.HasValue && success.Score < solution.Value.Score)
                 {
-                    await ReplyAsync($"Verification complete! You score {success.Score} points. Less than your current best of {solution.Value.Score}");
+                    await ReplyAsync($"Verification complete! You score {success.Score} points using {success.Length} chars and {success.Iterations} ticks. Less than your current best of {solution.Value.Score}");
                 }
                 else
                 {
@@ -79,7 +79,7 @@ namespace YololCompetition.Modules
                     var rankNum = uint.MaxValue;
                     if (rank.HasValue)
                         rankNum = rank.Value.Rank;
-                    await ReplyAsync($"Verification complete! You scored {success.Score} points. You are currently rank {rankNum} for this challenge.");
+                    await ReplyAsync($"Verification complete! You scored {success.Score} points using {success.Length} chars and {success.Iterations} ticks. You are currently rank {rankNum} for this challenge.");
 
                     // If this is the top ranking score, and there was a top ranking score before, and it wasn't this user: alert everyone
                     if (rankNum == 1 && topBefore.Length > 0 && topBefore.All(a => a.Solution.UserId != Context.User.Id))
