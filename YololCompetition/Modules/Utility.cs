@@ -12,7 +12,7 @@ namespace YololCompetition.Modules
         [Command("chars"), Summary("Count the letters in a string")]
         public async Task CharCount([Remainder] string message)
         {
-            await ReplyAsync($"{message.Trim('`').Length} characters");
+            await ReplyAsync($"{message.Trim('`').Replace("\n", "").Replace("\r", "").Length} characters");
         }
 
         [Command("check"), Summary("Attempt to parse some Yolol code, report syntax errors")]
