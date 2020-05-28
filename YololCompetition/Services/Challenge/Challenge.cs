@@ -81,8 +81,6 @@ namespace YololCompetition.Services.Challenge
             output.Add(new SqliteParameter("@Outputs", DbType.String) { Value = o });
 
             output.Add(new SqliteParameter("@EndUnixTime", DbType.UInt64) { Value = EndTime?.UnixTimestamp() });
-
-            
         }
 
         public static Challenge Read(DbDataReader reader)

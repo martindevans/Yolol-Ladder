@@ -113,6 +113,27 @@ namespace YololCompetition.Services.Challenge
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public IAsyncEnumerable<Challenge> GetChallenges(ChallengeDifficulty? difficultyFilter = null, ulong? id = null, string? name = null)
+        {
+            DbCommand PrepareQuery(IDatabase db)
+            {
+                var cmd = db.CreateCommand();
+                cmd.CommandText = "SELECT * FROM Challenges " +
+                                  "WHERE (Difficulty = @Difficulty or @Difficulty IS null) " +
+                                  "WHERE (ID = @ID or @ID IS null) " +
+                                  "WHERE (Name LIKE = @Name or @Name IS null) " +
+                                  "ORDER BY EndUnixTime DESC ";
+
+                cmd.Parameters.Add(new SqliteParameter("@Difficulty", DbType.UInt64) { Value = (object?)difficultyFilter ?? DBNull.Value });
+                cmd.Parameters.Add(new SqliteParameter("@ID", DbType.UInt64) { Value = (object?)id ?? DBNull.Value });
+                cmd.Parameters.Add(new SqliteParameter("@Name", DbType.UInt64) { Value = (object?)name ?? DBNull.Value });
+
+                return cmd;
+            }
+
+            return new SqlAsyncResult<Challenge>(_database, PrepareQuery, Challenge.Read);
+        }
+
         public async Task<Challenge?> GetCurrentChallenge()
         {
             await using var cmd = _database.CreateCommand();
