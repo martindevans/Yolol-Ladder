@@ -17,6 +17,6 @@ namespace YololCompetition.Services.Challenge
 
         Task ChangeChallengeDifficulty(Challenge challenge, ChallengeDifficulty difficulty);
 
-        IAsyncEnumerable<Challenge> GetChallenges(ChallengeDifficulty? difficultyFilter = null, ulong? id = null, string? name = null);
+        IAsyncEnumerable<Challenge> GetChallenges(ChallengeDifficulty? difficultyFilter = null, ulong? id = null, string? name = null, bool includeUnstarted = false);
     }
 }

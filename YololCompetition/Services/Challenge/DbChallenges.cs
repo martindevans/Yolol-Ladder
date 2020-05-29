@@ -113,20 +113,22 @@ namespace YololCompetition.Services.Challenge
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public IAsyncEnumerable<Challenge> GetChallenges(ChallengeDifficulty? difficultyFilter = null, ulong? id = null, string? name = null)
+        public IAsyncEnumerable<Challenge> GetChallenges(ChallengeDifficulty? difficultyFilter = null, ulong? id = null, string? name = null, bool includeUnstarted = false)
         {
             DbCommand PrepareQuery(IDatabase db)
             {
                 var cmd = db.CreateCommand();
                 cmd.CommandText = "SELECT * FROM Challenges " +
                                   "WHERE (Difficulty = @Difficulty or @Difficulty IS null) " +
-                                  "WHERE (ID = @ID or @ID IS null) " +
-                                  "WHERE (Name LIKE = @Name or @Name IS null) " +
+                                  "AND (ID = @ID or @ID IS null) " +
+                                  "AND (Name LIKE @Name or @Name IS null) " +
+                                  "AND ((NOT EndUnixTime IS null) or @IncludeUnstarted) " +
                                   "ORDER BY EndUnixTime DESC ";
 
                 cmd.Parameters.Add(new SqliteParameter("@Difficulty", DbType.UInt64) { Value = (object?)difficultyFilter ?? DBNull.Value });
                 cmd.Parameters.Add(new SqliteParameter("@ID", DbType.UInt64) { Value = (object?)id ?? DBNull.Value });
                 cmd.Parameters.Add(new SqliteParameter("@Name", DbType.UInt64) { Value = (object?)name ?? DBNull.Value });
+                cmd.Parameters.Add(new SqliteParameter("@IncludeUnstarted", DbType.Boolean) { Value = includeUnstarted });
 
                 return cmd;
             }
