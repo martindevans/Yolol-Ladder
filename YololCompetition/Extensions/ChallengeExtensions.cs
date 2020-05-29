@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
+using BalderHash.Extensions;
 using Discord;
 using Humanizer;
 using YololCompetition.Services.Challenge;
@@ -14,7 +15,7 @@ namespace YololCompetition.Extensions
             var embed = new EmbedBuilder {
                 Title = $"{challenge.Name} ({challenge.Difficulty})",
                 Color = Color.Green,
-                Footer = new EmbedFooterBuilder().WithText("A Cylon Project")
+                Footer = new EmbedFooterBuilder().WithText($"{((uint)challenge.Id).BalderHash()} - A Cylon Project")
             };
 
             if (challenge.EndTime.HasValue)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BalderHash.Extensions;
 using Discord.Commands;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Challenge;
@@ -49,29 +50,15 @@ namespace YololCompetition.Modules
         [Command("competition"), Summary("Search previous competitions")]
         public async Task GetCompetition(string search)
         {
-            // Try parsing the string as a challenge ID
-            if (ulong.TryParse(search, out var uid))
-            {
-                var c = await _challenges.GetChallenges(id: uid).SingleOrDefaultAsync();
-                if (c != null)
-                {
-                    await ReplyAsync(embed: c.ToEmbed().Build());
-                    return;
-                }
-            }
-
-            // Try searching for a challenge that matches the name
-            var matches = await _challenges.GetChallenges(name: search).ToArrayAsync();
-            if (matches.Length == 1)
-            {
-                await ReplyAsync(embed: matches[0].ToEmbed().Build());
-            }
+            var c = await _challenges.FuzzyFindChallenge(search).ToArrayAsync();
+            if (c.Length == 1)
+                await ReplyAsync(embed: c[0].ToEmbed().Build());
             else
             {
                 await DisplayItemList(
-                    matches.ToAsyncEnumerable(),
+                    c.ToAsyncEnumerable(),
                     () => "No challenges",
-                    (c, i) => $"[{c.Id}] {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
+                    (c, i) => $"[`{c.Id}`] {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
                 );
             }
         }
@@ -82,7 +69,7 @@ namespace YololCompetition.Modules
             await DisplayItemList(
                 _challenges.GetChallenges(null),
                 () => "No challenges",
-                (c, i) => $"[{c.Id}] {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
+                (c, i) => $"[{((uint)c.Id).BalderHash()}] {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
             );
         }
 
