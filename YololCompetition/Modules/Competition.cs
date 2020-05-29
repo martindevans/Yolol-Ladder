@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
-using Newtonsoft.Json;
-using Yolol.Execution;
 using YololCompetition.Extensions;
-using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Cron;
-using YololCompetition.Services.Schedule;
 
 namespace YololCompetition.Modules
 {
@@ -17,92 +14,12 @@ namespace YololCompetition.Modules
         : ModuleBase
     {
         private readonly IChallenges _challenges;
-        private readonly IScheduler _scheduler;
         private readonly ICron _cron;
 
-        public Competition(IChallenges challenges, IScheduler scheduler, ICron cron)
+        public Competition(IChallenges challenges, ICron cron)
         {
             _challenges = challenges;
-            _scheduler = scheduler;
             _cron = cron;
-        }
-
-        [RequireOwner]
-        [Command("create"), Summary("Create a new challenge")]
-        public async Task Create(string title, string description, ChallengeDifficulty difficulty, string url)
-        {
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var result))
-            {
-                await ReplyAsync("Invalid URL format");
-                return;
-            }
-
-            if (result.Host != "gist.githubusercontent.com")
-            {
-                await ReplyAsync("URL must begin with `gist.githubusercontent.com`");
-                return;
-            }
-
-            Data? data;
-            try
-            {
-                using var wc = new WebClient();
-                var json = wc.DownloadString(result);
-                data = JsonConvert.DeserializeObject<Data>(json, new JsonSerializerSettings {
-                    Converters = new JsonConverter[] {
-                        new YololValueConverter()
-                    },
-                    FloatParseHandling = FloatParseHandling.Decimal
-                });
-            }
-            catch (Exception e)
-            {
-                await ReplyAsync("Failed: " + e.Message.Substring(0, Math.Min(1000, e.Message.Length)));
-                return;
-            }
-
-            if (data == null)
-            {
-                await ReplyAsync("Test cases cannot be null");
-                return;
-            }
-
-            if (data.In == null)
-            {
-                await ReplyAsync("Input values cannot be null");
-                return;
-            }
-
-            if (data.Out == null)
-            {
-                await ReplyAsync("Output values cannot be null");
-                return;
-            }
-
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, description, data.Shuffle ?? true, ScoreMode.BasicScoring);
-            await _challenges.Create(c);
-            await ReplyAsync("Challenge added to queue");
-        }
-        
-        private class Data
-        {
-            [JsonProperty("in")]
-            public Dictionary<string, Value>[]? In { get; set; }
-
-            [JsonProperty("out")]
-            public Dictionary<string, Value>[]? Out { get; set; }
-
-            [JsonProperty("shuffle")]
-            public bool? Shuffle { get; set; }
-        }
-
-
-        [RequireOwner]
-        [Command("check-pool"), Summary("Check state of challenge pool")]
-        public async Task CheckPool()
-        {
-            var count = await _challenges.GetPendingCount();
-            await ReplyAsync($"There are {count} challenges pending");
         }
 
         [Command("current"), Summary("Show the current competition details")]
@@ -129,26 +46,72 @@ namespace YololCompetition.Modules
             }
         }
 
-        [Command("terminate-current-challenge"), RequireOwner, Summary("Immediately terminate current challenge without scoring")]
-        public async Task AbruptEnd()
+        [Command("competition"), Summary("Search previous competitions")]
+        public async Task GetCompetition(string search)
         {
-            await _challenges.EndCurrentChallenge();
-            await _scheduler.Poke();
-        }
-
-        [Command("set-current-difficulty"), RequireOwner, Summary("Change difficulty rating of current challenges")]
-        public async Task SetDifficulty(ChallengeDifficulty difficulty)
-        {
-            var current = await _challenges.GetCurrentChallenge();
-            if (current == null)
+            // Try parsing the string as a challenge ID
+            if (ulong.TryParse(search, out var uid))
             {
-                await ReplyAsync("There is no current challenge");
+                var c = await _challenges.GetChallenges(id: uid).SingleOrDefaultAsync();
+                if (c != null)
+                {
+                    await ReplyAsync(embed: c.ToEmbed().Build());
+                    return;
+                }
+            }
+
+            // Try searching for a challenge that matches the name
+            var matches = await _challenges.GetChallenges(name: search).ToArrayAsync();
+            if (matches.Length == 1)
+            {
+                await ReplyAsync(embed: matches[0].ToEmbed().Build());
             }
             else
             {
-                await _challenges.ChangeChallengeDifficulty(current, difficulty);
-                await ReplyAsync($"Changed difficulty from `{current.Difficulty}` to `{difficulty}`");
+                await DisplayItemList(
+                    matches.ToAsyncEnumerable(),
+                    () => "No challenges",
+                    (c, i) => $"[{c.Id}] {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
+                );
             }
+        }
+
+        [Command("competitions"), Summary("List all previous competitions")]
+        public async Task ListCompetitions()
+        {
+            await DisplayItemList(
+                _challenges.GetChallenges(null),
+                () => "No challenges",
+                (c, i) => $"[{c.Id}] {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
+            );
+        }
+
+        private async Task DisplayItemList<T>(IAsyncEnumerable<T> items, Func<string> nothing, Func<T, int, string> itemToString)
+        {
+            var builder = new StringBuilder();
+
+            var none = true;
+            var index = 0;
+            await foreach (var item in items)
+            {
+                none = false;    
+
+                var str = itemToString(item, index++);
+                if (builder.Length + str.Length > 1000)
+                {
+                    await ReplyAsync(builder.ToString());
+                    builder.Clear();
+                }
+
+                builder.Append(str);
+                builder.Append('\n');
+            }
+
+            if (builder.Length > 0)
+                await ReplyAsync(builder.ToString());
+
+            if (none)
+                await ReplyAsync(nothing());
         }
     }
 }

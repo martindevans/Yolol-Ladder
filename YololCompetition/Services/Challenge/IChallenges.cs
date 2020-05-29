@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace YololCompetition.Services.Challenge
 {
@@ -15,5 +16,7 @@ namespace YololCompetition.Services.Challenge
         Task EndCurrentChallenge();
 
         Task ChangeChallengeDifficulty(Challenge challenge, ChallengeDifficulty difficulty);
+
+        IAsyncEnumerable<Challenge> GetChallenges(ChallengeDifficulty? difficultyFilter = null, ulong? id = null, string? name = null, bool includeUnstarted = false);
     }
 }
