@@ -50,15 +50,15 @@ namespace YololCompetition.Modules
         [Command("competition"), Summary("Search previous competitions")]
         public async Task GetCompetition(string search)
         {
-            var c = await _challenges.FuzzyFindChallenge(search).ToArrayAsync();
-            if (c.Length == 1)
-                await ReplyAsync(embed: c[0].ToEmbed().Build());
+            var results = await _challenges.FuzzyFindChallenge(search).ToArrayAsync();
+            if (results.Length == 1)
+                await ReplyAsync(embed: results[0].ToEmbed().Build());
             else
             {
                 await DisplayItemList(
-                    c.ToAsyncEnumerable(),
+                    results.ToAsyncEnumerable(),
                     () => "No challenges",
-                    (c, i) => $"[`{c.Id}`] {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
+                    (c, i) => $"`[{((uint)c.Id).BalderHash()}]` {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
                 );
             }
         }
@@ -67,9 +67,9 @@ namespace YololCompetition.Modules
         public async Task ListCompetitions()
         {
             await DisplayItemList(
-                _challenges.GetChallenges(null),
+                _challenges.GetChallenges(),
                 () => "No challenges",
-                (c, i) => $"[{((uint)c.Id).BalderHash()}] {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
+                (c, i) => $"`[{((uint)c.Id).BalderHash()}]` {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
             );
         }
 
