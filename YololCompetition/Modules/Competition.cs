@@ -7,7 +7,7 @@ using BalderHash.Extensions;
 using Discord.Commands;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Challenge;
-using YololCompetition.Services.Cron;
+using YololCompetition.Services.Messages;
 
 namespace YololCompetition.Modules
 {
@@ -15,12 +15,12 @@ namespace YololCompetition.Modules
         : ModuleBase
     {
         private readonly IChallenges _challenges;
-        private readonly ICron _cron;
+        private readonly IMessages _messages;
 
-        public Competition(IChallenges challenges, ICron cron)
+        public Competition(IChallenges challenges, IMessages messages)
         {
             _challenges = challenges;
-            _cron = cron;
+            _messages = messages;
         }
 
         [Command("current"), Summary("Show the current competition details")]
@@ -32,18 +32,7 @@ namespace YololCompetition.Modules
             else
             {
                 var message = await ReplyAsync(embed: current.ToEmbed().Build());
-
-                _cron.Schedule(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1), uint.MaxValue, async () => {
-
-                    // Get current challenge
-                    var c = await _challenges.GetCurrentChallenge();
-
-                    // Update embed
-                    await message.ModifyAsync(a => a.Embed = current.ToEmbed().Build());
-
-                    // Keep running this task while the challenge is the same challenge that was initially scheduled
-                    return c?.Id == current.Id;
-                });
+                await _messages.TrackMessage(message.Channel.Id, message.Id, current.Id, 0);
             }
         }
 

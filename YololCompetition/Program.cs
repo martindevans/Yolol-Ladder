@@ -17,6 +17,7 @@ using YololCompetition.Services.Scoring;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Subscription;
 using YololCompetition.Services.Verification;
+using YololCompetition.Services.Messages;
 
 namespace YololCompetition
 {
@@ -38,6 +39,9 @@ namespace YololCompetition
 
             var commands = provider.GetService<CommandService>();
             await commands.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
+
+            var messages = provider.GetService<IMessages>();
+            messages.StartMessageWatch();
 
             var bot = provider.GetService<DiscordBot>();
             await bot.Start();
@@ -79,6 +83,7 @@ namespace YololCompetition
             di.AddTransient<IChallenges, DbChallenges>();
             di.AddTransient<ISubscription, DbSubscription>();
             di.AddTransient<IScore, BasicScoring>();
+            di.AddTransient<IMessages, DbMessages>();
 
             di.AddTransient<IVerification, YololEmulatorVerification>();
 
