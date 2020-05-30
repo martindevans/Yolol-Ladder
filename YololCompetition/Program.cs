@@ -78,7 +78,6 @@ namespace YololCompetition
             di.AddTransient<ISolutions, DbSolutions>();
             di.AddTransient<IChallenges, DbChallenges>();
             di.AddTransient<ISubscription, DbSubscription>();
-            di.AddTransient<IScore, BasicScoring>();
 
             di.AddTransient<IVerification, YololEmulatorVerification>();
 

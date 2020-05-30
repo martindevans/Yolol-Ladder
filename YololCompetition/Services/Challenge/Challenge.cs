@@ -25,6 +25,7 @@ namespace YololCompetition.Services.Challenge
         Unknown = 0,
 
         BasicScoring = 1,
+        Approximate = 2,
     }
 
     public class Challenge

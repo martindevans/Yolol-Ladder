@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord.WebSocket;
 using Yolol.Execution;
 using Yolol.Grammar;
 using YololCompetition.Services.Scoring;
 using MoreLinq;
-using YololCompetition.Extensions;
+using YololCompetition.Services.Challenge;
 
 namespace YololCompetition.Services.Verification
 {
@@ -16,41 +15,42 @@ namespace YololCompetition.Services.Verification
         : IVerification
     {
         private readonly Configuration _config;
-        private readonly IScore _score;
 
-        public YololEmulatorVerification(Configuration config, IScore score)
+        public YololEmulatorVerification(Configuration config)
         {
             _config = config;
-            _score = score;
         }
 
         public async Task<(Success?, Failure?)> Verify(Challenge.Challenge challenge, string yolol)
         {
             await Task.CompletedTask;
 
-            if (challenge.ScoreMode != Challenge.ScoreMode.BasicScoring)
-                throw new NotImplementedException($"Score mode `{challenge.ScoreMode}` is not implemented");
+            IScore scoreMode = challenge.ScoreMode switch {
+                ScoreMode.BasicScoring => new BasicScoring(),
+                ScoreMode.Approximate => new ApproximateScoring(),
+                ScoreMode.Unknown => throw new InvalidOperationException("Cannot use `Unknown` score mode (challenge is broken - contact Martin#2468)"),
+                _ => throw new NotImplementedException($"Score mode `{challenge.ScoreMode}` is not implemented")
+            };
 
             // Retrieve the test cases for the challenge
             var (inputs, outputs) = GetTests(challenge);
 
-            // Check input program is 20x70
+            // Check input program fits within 20x70
             var lines = yolol.Split("\n");
             if (lines.Length > 20 || lines.Any(l => l.Length > 70))
                 return (null, new Failure(FailureType.ProgramTooLarge, null));
 
-            // parse the entry program
+            // parse the program
             var result = Parser.ParseProgram(yolol);
             if (!result.IsOk)
                 return (null, new Failure(FailureType.ParseFailed, result.Err.ToString()));
-
             var entry = result.Ok;
             
             // Get the variable which the program uses to indicate it is ready to move to the next round
             var state = new MachineState(new DefaultValueDeviceNetwork());
             var done = state.GetVariable($":{challenge.CheckIndicator}");
 
-            // Begin counting how long it takes to verify
+            // Begin counting how long it takes to verify (for profiling purposes)
             var timer = new Stopwatch();
             timer.Start();
 
@@ -102,25 +102,17 @@ namespace YololCompetition.Services.Verification
                         pc = 0;
                 }
 
-                // Check outputs
-                foreach (var (key, value) in outputs[i])
-                {
-                    var v = state.GetVariable($":{key}");
-                    if ((v.Value != value).ToBool())
-                    {
-                        var ii = string.Join(",", input.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
-                        var oo = string.Join(",", outputs[i].Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
-
-                        return (null, new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `{v.Value.ToHumanString()}` for `:{key}`"));
-                    }
-                }
+                // Check this test case with the current scoring mode
+                var scoreFailure = scoreMode.CheckCase(input, outputs[i], state);
+                if (scoreFailure != null)
+                    return (null, scoreFailure);
             }
 
             Console.WriteLine($"Verified {totalRuntime} ticks, {timer.ElapsedMilliseconds}ms runtime");
 
             // Calculate score
             var codeLength = yolol.Replace("\n", "").Length;
-            var score = _score.Score(
+            var score = scoreMode.FinalizeScore(
                 (uint)inputs.Count,
                 totalRuntime,
                 codeLength
@@ -129,7 +121,7 @@ namespace YololCompetition.Services.Verification
             return (new Success((uint)score, (uint)totalRuntime, (uint)codeLength), null);
         }
 
-        private (IReadOnlyList<IReadOnlyDictionary<string, Value>>, IReadOnlyList<IReadOnlyDictionary<string, Value>>) GetTests(Challenge.Challenge challenge)
+        private static (IReadOnlyList<IReadOnlyDictionary<string, Value>>, IReadOnlyList<IReadOnlyDictionary<string, Value>>) GetTests(Challenge.Challenge challenge)
         {
             if (challenge.ShuffleTests)
             {

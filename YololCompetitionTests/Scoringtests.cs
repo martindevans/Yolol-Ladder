@@ -13,7 +13,7 @@ namespace YololCompetitionTests
             const int iters = 100;
 
             var s = new BasicScoring();
-            var score = s.Score(tests, 10 * tests, 0);
+            var score = s.FinalizeScore(tests, 10 * tests, 0);
             Assert.AreEqual(50*1000+1400 - 500u, score);
         }
     }

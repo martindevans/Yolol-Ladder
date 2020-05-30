@@ -76,7 +76,7 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, description, data.Shuffle ?? true, ScoreMode.BasicScoring);
+            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, description, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring);
             await _challenges.Create(c);
             await ReplyAsync("Challenge added to queue");
         }
@@ -91,6 +91,9 @@ namespace YololCompetition.Modules
 
             [JsonProperty("shuffle")]
             public bool? Shuffle { get; set; }
+
+            [JsonProperty("mode")]
+            public ScoreMode? Mode { get; set; }
         }
 
 
