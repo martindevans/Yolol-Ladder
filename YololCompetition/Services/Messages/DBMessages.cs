@@ -85,12 +85,17 @@ namespace YololCompetition.Services.Messages
                 {
                     
                     if (entry.ChallengeID != c.Id) {continue;}
-                    
-                    var channel = _client.GetChannel(entry.ChannelID);
-                    var chn = channel as ISocketMessageChannel;
-                    IUserMessage msg = chn.GetMessageAsync(entry.MessageID) as IUserMessage; 
 
-                    await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
+                    switch (entry.MessageType) {
+                        default:
+                        case 0:
+                        var channel = _client.GetChannel(entry.ChannelID);
+                        var chn = channel as ISocketMessageChannel;
+                        IUserMessage msg = chn.GetMessageAsync(entry.MessageID) as IUserMessage; 
+
+                        await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
+                        break;
+                    }
                 }
 
                 return true;      
