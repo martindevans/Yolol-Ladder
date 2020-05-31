@@ -76,7 +76,7 @@ namespace YololCompetition.Services.Messages
             var c = _challenges.GetCurrentChallenge().Result;
             if (c == null)
             {                
-                //Insert Error Handling thing here.
+                Console.WriteLine("Tried to run FinalUpdateMessage when there is no current Challenge");
                 return;
             }
 
@@ -94,7 +94,7 @@ namespace YololCompetition.Services.Messages
                         }                        
                         break;
                     default:
-                        //Insert Error Handling thing here
+                        Console.WriteLine("Invalid Message type " + entry.MessageType + " for Message " + entry.MessageID + " from channel " + entry.ChannelID + " For challenge " + entry.ChallengeID);
                         break;
                 }
             }
@@ -112,37 +112,50 @@ namespace YololCompetition.Services.Messages
                 (MessageType)uint.Parse(reader["MessageType"].ToString()!)
             );
         }
-
+        
         public void StartMessageWatch()
         {
             _cron.Schedule(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1), uint.MaxValue, async () => {
-                // Get current challenge
-                var c = await _challenges.GetCurrentChallenge();
-                if (c == null) 
+                try 
                 {
-                    return true;
-                }
-
-                var messages = GetCurrentMessages(c.Id);
-                await foreach (Message entry in messages) 
-                {
-                    switch (entry.MessageType) {
-                        case 0:
-                            var channel = _client.GetChannel(entry.ChannelID) as ISocketMessageChannel;                        
-                            var msg = channel?.GetMessageAsync(entry.MessageID) as IUserMessage; 
-                            if (msg != null) 
-                            {
-                            await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
-                            }                        
-                            break;
-                        default:
-                            //Insert Error Handling thing here.
-                            break;
+                    // Get current challenge
+                    var c = await _challenges.GetCurrentChallenge();
+                    if (c == null) 
+                    {
+                        return true;
                     }
+
+                    var messages = GetCurrentMessages(c.Id);
+                    await foreach (Message entry in messages) 
+                    {
+                        try
+                        {                        
+                            switch (entry.MessageType) {
+                                case 0:
+                                    var channel = _client.GetChannel(entry.ChannelID) as ISocketMessageChannel;                        
+                                    var msg = channel?.GetMessageAsync(entry.MessageID) as IUserMessage; 
+                                    if (msg != null) 
+                                    {
+                                    await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
+                                    }                        
+                                    break;
+                                default:
+                                    Console.WriteLine("Invalid Message type " + entry.MessageType + " for Message " + entry.MessageID + " from channel " + entry.ChannelID + " For challenge " + entry.ChallengeID);
+                                    break;
+                            }
+                        }
+                        catch (Exception E)
+                        {
+                            Console.WriteLine(E);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
                 return true;      
             });
-
         }
     }
 }
