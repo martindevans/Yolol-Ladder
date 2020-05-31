@@ -62,7 +62,7 @@ namespace YololCompetition.Services.Messages
             DbCommand PrepareQuery(IDatabase database)
             {
                 var cmd = _database.CreateCommand();
-                cmd.CommandText = "SELECT from 'Messages' WHERE 'ChallengeID' = @challengeID";
+                cmd.CommandText = "SELECT from 'Messages' WHERE 'ChallengeID' = @ChallengeID";
                 cmd.Parameters.Add(new SqliteParameter("@ChallengeID", DbType.UInt64) { Value = challengeID});
                 return cmd;
             }
@@ -112,7 +112,7 @@ namespace YololCompetition.Services.Messages
                 (MessageType)uint.Parse(reader["MessageType"].ToString()!)
             );
         }
-        
+
         public void StartMessageWatch()
         {
             _cron.Schedule(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1), uint.MaxValue, async () => {
