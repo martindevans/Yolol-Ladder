@@ -40,13 +40,14 @@ namespace YololCompetition
             await commands.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
 
             var messages = provider.GetService<IMessages>();
-            messages.StartMessageWatch();
 
             var bot = provider.GetService<DiscordBot>();
             await bot.Start();
 
             Console.WriteLine("Bot Started");
             await provider.GetRequiredService<IScheduler>().Start();
+
+            messages.StartMessageWatch();
         }
 
         private static Configuration? ArgsNotParsed(IEnumerable<Error> errs)

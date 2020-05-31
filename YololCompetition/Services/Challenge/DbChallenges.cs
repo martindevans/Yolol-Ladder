@@ -103,7 +103,6 @@ namespace YololCompetition.Services.Challenge
 
         public async Task EndCurrentChallenge()
         {
-            await _messages.FinalUpdateMessages();
             await _database.ExecAsync("UPDATE Challenges SET Status = 3 WHERE Status = 2");
         }
 

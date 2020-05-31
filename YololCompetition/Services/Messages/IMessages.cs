@@ -7,9 +7,9 @@ namespace YololCompetition.Services.Messages
     public interface IMessages
     {
         Task TrackMessage(ulong ChannelID, ulong MessageID, ulong ChallengeID, MessageType MessageType);
-        IAsyncEnumerable<Message> GetCurrentMessages(ulong challengeID);
+        IAsyncEnumerable<Message> GetMessages();
         void StartMessageWatch();
-        Task FinalUpdateMessages();
+        Task UpdateCurrentMessage(Message message);
     }
 
     public readonly struct Message
@@ -30,5 +30,6 @@ namespace YololCompetition.Services.Messages
 
     public enum MessageType : uint {
         Current, 
-        Leaderboard}
+        Leaderboard
+    }
 }

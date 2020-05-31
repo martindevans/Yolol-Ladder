@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Data.Common;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
@@ -49,58 +50,55 @@ namespace YololCompetition.Services.Messages
             await cmd.ExecuteNonQueryAsync();
         }
 
-        private async Task RemoveMessages(ulong challengeID)
+        private async Task RemoveMessage(Message message)
         {
             await using var cmd = _database.CreateCommand();
-            cmd.CommandText = "DELETE FROM Messages WHERE ChallengeID = @ChallengeID";
-            cmd.Parameters.Add(new SqliteParameter("@ChallengeID", DbType.UInt64) { Value = challengeID});
+            cmd.CommandText = "DELETE FROM Messages WHERE ChannelID = @ChannelID AND MessageID = @MessageID" ;
+            cmd.Parameters.Add(new SqliteParameter("@ChannelID", DbType.UInt64) { Value = message.ChannelID });
+            cmd.Parameters.Add(new SqliteParameter("@MessageID", DbType.UInt64) { Value = message.MessageID });
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public IAsyncEnumerable<Message> GetCurrentMessages(ulong challengeID)
+        public IAsyncEnumerable<Message> GetMessages()
         {
             DbCommand PrepareQuery(IDatabase database)
-            {
+            {                
                 var cmd = _database.CreateCommand();
-                cmd.CommandText = "SELECT from 'Messages' WHERE 'ChallengeID' = @ChallengeID";
-                cmd.Parameters.Add(new SqliteParameter("@ChallengeID", DbType.UInt64) { Value = challengeID});
+                cmd.CommandText = "SELECT from 'Messages'";
                 return cmd;
             }
-
-            return new SqlAsyncResult<Message>(_database, PrepareQuery, ParseMessage);
+            return new SqlAsyncResult<Message>(_database, PrepareQuery, ParseMessage);            
         }
 
-        public async Task FinalUpdateMessages()
+        public async Task UpdateCurrentMessage(Message message)
         {
-            //Get Current Challenge
-            var c = _challenges.GetCurrentChallenge().Result;
-            if (c == null)
-            {                
-                Console.WriteLine("Tried to run FinalUpdateMessage when there is no current Challenge");
-                return;
-            }
+            var currentChallenge = await _challenges.GetCurrentChallenge();        
+            var challenge = await _challenges.GetChallenges(id: message.ChallengeID).FirstAsync();
 
-            //Get Messages to do Final Update For and iterate doing the updates.
-            var messages = GetCurrentMessages(c.Id);
-            await foreach (Message entry in messages)
-            {                
-                switch (entry.MessageType) {
-                    case 0:
-                        var channel = _client.GetChannel(entry.ChannelID) as ISocketMessageChannel;                        
-                        var msg = channel?.GetMessageAsync(entry.MessageID) as IUserMessage; 
-                        if (msg != null) 
-                        {
-                        await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
-                        }                        
-                        break;
-                    default:
-                        Console.WriteLine("Invalid Message type " + entry.MessageType + " for Message " + entry.MessageID + " from channel " + entry.ChannelID + " For challenge " + entry.ChallengeID);
-                        break;
+            if (challenge == null)
+            {
+                Console.WriteLine("Message exists for inexistant challenge " + message.ChallengeID);
+                await RemoveMessage(message);
+            }
+            else
+            {
+                var channel = _client.GetChannel(message.ChannelID) as ISocketMessageChannel;                        
+                var msg = channel?.GetMessageAsync(message.MessageID) as IUserMessage;
+
+                if (msg != null)
+                {
+                await msg.ModifyAsync(a => a.Embed = challenge.ToEmbed().Build());
                 }
-            }
+                else
+                {
+                    Console.WriteLine ("Message " + message.MessageID + " from channel " + message.ChannelID + " is null");
+                }
 
-            //Remove messages after final update.  
-            await RemoveMessages(c.Id);
+                if (currentChallenge == null || challenge != currentChallenge)
+                {
+                    await RemoveMessage(message);
+                }
+            }            
         }
 
         private static Message ParseMessage(DbDataReader reader)
@@ -118,26 +116,14 @@ namespace YololCompetition.Services.Messages
             _cron.Schedule(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1), uint.MaxValue, async () => {
                 try 
                 {
-                    // Get current challenge
-                    var c = await _challenges.GetCurrentChallenge();
-                    if (c == null) 
-                    {
-                        return true;
-                    }
-
-                    var messages = GetCurrentMessages(c.Id);
+                    var messages = GetMessages();
                     await foreach (Message entry in messages) 
                     {
                         try
-                        {                        
+                        {
                             switch (entry.MessageType) {
                                 case 0:
-                                    var channel = _client.GetChannel(entry.ChannelID) as ISocketMessageChannel;                        
-                                    var msg = channel?.GetMessageAsync(entry.MessageID) as IUserMessage; 
-                                    if (msg != null) 
-                                    {
-                                    await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
-                                    }                        
+                                    await UpdateCurrentMessage(entry);
                                     break;
                                 default:
                                     Console.WriteLine("Invalid Message type " + entry.MessageType + " for Message " + entry.MessageID + " from channel " + entry.ChannelID + " For challenge " + entry.ChallengeID);
