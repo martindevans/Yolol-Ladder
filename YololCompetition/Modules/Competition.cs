@@ -32,7 +32,7 @@ namespace YololCompetition.Modules
             else
             {
                 var message = await ReplyAsync(embed: current.ToEmbed().Build());
-                await _messages.TrackMessage(message.Channel.Id, message.Id, current.Id, 0);
+                await _messages.TrackMessage(message.Channel.Id, message.Id, current.Id, MessageType.Current);
             }
         }
 

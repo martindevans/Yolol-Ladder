@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Database;
+using YololCompetition.Services.Messages;
 
 namespace YololCompetition.Services.Challenge
 {
@@ -24,11 +25,13 @@ namespace YololCompetition.Services.Challenge
 
         private readonly IDatabase _database;
         private readonly Configuration _config;
+        private readonly IMessages _messages;
 
-        public DbChallenges(IDatabase database, Configuration config)
+        public DbChallenges(IDatabase database, Configuration config, IMessages messages)
         {
             _database = database;
             _config = config;
+            _messages = messages;
 
             try
             {
@@ -100,6 +103,7 @@ namespace YololCompetition.Services.Challenge
 
         public async Task EndCurrentChallenge()
         {
+            await _messages.FinalUpdateMessages();
             await _database.ExecAsync("UPDATE Challenges SET Status = 3 WHERE Status = 2");
         }
 

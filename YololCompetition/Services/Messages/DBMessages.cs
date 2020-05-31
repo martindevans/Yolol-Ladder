@@ -19,11 +19,9 @@ namespace YololCompetition.Services.Messages
         private readonly IDatabase _database;
         private readonly ICron _cron;
         private readonly IChallenges _challenges;
-        private readonly BaseSocketClient _client;
-
-        public enum messageType : uint {Current, Leaderboard}
+        private readonly DiscordSocketClient _client;
         
-        public DbMessages(IDatabase database, ICron cron, IChallenges challenges, BaseSocketClient client)
+        public DbMessages(IDatabase database, ICron cron, IChallenges challenges, DiscordSocketClient client)
         {
             _database = database;
             _cron = cron;
@@ -40,7 +38,7 @@ namespace YololCompetition.Services.Messages
             }
         }
 
-        public async Task TrackMessage(ulong ChannelID, ulong MessageID, ulong ChallengeID, uint MessageType)
+        public async Task TrackMessage(ulong ChannelID, ulong MessageID, ulong ChallengeID, MessageType MessageType)
         {
             await using var cmd = _database.CreateCommand();
             cmd.CommandText = "INSERT into Messages (ChannelID, MessageID, ChallengeID, MessageType) values(@ChannelID, @MessageID, @ChallengeID, @MessageType)";
@@ -51,17 +49,58 @@ namespace YololCompetition.Services.Messages
             await cmd.ExecuteNonQueryAsync();
         }
 
+        private async Task RemoveMessages(ulong challengeID)
+        {
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "DELETE FROM Messages WHERE ChallengeID = @ChallengeID";
+            cmd.Parameters.Add(new SqliteParameter("@ChallengeID", DbType.UInt64) { Value = challengeID});
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         public IAsyncEnumerable<Message> GetCurrentMessages(ulong challengeID)
         {
             DbCommand PrepareQuery(IDatabase database)
             {
                 var cmd = _database.CreateCommand();
-                cmd.CommandText = "SELECT from 'Messages' WHERE 'ChallengID' = @challengeID";
+                cmd.CommandText = "SELECT from 'Messages' WHERE 'ChallengeID' = @challengeID";
                 cmd.Parameters.Add(new SqliteParameter("@ChallengeID", DbType.UInt64) { Value = challengeID});
                 return cmd;
             }
 
             return new SqlAsyncResult<Message>(_database, PrepareQuery, ParseMessage);
+        }
+
+        public async Task FinalUpdateMessages()
+        {
+            //Get Current Challenge
+            var c = _challenges.GetCurrentChallenge().Result;
+            if (c == null)
+            {                
+                //Insert Error Handling thing here.
+                return;
+            }
+
+            //Get Messages to do Final Update For and iterate doing the updates.
+            var messages = GetCurrentMessages(c.Id);
+            await foreach (Message entry in messages)
+            {                
+                switch (entry.MessageType) {
+                    case 0:
+                        var channel = _client.GetChannel(entry.ChannelID) as ISocketMessageChannel;                        
+                        var msg = channel?.GetMessageAsync(entry.MessageID) as IUserMessage; 
+                        if (msg != null) 
+                        {
+                        await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
+                        }                        
+                        break;
+                    default:
+                        //Insert Error Handling thing here
+                        break;
+                }
+            }
+
+            //Remove messages after final update.  
+            await RemoveMessages(c.Id);
         }
 
         private static Message ParseMessage(DbDataReader reader)
@@ -70,7 +109,7 @@ namespace YololCompetition.Services.Messages
                 ulong.Parse(reader["ChannelID"].ToString()!),
                 ulong.Parse(reader["MessageID"].ToString()!),
                 ulong.Parse(reader["ChallengeID"].ToString()!),
-                uint.Parse(reader["MessageType"].ToString()!)
+                (MessageType)uint.Parse(reader["MessageType"].ToString()!)
             );
         }
 
@@ -79,25 +118,28 @@ namespace YololCompetition.Services.Messages
             _cron.Schedule(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1), uint.MaxValue, async () => {
                 // Get current challenge
                 var c = await _challenges.GetCurrentChallenge();
+                if (c == null) 
+                {
+                    return true;
+                }
 
                 var messages = GetCurrentMessages(c.Id);
                 await foreach (Message entry in messages) 
                 {
-                    
-                    if (entry.ChallengeID != c.Id) {continue;}
-
                     switch (entry.MessageType) {
-                        default:
                         case 0:
-                        var channel = _client.GetChannel(entry.ChannelID);
-                        var chn = channel as ISocketMessageChannel;
-                        IUserMessage msg = chn.GetMessageAsync(entry.MessageID) as IUserMessage; 
-
-                        await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
-                        break;
+                            var channel = _client.GetChannel(entry.ChannelID) as ISocketMessageChannel;                        
+                            var msg = channel?.GetMessageAsync(entry.MessageID) as IUserMessage; 
+                            if (msg != null) 
+                            {
+                            await msg.ModifyAsync(a => a.Embed = c.ToEmbed().Build());
+                            }                        
+                            break;
+                        default:
+                            //Insert Error Handling thing here.
+                            break;
                     }
                 }
-
                 return true;      
             });
 
