@@ -22,8 +22,8 @@ namespace YololCompetition.Services.Verification
 
         public IEnumerator<(string, Value)> GetEnumerator()
         {
-            foreach (var item in _saved)
-                yield return (item.Key, item.Value.Value);
+            foreach (var (key, value) in _saved)
+                yield return (key, value.Value);
         }
 
         IEnumerator IEnumerable.GetEnumerator()

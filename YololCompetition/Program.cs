@@ -44,10 +44,10 @@ namespace YololCompetition
             var bot = provider.GetService<DiscordBot>();
             await bot.Start();
 
+            messages.StartMessageWatch();
+
             Console.WriteLine("Bot Started");
             await provider.GetRequiredService<IScheduler>().Start();
-
-            messages.StartMessageWatch();
         }
 
         private static Configuration? ArgsNotParsed(IEnumerable<Error> errs)
@@ -82,7 +82,6 @@ namespace YololCompetition
             di.AddTransient<ISolutions, DbSolutions>();
             di.AddTransient<IChallenges, DbChallenges>();
             di.AddTransient<ISubscription, DbSubscription>();
-            di.AddTransient<IScore, BasicScoring>();
             di.AddTransient<IMessages, DbMessages>();
 
             di.AddTransient<IVerification, YololEmulatorVerification>();

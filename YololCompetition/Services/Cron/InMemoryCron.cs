@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace YololCompetition.Services.Cron
@@ -6,21 +7,30 @@ namespace YololCompetition.Services.Cron
     public class InMemoryCron
         : ICron
     {
-        public void Schedule(TimeSpan period, TimeSpan initialDelay, uint maxRuns, Func<Task<bool>> run)
+        public Task Schedule(TimeSpan initialDelay, CancellationToken token, Func<CancellationToken, Task<TimeSpan?>> run)
         {
-            Task.Run(async () => {
+            return Task.Run(async () => {
 
-                await Task.Delay(initialDelay);
+                await Task.Delay(initialDelay, token);
 
-                for (uint i = 0; i < maxRuns; i++)
+                while (!token.IsCancellationRequested)
                 {
-                    var cont = await run();
-                    if (!cont)
-                        break;
+                    TimeSpan? delay = null;
+                    try
+                    {
+                        delay = await run(token);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Cron job Exception: {e}");
+                    }
 
-                    await Task.Delay(period);
+                    if (delay == null)
+                        break;
+                    await Task.Delay(delay.Value, token);
                 }
-            });
+                
+            }, token);
         }
     }
 }

@@ -39,14 +39,14 @@ namespace YololCompetition.Services.Messages
             }
         }
 
-        public async Task TrackMessage(ulong ChannelID, ulong MessageID, ulong ChallengeID, MessageType MessageType)
+        public async Task TrackMessage(ulong channelID, ulong messageID, ulong challengeID, MessageType messageType)
         {
             await using var cmd = _database.CreateCommand();
             cmd.CommandText = "INSERT into Messages (ChannelID, MessageID, ChallengeID, MessageType) values(@ChannelID, @MessageID, @ChallengeID, @MessageType)";
-            cmd.Parameters.Add(new SqliteParameter("@ChannelID", DbType.UInt64) { Value = ChannelID });
-            cmd.Parameters.Add(new SqliteParameter("@MessageID", DbType.UInt64) { Value = MessageID });
-            cmd.Parameters.Add(new SqliteParameter("@ChallengeID", DbType.UInt64) { Value = ChallengeID });
-            cmd.Parameters.Add(new SqliteParameter("@MessageType", DbType.UInt64) { Value = MessageType });
+            cmd.Parameters.Add(new SqliteParameter("@ChannelID", DbType.UInt64) { Value = channelID });
+            cmd.Parameters.Add(new SqliteParameter("@MessageID", DbType.UInt64) { Value = messageID });
+            cmd.Parameters.Add(new SqliteParameter("@ChallengeID", DbType.UInt64) { Value = challengeID });
+            cmd.Parameters.Add(new SqliteParameter("@MessageType", DbType.UInt64) { Value = messageType });
             await cmd.ExecuteNonQueryAsync();
         }
 
@@ -64,7 +64,7 @@ namespace YololCompetition.Services.Messages
             DbCommand PrepareQuery(IDatabase database)
             {                
                 var cmd = _database.CreateCommand();
-                cmd.CommandText = "SELECT from `Messages`";
+                cmd.CommandText = "SELECT * from Messages";
                 return cmd;
             }
             return new SqlAsyncResult<Message>(_database, PrepareQuery, ParseMessage);            
@@ -82,22 +82,23 @@ namespace YololCompetition.Services.Messages
             }
             else
             {
-                var channel = _client.GetChannel(message.ChannelID) as ISocketMessageChannel;                        
-                var msg = channel?.GetMessageAsync(message.MessageID) as IUserMessage;
-
-                if (msg != null)
+                if (!(_client.GetChannel(message.ChannelID) is ISocketMessageChannel channel))
                 {
-                await msg.ModifyAsync(a => a.Embed = challenge.ToEmbed().Build());
-                }
-                else
-                {
-                    Console.WriteLine ("Message " + message.MessageID + " from channel " + message.ChannelID + " is null");
-                }
-
-                if (currentChallenge == null || challenge != currentChallenge)
-                {
+                    Console.WriteLine($"No such channel: {message.ChannelID}");
                     await RemoveMessage(message);
+                    return;
                 }
+
+                if (!((await channel.GetMessageAsync(message.MessageID)) is IUserMessage msg))
+                {
+                    Console.WriteLine($"No such message: {message.MessageID}");
+                    await RemoveMessage(message);
+                    return;
+                }
+
+                await msg.ModifyAsync(a => a.Embed = challenge.ToEmbed().Build());
+                if (currentChallenge == null || challenge.Id != currentChallenge.Id)
+                    await RemoveMessage(message);
             }            
         }
 
@@ -113,34 +114,45 @@ namespace YololCompetition.Services.Messages
 
         public void StartMessageWatch()
         {
-            _cron.Schedule(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1), uint.MaxValue, async () => {
-                try 
+            _cron.Schedule(TimeSpan.FromSeconds(30), default, async ct => {
+
+                await foreach (var entry in GetMessages().WithCancellation(ct))
                 {
-                    var messages = GetMessages();
-                    await foreach (Message entry in messages) 
+                    try
                     {
-                        try
-                        {
-                            switch (entry.MessageType) {
-                                case 0:
-                                    await UpdateCurrentMessage(entry);
-                                    break;
-                                default:
-                                    Console.WriteLine("Invalid Message type " + entry.MessageType + " for Message " + entry.MessageID + " from channel " + entry.ChannelID + " For challenge " + entry.ChallengeID);
-                                    break;
-                            }
-                        }
-                        catch (Exception E)
-                        {
-                            Console.WriteLine(E);
+                        switch (entry.MessageType) {
+                            case MessageType.Current:
+                                await UpdateCurrentMessage(entry);
+                                break;
+
+                            case MessageType.Leaderboard:
+                                throw new NotImplementedException("MessageType.Leaderboard");
+
+                            default:
+                                Console.WriteLine($"Invalid Message type {entry.MessageType} for Message {entry.MessageID} from channel {entry.ChannelID} For challenge {entry.ChallengeID}");
+                                break;
                         }
                     }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-                return true;      
+
+                var current = await _challenges.GetCurrentChallenge();
+                if (current == null)
+                    return TimeSpan.FromMinutes(5);
+
+                // This shouldn't ever happen - the current challenge should always have an end time!
+                if (current.EndTime == null)
+                    return TimeSpan.FromMinutes(1);
+
+                var duration = current.EndTime.Value - DateTime.UtcNow;
+                if (duration > TimeSpan.FromMinutes(5))
+                    return TimeSpan.FromMinutes(5);
+
+                return duration;
+
             });
         }
     }

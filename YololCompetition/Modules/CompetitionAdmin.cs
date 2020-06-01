@@ -7,8 +7,9 @@ using Newtonsoft.Json;
 using Yolol.Execution;
 using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
-using YololCompetition.Services.Cron;
 using YololCompetition.Services.Schedule;
+using System.Linq;
+using BalderHash.Extensions;
 
 namespace YololCompetition.Modules
 {
@@ -19,7 +20,7 @@ namespace YololCompetition.Modules
         private readonly IChallenges _challenges;
         private readonly IScheduler _scheduler;
 
-        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ICron cron)
+        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler)
         {
             _challenges = challenges;
             _scheduler = scheduler;
@@ -76,7 +77,7 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, description, data.Shuffle ?? true, ScoreMode.BasicScoring);
+            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, description, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring);
             await _challenges.Create(c);
             await ReplyAsync("Challenge added to queue");
         }
@@ -91,14 +92,31 @@ namespace YololCompetition.Modules
 
             [JsonProperty("shuffle")]
             public bool? Shuffle { get; set; }
-        }
 
+            [JsonProperty("mode")]
+            public ScoreMode? Mode { get; set; }
+        }
 
         [Command("check-pool"), Summary("Check state of challenge pool")]
         public async Task CheckPool()
         {
             var count = await _challenges.GetPendingCount();
             await ReplyAsync($"There are {count} challenges pending");
+        }
+
+        [Command("show-pool"), Summary("Show state of challenge pool")]
+        public async Task ShowPool()
+        {
+            var none = true;
+            await foreach (var challenge in _challenges.GetChallenges(includeUnstarted: true).Where(a => a.EndTime == null))
+            {
+                none = false;
+                await ReplyAsync($" - {challenge.Name} (`{challenge.Id.BalderHash()}`)");
+                await Task.Delay(10);
+            }
+
+            if (none)
+                await ReplyAsync("No challenges in pool :(");
         }
 
         [Command("terminate-current-challenge"), Summary("Immediately terminate current challenge without scoring")]
