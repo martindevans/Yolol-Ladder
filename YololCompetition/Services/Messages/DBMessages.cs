@@ -31,7 +31,7 @@ namespace YololCompetition.Services.Messages
 
             try
             {
-                _database.Exec("CREATE TABLE IF NOT EXISTS `Messages` (`ChannelID` INTEGER NOT NULL, `MessageID` INTEGER NOT NULL, `ChallengeID` INTEGER NOT NULL, 'MessageType' INTEGER NOT NULL, PRIMARY KEY(`MessageID`, `ChallengeID'))");
+                _database.Exec("CREATE TABLE IF NOT EXISTS `Messages` (`ChannelID` INTEGER NOT NULL, `MessageID` INTEGER NOT NULL, `ChallengeID` INTEGER NOT NULL, `MessageType` INTEGER NOT NULL, PRIMARY KEY(`MessageID`, `ChallengeID`))");
             }
             catch (Exception e)
             {
@@ -64,7 +64,7 @@ namespace YololCompetition.Services.Messages
             DbCommand PrepareQuery(IDatabase database)
             {                
                 var cmd = _database.CreateCommand();
-                cmd.CommandText = "SELECT from 'Messages'";
+                cmd.CommandText = "SELECT from `Messages`";
                 return cmd;
             }
             return new SqlAsyncResult<Message>(_database, PrepareQuery, ParseMessage);            
