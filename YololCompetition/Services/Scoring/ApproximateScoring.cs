@@ -13,6 +13,7 @@ namespace YololCompetition.Services.Scoring
         public const double AccuracyPoints = PointsPerTick * 10;
 
         // Max multiplier for an almost accurate answer (0.001) is 6
+        // Getting a better answer than that is worth this much:
         public const double ExactMultiplier = 8;
 
         public override Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, MachineState state)
@@ -37,7 +38,7 @@ namespace YololCompetition.Services.Scoring
         private static double AccuracyScore(Number a, Number b)
         {
             var error = Math.Abs((double)(a.Value - b.Value));
-            if (Math.Abs(error) < 0.0001)
+            if (Math.Abs(error) < 0.001)
                 return AccuracyPoints * ExactMultiplier;
 
             return Math.Max(0, 3 - Math.Log10(error)) * AccuracyPoints;
