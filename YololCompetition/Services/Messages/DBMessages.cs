@@ -82,16 +82,14 @@ namespace YololCompetition.Services.Messages
             }
             else
             {
-                var channel = _client.GetChannel(message.ChannelID) as ISocketMessageChannel;
-                if (channel == null)
+                if (!(_client.GetChannel(message.ChannelID) is ISocketMessageChannel channel))
                 {
                     Console.WriteLine($"No such channel: {message.ChannelID}");
                     await RemoveMessage(message);
                     return;
                 }
 
-                var msg = (await channel.GetMessageAsync(message.MessageID)) as IUserMessage;
-                if (msg == null)
+                if (!((await channel.GetMessageAsync(message.MessageID)) is IUserMessage msg))
                 {
                     Console.WriteLine($"No such message: {message.MessageID}");
                     await RemoveMessage(message);
@@ -116,34 +114,45 @@ namespace YololCompetition.Services.Messages
 
         public void StartMessageWatch()
         {
-            _cron.Schedule(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1), uint.MaxValue, async () => {
-                try 
+            _cron.Schedule(TimeSpan.FromSeconds(30), default, async ct => {
+
+                await foreach (var entry in GetMessages().WithCancellation(ct))
                 {
-                    var messages = GetMessages();
-                    await foreach (var entry in messages) 
+                    try
                     {
-                        try
-                        {
-                            switch (entry.MessageType) {
-                                case 0:
-                                    await UpdateCurrentMessage(entry);
-                                    break;
-                                default:
-                                    Console.WriteLine("Invalid Message type " + entry.MessageType + " for Message " + entry.MessageID + " from channel " + entry.ChannelID + " For challenge " + entry.ChallengeID);
-                                    break;
-                            }
-                        }
-                        catch (Exception E)
-                        {
-                            Console.WriteLine(E);
+                        switch (entry.MessageType) {
+                            case MessageType.Current:
+                                await UpdateCurrentMessage(entry);
+                                break;
+
+                            case MessageType.Leaderboard:
+                                throw new NotImplementedException("MessageType.Leaderboard");
+
+                            default:
+                                Console.WriteLine($"Invalid Message type {entry.MessageType} for Message {entry.MessageID} from channel {entry.ChannelID} For challenge {entry.ChallengeID}");
+                                break;
                         }
                     }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-                return true;      
+
+                var current = await _challenges.GetCurrentChallenge();
+                if (current == null)
+                    return TimeSpan.FromMinutes(5);
+
+                // This shouldn't ever happen - the current challenge should always have an end time!
+                if (current.EndTime == null)
+                    return TimeSpan.FromMinutes(1);
+
+                var duration = current.EndTime.Value - DateTime.UtcNow;
+                if (duration > TimeSpan.FromMinutes(5))
+                    return TimeSpan.FromMinutes(5);
+
+                return duration;
+
             });
         }
     }

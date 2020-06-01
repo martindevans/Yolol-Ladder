@@ -7,24 +7,6 @@ namespace YololCompetition.Services.Cron
     public class InMemoryCron
         : ICron
     {
-        public Task Schedule(TimeSpan period, TimeSpan initialDelay, CancellationToken token, Func<CancellationToken, Task<bool>> run)
-        {
-            return Task.Run(async () => {
-
-                await Task.Delay(initialDelay, token);
-
-                while (!token.IsCancellationRequested)
-                {
-                    var cont = await run(token);
-                    if (!cont)
-                        break;
-
-                    await Task.Delay(period, token);
-                }
-                
-            }, token);
-        }
-
         public Task Schedule(TimeSpan initialDelay, CancellationToken token, Func<CancellationToken, Task<TimeSpan?>> run)
         {
             return Task.Run(async () => {
@@ -33,10 +15,18 @@ namespace YololCompetition.Services.Cron
 
                 while (!token.IsCancellationRequested)
                 {
-                    var delay = await run(token);
+                    TimeSpan? delay = null;
+                    try
+                    {
+                        delay = await run(token);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Cron job Exception: {e}");
+                    }
+
                     if (delay == null)
                         break;
-
                     await Task.Delay(delay.Value, token);
                 }
                 
