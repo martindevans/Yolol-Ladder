@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using CommandLine;
@@ -17,6 +16,7 @@ using YololCompetition.Services.Scoring;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Subscription;
 using YololCompetition.Services.Verification;
+using YololCompetition.Services.Messages;
 
 namespace YololCompetition
 {
@@ -39,8 +39,12 @@ namespace YololCompetition
             var commands = provider.GetService<CommandService>();
             await commands.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
 
+            var messages = provider.GetService<IMessages>();
+
             var bot = provider.GetService<DiscordBot>();
             await bot.Start();
+
+            messages.StartMessageWatch();
 
             Console.WriteLine("Bot Started");
             await provider.GetRequiredService<IScheduler>().Start();
@@ -78,6 +82,7 @@ namespace YololCompetition
             di.AddTransient<ISolutions, DbSolutions>();
             di.AddTransient<IChallenges, DbChallenges>();
             di.AddTransient<ISubscription, DbSubscription>();
+            di.AddTransient<IMessages, DbMessages>();
 
             di.AddTransient<IVerification, YololEmulatorVerification>();
 

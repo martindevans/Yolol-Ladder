@@ -15,7 +15,7 @@ namespace YololCompetition.Extensions
             var embed = new EmbedBuilder {
                 Title = $"{challenge.Name} ({challenge.Difficulty})",
                 Color = Color.Green,
-                Footer = new EmbedFooterBuilder().WithText($"{((uint)challenge.Id).BalderHash()} - A Cylon Project")
+                Footer = new EmbedFooterBuilder().WithText($"{((uint)challenge.Id).BalderHash()} - A Cylon Project ({DateTime.UtcNow.Ticks.GetHashCode()})")
             };
 
             if (challenge.EndTime.HasValue)
