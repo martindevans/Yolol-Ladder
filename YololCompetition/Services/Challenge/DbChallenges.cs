@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Database;
-using YololCompetition.Services.Messages;
 
 namespace YololCompetition.Services.Challenge
 {
@@ -25,13 +24,11 @@ namespace YololCompetition.Services.Challenge
 
         private readonly IDatabase _database;
         private readonly Configuration _config;
-        private readonly IMessages _messages;
 
-        public DbChallenges(IDatabase database, Configuration config, IMessages messages)
+        public DbChallenges(IDatabase database, Configuration config)
         {
             _database = database;
             _config = config;
-            _messages = messages;
 
             try
             {
