@@ -98,7 +98,7 @@ namespace YololCompetition.Services.Schedule
 
                 // Wait for a cooldown period
                 State = SchedulerState.WaitingCooldown;
-                await Task.WhenAny(_poker.WaitAsync(), Task.Delay(TimeSpan.FromHours(23)));
+                await Task.WhenAny(_poker.WaitAsync(), Task.Delay(TimeSpan.FromHours(24)));
             }
         }
 
