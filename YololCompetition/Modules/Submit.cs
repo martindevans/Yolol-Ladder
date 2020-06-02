@@ -100,6 +100,9 @@ namespace YololCompetition.Modules
                         await _broadcast.Broadcast(embed.Build());
                     }
                 }
+
+                if (success.Hint != null)
+                    await ReplyAsync(success.Hint);
             }
             else
                 throw new InvalidOperationException("Failed to verify solution (this is a bug, please contact @Martin#2468)");

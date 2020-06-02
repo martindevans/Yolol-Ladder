@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -24,9 +23,9 @@ namespace YololCompetition
 
         public async Task Start()
         {
-            var tcs = new TaskCompletionSource<bool>();
+            var ready = new TaskCompletionSource<bool>();
             _client.Ready += () => {
-                tcs.SetResult(true);
+                ready.SetResult(true);
                 return Task.CompletedTask;
             };
 
@@ -39,8 +38,12 @@ namespace YololCompetition
             await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable(_config.TokenEnvVar));
             await _client.StartAsync();
 
+            // Wait until connected
+            while (_client.ConnectionState == ConnectionState.Connecting)
+                await Task.Delay(1);
+
             // Wait until client is `Ready`
-            await tcs.Task;
+            await ready.Task;
         }
 
         private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)

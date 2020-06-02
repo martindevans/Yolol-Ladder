@@ -82,7 +82,8 @@ namespace YololCompetition.Services.Messages
             }
             else
             {
-                if (!(_client.GetChannel(message.ChannelID) is ISocketMessageChannel channel))
+                var channel = _client.GetChannel(message.ChannelID) as ISocketMessageChannel ?? await _client.GetPrivateChannelAsync(message.ChannelID) as ISocketMessageChannel;
+                if (channel == null)
                 {
                     Console.WriteLine($"No such channel: {message.ChannelID}");
                     await RemoveMessage(message);
@@ -114,7 +115,7 @@ namespace YololCompetition.Services.Messages
 
         public void StartMessageWatch()
         {
-            _cron.Schedule(TimeSpan.FromSeconds(30), default, async ct => {
+            _cron.Schedule(TimeSpan.FromSeconds(120), default, async ct => {
 
                 await foreach (var entry in GetMessages().WithCancellation(ct))
                 {
@@ -137,6 +138,8 @@ namespace YololCompetition.Services.Messages
                     {
                         Console.WriteLine(e);
                     }
+
+                    await Task.Delay(100, ct);
                 }
 
                 var current = await _challenges.GetCurrentChallenge();

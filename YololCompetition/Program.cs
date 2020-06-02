@@ -39,11 +39,10 @@ namespace YololCompetition
             var commands = provider.GetService<CommandService>();
             await commands.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
 
-            var messages = provider.GetService<IMessages>();
-
             var bot = provider.GetService<DiscordBot>();
             await bot.Start();
 
+            var messages = provider.GetService<IMessages>();
             messages.StartMessageWatch();
 
             Console.WriteLine("Bot Started");

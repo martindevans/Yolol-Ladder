@@ -15,11 +15,14 @@ namespace YololCompetition.Services.Verification
 
         public uint Length { get; }
 
-        public Success(uint score, uint iterations, uint length)
+        public string? Hint { get; }
+
+        public Success(uint score, uint iterations, uint length, string? hint)
         {
             Score = score;
             Iterations = iterations;
             Length = length;
+            Hint = hint;
         }
     }
 
@@ -27,7 +30,7 @@ namespace YololCompetition.Services.Verification
     {
         public FailureType Type { get; }
 
-        public string? Hint{ get; }
+        public string? Hint { get; }
 
         public Failure(FailureType type, string? hint)
         {

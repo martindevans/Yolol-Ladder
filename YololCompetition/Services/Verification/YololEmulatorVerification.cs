@@ -118,7 +118,7 @@ namespace YololCompetition.Services.Verification
                 codeLength
             );
 
-            return (new Success((uint)score, (uint)totalRuntime, (uint)codeLength), null);
+            return (new Success(score, totalRuntime, (uint)codeLength, scoreMode.Hint), null);
         }
 
         private static (IReadOnlyList<IReadOnlyDictionary<string, Value>>, IReadOnlyList<IReadOnlyDictionary<string, Value>>) GetTests(Challenge.Challenge challenge)

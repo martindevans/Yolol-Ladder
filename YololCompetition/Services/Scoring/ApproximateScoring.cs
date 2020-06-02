@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Yolol.Execution;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Verification;
@@ -24,32 +25,44 @@ namespace YololCompetition.Services.Scoring
                 var actual = state.GetVariable($":{key}").Value;
 
                 // Add bonus points averaged across all cases
-                AddBonusAveragedPoints((expected.Type, actual.Type) switch {
-                    (Type.Number, Type.Number) => AccuracyScore(expected.Number, actual.Number),
-                    (Type.String, Type.String) => AccuracyScore(expected.String, actual.String),
-                    _ => 0,
-                });
+                switch (expected.Type, actual.Type)
+                {
+                    case (Type.Number, Type.Number):
+                        AddBonusAveragedPoints(AccuracyScoreNumbers(key, expected.Number, actual.Number));
+                        break;
+
+                    case (_, _):
+                        var ii = InputString();
+                        var oo = OutputString();
+                        return new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `:{key}={actual.ToHumanString()}`");
+                }
             }
 
-            // Approx challenge never fails
             return null;
+
+            string InputString() => string.Join(",", inputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
+            string OutputString() => string.Join(",", expectedOutputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
+
+            double AccuracyScoreNumbers(string key, Number expected, Number actual)
+            {
+                var error = Math.Abs((double)(expected.Value - actual.Value));
+                if (Math.Abs(error) < 0.001)
+                    return AccuracyPoints * ExactMultiplier;
+
+                if (error > _hintError && error > 0)
+                {
+                    var ii = InputString();
+                    var oo = OutputString();
+                    _hint = $"For inputs {ii} expected outputs {oo}, produced `:{key}={new Value(actual).ToHumanString()}` (error of `{error}`)";
+                    _hintError = error;
+                }
+
+                return Math.Max(0, 3 - Math.Log10(error)) * AccuracyPoints;
+            }
         }
 
-        private static double AccuracyScore(Number a, Number b)
-        {
-            var error = Math.Abs((double)(a.Value - b.Value));
-            if (Math.Abs(error) < 0.001)
-                return AccuracyPoints * ExactMultiplier;
-
-            return Math.Max(0, 3 - Math.Log10(error)) * AccuracyPoints;
-        }
-
-        private static double AccuracyScore(string a, string b)
-        {
-            if (a.Equals(b))
-                return AccuracyPoints * 20;
-
-            return a.Levenshtein(b) / (double)Math.Max(a.Length, b.Length) * 10;
-        }
+        private double _hintError = 0;
+        private string? _hint;
+        public override string? Hint => _hint;
     }
 }
