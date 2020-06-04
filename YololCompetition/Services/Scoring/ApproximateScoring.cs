@@ -42,7 +42,6 @@ namespace YololCompetition.Services.Scoring
 
             string InputString() => string.Join(",", inputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
             string OutputString() => string.Join(",", expectedOutputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
-
             double AccuracyScoreNumbers(string key, Number expected, Number actual)
             {
                 var error = Math.Abs((double)(expected.Value - actual.Value));
@@ -65,7 +64,7 @@ namespace YololCompetition.Services.Scoring
         public override uint FinalizeScore(uint totalTests, uint totalTicks, int codeChars)
         {
             if (_hint != null)
-                _hint += $" Total error: {_totalError}.";
+                _hint += $" Total error: {_totalError:#.000}.";
 
             return base.FinalizeScore(totalTests, totalTicks, codeChars);
         }

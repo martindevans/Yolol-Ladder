@@ -106,6 +106,10 @@ namespace YololCompetition.Services.Verification
                 var scoreFailure = scoreMode.CheckCase(input, outputs[i], state);
                 if (scoreFailure != null)
                     return (null, scoreFailure);
+
+                // Slow down verification to reduce load on server
+                if (i % 10 == 0)
+                    await Task.Delay(1);
             }
 
             Console.WriteLine($"Verified {totalRuntime} ticks, {timer.ElapsedMilliseconds}ms runtime");

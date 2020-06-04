@@ -48,7 +48,7 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var (success, failure) = await _verification.Verify(challenge, code);
+            var (success, failure) = await _verification.Verify(challenge, code).ConfigureAwait(false);
             if (failure != null)
             {
                 var message = failure.Type switch {
