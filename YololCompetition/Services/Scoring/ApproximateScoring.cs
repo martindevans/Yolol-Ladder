@@ -49,11 +49,12 @@ namespace YololCompetition.Services.Scoring
                 if (Math.Abs(error) < 0.001)
                     return AccuracyPoints * ExactMultiplier;
 
+                _totalError += error;
                 if (error > _hintError && error > 0)
                 {
                     var ii = InputString();
                     var oo = OutputString();
-                    _hint = $"For inputs {ii} expected outputs {oo}, produced `:{key}={new Value(actual).ToHumanString()}` (error of `{error}`)";
+                    _hint = $"For inputs {ii} expected outputs {oo}, produced `:{key}={new Value(actual).ToHumanString()}` (error of `{error}`).";
                     _hintError = error;
                 }
 
@@ -61,7 +62,16 @@ namespace YololCompetition.Services.Scoring
             }
         }
 
-        private double _hintError = 0;
+        public override uint FinalizeScore(uint totalTests, uint totalTicks, int codeChars)
+        {
+            if (_hint != null)
+                _hint += $" Total error: {_totalError}."
+
+            return base.FinalizeScore(totalTests, totalTicks, codeChars);
+        }
+
+        private double _totalError;
+        private double _hintError;
         private string? _hint;
         public override string? Hint => _hint;
     }
