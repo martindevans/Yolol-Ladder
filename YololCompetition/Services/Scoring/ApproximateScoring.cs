@@ -65,7 +65,7 @@ namespace YololCompetition.Services.Scoring
         public override uint FinalizeScore(uint totalTests, uint totalTicks, int codeChars)
         {
             if (_hint != null)
-                _hint += $" Total error: {_totalError}."
+                _hint += $" Total error: {_totalError}.";
 
             return base.FinalizeScore(totalTests, totalTicks, codeChars);
         }
