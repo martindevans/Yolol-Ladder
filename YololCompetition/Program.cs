@@ -17,6 +17,7 @@ using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Subscription;
 using YololCompetition.Services.Verification;
 using YololCompetition.Services.Messages;
+using YololCompetition.Services.Rates;
 
 namespace YololCompetition
 {
@@ -74,6 +75,7 @@ namespace YololCompetition
             di.AddSingleton<DiscordBot>();
             di.AddSingleton<IScheduler, InMemoryScheduler>();
             di.AddSingleton<ICron, InMemoryCron>();
+            di.AddSingleton<IRateLimit, InMemoryRateLimits>();
 
             di.AddTransient<IBroadcast, DiscordBroadcast>();
             di.AddTransient<IDatabase, SqliteDatabase>();

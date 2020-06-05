@@ -5,6 +5,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
+using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Challenge;
@@ -32,6 +33,7 @@ namespace YololCompetition.Modules
         }
 
         [Command("submit"), Summary("Submit a new competition entry. Code must be enclosed in triple backticks.")]
+        [RateLimit("b7083f80-8979-450f-a6ff-e7e5886b038b", 5, "Please wait a short while before submitting another solution")]
         public async Task SubmitSolution([Remainder] string input)
         {
             var code = input.ExtractYololCodeBlock();

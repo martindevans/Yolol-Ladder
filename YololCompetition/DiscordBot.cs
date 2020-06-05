@@ -48,10 +48,32 @@ namespace YololCompetition
 
         private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
         {
-            if (result.IsSuccess || !result.Error.HasValue || result.Error != CommandError.Exception)
+            if (result.IsSuccess)
                 return;
 
-            await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
+            if (!result.Error.HasValue)
+            {
+                await context.Channel.SendMessageAsync("Command failed (no error)");
+                return;
+            }
+
+            if (result.Error == CommandError.Exception)
+            {
+                await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
+                return;
+            }
+
+            if (result.Error == CommandError.UnmetPrecondition)
+            {
+                await context.Channel.SendMessageAsync(result.ErrorReason);
+                return;
+            }
+
+            if (result.Error == CommandError.Exception)
+            {
+                await context.Channel.SendMessageAsync($"Command Failed! {result.ErrorReason}");
+                return;
+            }
         }
 
         private async Task HandleMessage(SocketMessage msg)
