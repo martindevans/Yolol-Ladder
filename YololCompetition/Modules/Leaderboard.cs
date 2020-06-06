@@ -62,21 +62,19 @@ namespace YololCompetition.Modules
         [Command("leaderboard"), Summary("Display the top Yolol programmers")]
         public async Task ShowLeaderboard(string id)
         {
-            var uid = BalderHash.BalderHash32.Parse(id);
-            if (!uid.HasValue)
+            var c = await _challenges.FuzzyFindChallenge(id).Take(2).ToArrayAsync();
+            if (c.Length > 1)
             {
-                await ReplyAsync("That is not a valid challenge ID.");
-                return;
+                await ReplyAsync("Found more than one challenge matching that search string, please be more specific");
             }
-
-            var c = await _challenges.GetChallenges(id: uid.Value.Value).SingleOrDefaultAsync();
-            if (c == null)
+            else if (c.Length == 0)
             {
-                await ReplyAsync("Cannot find a challenge with that ID.");
-                return;
+                await ReplyAsync("Could not find a challenge matching that searching string");
             }
-
-            await DisplayChallengeLeaderboard(c);
+            else
+            {
+                await DisplayChallengeLeaderboard(c[0]);
+            }
         }
 
         private async Task DisplayChallengeLeaderboard(Challenge challenge)

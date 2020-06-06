@@ -11,7 +11,7 @@ namespace YololCompetition.Services.Scoring
         : IScore
     {
         public const int PointsPerChar = 1;
-        public const int PointsPerTick = 100;
+        public const int PointsPerTick = 75;
 
         private const int MaxChars = 20 * 70;
         private const int MaxTicksScore = 1000 * PointsPerTick;

@@ -11,11 +11,11 @@ namespace YololCompetition.Services.Scoring
     public class ApproximateScoring
         : BasicScoring
     {
-        public const double AccuracyPoints = PointsPerTick * 10;
+        public const double AccuracyPoints = PointsPerTick * 5;
 
         // Max multiplier for an almost accurate answer (0.001) is 6
         // Getting a better answer than that is worth this much:
-        public const double ExactMultiplier = 8;
+        public const double ExactMultiplier = 9;
 
         public override Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, MachineState state)
         {
