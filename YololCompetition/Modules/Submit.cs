@@ -119,7 +119,7 @@ namespace YololCompetition.Modules
             await SubmitSolution(challenge, input, true);
         }
 
-        [Command("submit"), Summary("Submit a new competition entry. Code must be enclosed in triple backticks.")]
+        [Command("submitto"), Summary("Submit an entry to a previous competition. Code must be enclosed in triple backticks.")]
         [RateLimit("b7083f80-8979-450f-a6ff-e7e5886b038b", 5, "Please wait a short while before submitting another solution")]
         public async Task SubmitSolution(string id, [Remainder] string input)
         {
