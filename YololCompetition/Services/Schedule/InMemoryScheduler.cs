@@ -164,7 +164,7 @@ namespace YololCompetition.Services.Schedule
                 embed.AddField("Leaderboard", leaderboardStr.ToString());
             }
 
-            await SendEmbedToSubs(embed.Build());
+            await SendEmbedToSubs(embed.Build(), null);
         }
 
         private async Task NotifyStart(Challenge.Challenge challenge)
@@ -172,10 +172,11 @@ namespace YololCompetition.Services.Schedule
             await SendEmbedToSubs(challenge.ToEmbed().Build(), challenge.Id);
         }
 
-        private async Task SendEmbedToSubs(Embed embed, ulong challengeId)
+        private async Task SendEmbedToSubs(Embed embed, ulong? challengeId)
         {
             await foreach (var message in _broadcaster.Broadcast(embed))
-                await _messages.TrackMessage(message, challengeId, Messages.MessageType.Current);
+                if (challengeId != null)
+                    await _messages.TrackMessage(message, challengeId.Value, Messages.MessageType.Current);
         }
 
         public Task Poke()
