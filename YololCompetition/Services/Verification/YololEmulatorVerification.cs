@@ -80,7 +80,7 @@ namespace YololCompetition.Services.Verification
 
                         //Once the overflow pool is empty too, fail
                         if (overflowIters <= 0)
-                            return (null, new Failure(FailureType.RuntimeTooLong, null));
+                            return (null, new Failure(FailureType.RuntimeTooLong, $"Completed {i}/{inputs.Count} tests."));
                     }
 
                     totalRuntime++;

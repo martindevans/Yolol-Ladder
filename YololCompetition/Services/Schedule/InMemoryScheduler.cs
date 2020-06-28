@@ -11,6 +11,7 @@ using Nito.AsyncEx;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Leaderboard;
+using YololCompetition.Services.Messages;
 
 namespace YololCompetition.Services.Schedule
 {
@@ -22,17 +23,19 @@ namespace YololCompetition.Services.Schedule
         private readonly IBroadcast _broadcaster;
         private readonly ILeaderboard _leaderboard;
         private readonly DiscordSocketClient _client;
+        private readonly IMessages _messages;
 
         private readonly AsyncAutoResetEvent _poker = new AsyncAutoResetEvent();
 
         public SchedulerState State { get; private set; }
         
-        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client)
+        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client, IMessages messages)
         {
             _challenges = challenges;
             _solutions = solutions;
             _broadcaster = broadcaster;
             _client = client;
+            _messages = messages;
             _leaderboard = leaderboard;
         }
 
@@ -166,12 +169,13 @@ namespace YololCompetition.Services.Schedule
 
         private async Task NotifyStart(Challenge.Challenge challenge)
         {
-            await SendEmbedToSubs(challenge.ToEmbed().Build());
+            await SendEmbedToSubs(challenge.ToEmbed().Build(), challenge.Id);
         }
 
-        private async Task SendEmbedToSubs(Embed embed)
+        private async Task SendEmbedToSubs(Embed embed, ulong challengeId)
         {
-            await _broadcaster.Broadcast(embed);
+            await foreach (var message in _broadcaster.Broadcast(embed))
+                await _messages.TrackMessage(message, challengeId, Messages.MessageType.Current);
         }
 
         public Task Poke()

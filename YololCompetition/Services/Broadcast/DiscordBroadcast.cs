@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using YololCompetition.Services.Subscription;
@@ -17,7 +18,7 @@ namespace YololCompetition.Services.Broadcast
             _client = client;
         }
 
-        public async Task Broadcast(Embed embed)
+        public async IAsyncEnumerable<IUserMessage> Broadcast(Embed embed)
         {
             await foreach (var subscription in _subscriptions.GetSubscriptions())
             {
@@ -29,7 +30,7 @@ namespace YololCompetition.Services.Broadcast
                 if (channel == null)
                     continue;
 
-                await channel.SendMessageAsync(embed: embed);
+                yield return await channel.SendMessageAsync(embed: embed);
                 await Task.Delay(100);
             }
         }
