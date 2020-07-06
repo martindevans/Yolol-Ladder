@@ -11,8 +11,6 @@ namespace YololCompetition.Services.Database
 
         public SqliteDatabase(Configuration config)
         {
-            SQLitePCL.raw.sqlite3_config(2); // SQLITE_CONFIG_MULTITHREAD
-
             _dbConnection = new SqliteConnection(config.DatabaseConnectionString);
             _dbConnection.Open();
         }
