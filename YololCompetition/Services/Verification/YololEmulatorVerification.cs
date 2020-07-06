@@ -58,12 +58,18 @@ namespace YololCompetition.Services.Verification
             var overflowIters = _config.MaxItersOverflow;
             var totalRuntime = 0u;
             var pc = 0;
-            for (var i = 0; i < Math.Min(inputs.Count, outputs.Count); i++)
+            for (var i = 0; i < Math.Max(inputs.Count, outputs.Count); i++)
             {
-                // Set inputs
-                var input = inputs[i];
-                foreach (var (key, value) in input)
-                    state.GetVariable($":{key}").Value = value;
+                // Set inputs (if there are any)
+                IReadOnlyDictionary<string, Value> input;
+                if (i < inputs.Count)
+                {
+                    input = inputs[i];
+                    foreach (var (key, value) in input)
+                        state.GetVariable($":{key}").Value = value;
+                }
+                else
+                    input = new Dictionary<string, Value>();
 
                 // Clear completion indicator
                 done.Value = 0;
