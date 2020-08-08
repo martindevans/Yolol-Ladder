@@ -123,7 +123,7 @@ namespace YololCompetition.Services.Verification
             // Calculate score
             var codeLength = yolol.Replace("\n", "").Length;
             var score = scoreMode.FinalizeScore(
-                (uint)inputs.Count,
+                (uint)Math.Max(inputs.Count, outputs.Count),
                 totalRuntime,
                 codeLength
             );

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -12,6 +13,9 @@ namespace YololCompetition
         private readonly CommandService _commands;
         private readonly Configuration _config;
         private readonly IServiceProvider _services;
+
+        private const int MaxWaitTimeMs = 2500;
+        private readonly SemaphoreSlim _commandConcurrencyLimit = new SemaphoreSlim(10);
 
         public DiscordBot(DiscordSocketClient client, CommandService commands, Configuration config, IServiceProvider services)
         {
@@ -78,31 +82,45 @@ namespace YololCompetition
 
         private async Task HandleMessage(SocketMessage msg)
         {
-            // Don't process the command if it was a System Message
-            if (!(msg is SocketUserMessage message))
-                return;
-
-            // Ignore messages from self
-            if (message.Author.Id == _client.CurrentUser.Id)
-                return;
-
-            // Check if the message starts with the command prefix character
-            var prefixPos = 0;
-            var hasPrefix = message.HasCharPrefix(_config.Prefix, ref prefixPos);
-
-            // Skip non-prefixed messages
-            if (!hasPrefix)
-                return;
-
-            // Execute the command
-            var context = new SocketCommandContext(_client, message);
             try
             {
-                await _commands.ExecuteAsync(context, prefixPos, _services);
+                if (_commandConcurrencyLimit.CurrentCount == 0)
+                    await msg.Channel.SendMessageAsync("Bot is busy - waiting in queue.");
+
+                // Wait until this command is allowed to be serviced (limit total command concurrency)
+                if (!await _commandConcurrencyLimit.WaitAsync(MaxWaitTimeMs))
+                    await msg.Channel.SendMessageAsync("Bot is too busy. Please try again later.");
+
+                // Don't process the command if it was a System Message
+                if (!(msg is SocketUserMessage message))
+                    return;
+
+                // Ignore messages from self
+                if (message.Author.Id == _client.CurrentUser.Id)
+                    return;
+
+                // Check if the message starts with the command prefix character
+                var prefixPos = 0;
+                var hasPrefix = message.HasCharPrefix(_config.Prefix, ref prefixPos);
+
+                // Skip non-prefixed messages
+                if (!hasPrefix)
+                    return;
+
+                // Execute the command
+                var context = new SocketCommandContext(_client, message);
+                try
+                {
+                    await _commands.ExecuteAsync(context, prefixPos, _services);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
-            catch (Exception e)
+            finally
             {
-                Console.WriteLine(e);
+                _commandConcurrencyLimit.Release();
             }
         }
     }

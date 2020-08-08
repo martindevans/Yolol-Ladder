@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -23,14 +22,20 @@ namespace YololCompetition.Modules
         }
 
         [Command("memory"), RequireOwner, Summary("Print current memory stats")]
-        public async Task MemoryUsage()
+        public async Task MemoryUsage(bool gc = false)
         {
             var embed = new EmbedBuilder()
                         .AddField("Working Set", Environment.WorkingSet.Bytes().Humanize("#.##"), true)
                         .AddField("GC Total Memory", GC.GetTotalMemory(false).Bytes().Humanize("#.##"), true)
                         .Build();
-
             await ReplyAsync(embed: embed);
+
+            if (gc)
+            {
+                GC.Collect();
+                await ReplyAsync("Forced GC Collection of all generations");
+                await MemoryUsage();
+            }
         }
 
         [Command("hostinfo"), RequireOwner, Summary("Print HostInfo")]
