@@ -54,7 +54,7 @@ namespace YololCompetition.Services.Scoring
             foreach (var (key, value) in expectedOutputs)
             {
                 var v = state.GetVariable($":{key}");
-                if ((v.Value != value).ToBool())
+                if (v.Value != value)
                 {
                     var ii = string.Join(",", inputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
                     var oo = string.Join(",", expectedOutputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));

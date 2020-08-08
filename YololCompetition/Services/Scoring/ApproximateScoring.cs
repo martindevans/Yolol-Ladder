@@ -44,7 +44,7 @@ namespace YololCompetition.Services.Scoring
             string OutputString() => string.Join(",", expectedOutputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
             double AccuracyScoreNumbers(string key, Number expected, Number actual)
             {
-                var error = Math.Abs((double)(expected.Value - actual.Value));
+                var error = Math.Abs((double)((decimal)expected - (decimal)actual));
                 if (Math.Abs(error) < 0.001)
                     return AccuracyPoints * ExactMultiplier;
 
