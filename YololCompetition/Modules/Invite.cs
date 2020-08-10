@@ -21,7 +21,7 @@ namespace YololCompetition.Modules
             _client = client;
         }
 
-        [Command("invite"), RequireOwner, Summary("Invite this bot to another server")]
+        [Command("invite"), Summary("Invite this bot to another server")]
         public async Task GetInvite()
         {
             await ReplyAsync(embed: new EmbedBuilder()

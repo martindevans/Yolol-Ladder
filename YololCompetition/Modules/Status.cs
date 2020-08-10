@@ -54,23 +54,23 @@ namespace YololCompetition.Modules
         [Command("ping"), Summary("Respond with `Pong`"), Alias("test")]
         public async Task Ping()
         {
-            await ReplyAsync("pong");
+            await ReplyAsync("<pong");
         }
 
-        [Command("latency"), Summary("Show current latency between Bot and Discord")]
+        [Command("latency"), Hidden, Summary("Show current latency between Bot and Discord")]
         public async Task Latency()
         {
             var latency = TimeSpan.FromMilliseconds(_client.Latency);
             await ReplyAsync($"{latency.TotalMilliseconds}ms");
         }
 
-        [Command("shard"), Summary("Print Shard ID")]
+        [Command("shard"), Hidden, Summary("Print Shard ID")]
         public async Task Shard()
         {
             await ReplyAsync($"Shard ID: {_client.ShardId}");
         }
 
-        [Command("status"), Summary("Print scheduler status")]
+        [Command("status"), Hidden, Summary("Print scheduler status")]
         public async Task SchedulerStatus()
         {
             await ReplyAsync(_scheduler.State.ToString());

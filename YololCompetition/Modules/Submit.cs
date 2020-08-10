@@ -102,7 +102,6 @@ namespace YololCompetition.Modules
 
             if (success.Hint != null)
                 await ReplyAsync(success.Hint);
-
         }
 
         [Command("submit"), Summary("Submit a new competition entry. Code must be enclosed in triple backticks.")]

@@ -92,39 +92,6 @@ namespace YololCompetition.Modules
 
         }
 
-        [Command("rank"), Summary("Display your own rank among Yolol programmers")]
-        public async Task Rank(LeaderboardType type = LeaderboardType.Global)
-        {
-            if (type == LeaderboardType.Global)
-            {
-                var rank = await _leaderboard.GetRank(Context.User.Id);
-                if (rank.HasValue)
-                    await ReplyAsync($"You are rank {rank.Value.Rank} with a score of {rank.Value.Score}");
-                else
-                    await ReplyAsync($"You do not have a rank yet!");
-            }
-            else if (type == LeaderboardType.Current)
-            {
-                var challenge = await _challenges.GetCurrentChallenge();
-                if (challenge == null)
-                {
-                    await ReplyAsync("There is no currently running challenge");
-                    return;
-                }
-
-                var self = await _solutions.GetRank(challenge.Id, Context.User.Id);
-                if (!self.HasValue)
-                {
-                    await ReplyAsync("You do not have a rank for this challenge yet");
-                    return;
-                }
-
-                await ReplyAsync($"You are rank {self.Value.Rank} for the current challenge with a score of {self.Value.Solution.Score}");
-            }
-            else
-                throw new InvalidOperationException("Unknown leaderboard type");
-        }
-
         [RequireOwner]
         [Command("give-points"), Summary("Give some points to a user")]
         public async Task GivePoints(IUser user, uint score)
