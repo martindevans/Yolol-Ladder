@@ -27,6 +27,7 @@ namespace YololCompetition.Modules
             var embed = new EmbedBuilder()
                         .AddField("Working Set", Environment.WorkingSet.Bytes().Humanize("#.##"), true)
                         .AddField("GC Total Memory", GC.GetTotalMemory(false).Bytes().Humanize("#.##"), true)
+                        .AddField("GC Max Generation", GC.MaxGeneration, true)
                         .Build();
             await ReplyAsync(embed: embed);
 

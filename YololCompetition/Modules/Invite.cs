@@ -71,5 +71,26 @@ namespace YololCompetition.Modules
             if (output.Length > 0)
                 await ReplyAsync(output.ToString());
         }
+
+        [Command("dump-guilds"), RequireOwner, Summary("Print out all guilds this bot is in")]
+        public async Task DumpGuilds()
+        {
+            var output = new StringBuilder();
+            foreach (var guild in _client.Guilds)
+            {
+                var next = $" - {guild?.Name}";
+
+                if (output.Length + next.Length > 1000)
+                {
+                    await ReplyAsync(output.ToString());
+                    output.Clear();
+                }
+
+                output.AppendLine(next);
+            }
+
+            if (output.Length > 0)
+                await ReplyAsync(output.ToString());
+        }
     }
 }

@@ -93,7 +93,7 @@ namespace YololCompetition.Modules
                 if (timer.ElapsedMilliseconds > 500)
                 {
                     await ReplyAsync("Execution Timed Out!");
-                    break;
+                    return;
                 }
 
                 // Sanity check strings are not getting too long
@@ -109,7 +109,7 @@ namespace YololCompetition.Modules
                     if (str.String.Length < 5000)
                         continue;
                     await ReplyAsync("Max String Length Exceeded!");
-                    break;
+                    return;
                 }
             }
 
