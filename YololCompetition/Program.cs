@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using CommandLine;
+using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,6 +77,7 @@ namespace YololCompetition
             di.AddSingleton<IScheduler, InMemoryScheduler>();
             di.AddSingleton<ICron, InMemoryCron>();
             di.AddSingleton<IRateLimit, InMemoryRateLimits>();
+            di.AddSingleton<InteractiveService>();
 
             di.AddTransient<IBroadcast, DiscordBroadcast>();
             di.AddTransient<IDatabase, SqliteDatabase>();

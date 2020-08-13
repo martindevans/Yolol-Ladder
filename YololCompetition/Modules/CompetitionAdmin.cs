@@ -10,12 +10,13 @@ using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Schedule;
 using System.Linq;
 using BalderHash.Extensions;
+using Discord.Addons.Interactive;
 
 namespace YololCompetition.Modules
 {
     [RequireOwner]
     public class CompetitionAdmin
-        : ModuleBase
+        : InteractiveBase
     {
         private readonly IChallenges _challenges;
         private readonly IScheduler _scheduler;
@@ -27,8 +28,21 @@ namespace YololCompetition.Modules
         }
 
         [Command("create"), Summary("Create a new challenge")]
-        public async Task Create(string title, string description, ChallengeDifficulty difficulty, string url)
+        public async Task Create()
         {
+            await ReplyAsync("What is the challenge title?");
+            var title = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+
+            await ReplyAsync("What is the challenge description?");
+            var desc = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+
+            var levels = string.Join(',', Enum.GetNames(typeof(ChallengeDifficulty)));
+            await ReplyAsync($"What is the challenge difficulty ({levels})?");
+            var difficulty = Enum.Parse<ChallengeDifficulty>((await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content);
+
+            await ReplyAsync("What is the challenge URL (raw JSON)?");
+            var url = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+
             if (!Uri.TryCreate(url, UriKind.Absolute, out var result))
             {
                 await ReplyAsync("Invalid URL format");
@@ -77,11 +91,11 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, description, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring);
+            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring);
             await _challenges.Create(c);
             await ReplyAsync("Challenge added to queue");
         }
-        
+
         private class Data
         {
             [JsonProperty("in")]

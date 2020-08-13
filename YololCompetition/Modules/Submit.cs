@@ -72,7 +72,7 @@ namespace YololCompetition.Modules
                 }
                 else
                 {
-                    // Get the current top solution
+                    // Get the current top solution(s)
                     var topSolutionsBefore = await _solutions.GetTopRank(challenge.Id).Select(a => a.Solution).ToListAsync();
                     var topUsersBefore = topSolutionsBefore.Select(a => a.UserId).ToList();
 
@@ -96,6 +96,8 @@ namespace YololCompetition.Modules
                             embed.Description = success.Score == topSolutionsBefore[0].Score
                                 ? $"{self} ties for rank #1"
                                 : $"{self} takes rank #1 from {prev}!";
+
+                            await _broadcast.Broadcast(embed.Build()).LastAsync();
                         }
                         else if (topUsersBefore.Count > 1 && topUsersBefore.Contains(Context.User.Id))
                         {
@@ -104,8 +106,9 @@ namespace YololCompetition.Modules
                             var prev = (await topUsersBefore.ToAsyncEnumerable().SelectAwait(async a => await _client.GetUserName(a)).ToArrayAsync()).Humanize("&");
 
                             embed.Description = $"{self} breaks a tie to take #1 from {prev}!";
+
+                            await _broadcast.Broadcast(embed.Build()).LastAsync();
                         }
-                        await _broadcast.Broadcast(embed.Build()).LastAsync();
                     }
                 }
             }
