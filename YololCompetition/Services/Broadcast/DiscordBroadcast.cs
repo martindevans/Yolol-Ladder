@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -20,7 +21,8 @@ namespace YololCompetition.Services.Broadcast
 
         public async IAsyncEnumerable<IUserMessage> Broadcast(Embed embed)
         {
-            await foreach (var subscription in _subscriptions.GetSubscriptions())
+            var subs = await _subscriptions.GetSubscriptions().ToArrayAsync();
+            foreach (var subscription in subs)
             {
                 var guild = await _client.GetGuildAsync(subscription.Guild);
                 if (guild == null)
@@ -37,7 +39,8 @@ namespace YololCompetition.Services.Broadcast
 
         public async Task Broadcast(string message)
         {
-            await foreach (var subscription in _subscriptions.GetSubscriptions())
+            var subs = await _subscriptions.GetSubscriptions().ToArrayAsync();
+            foreach (var subscription in subs)
             {
                 var guild = await _client.GetGuildAsync(subscription.Guild);
                 if (guild == null)

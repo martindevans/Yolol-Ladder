@@ -174,12 +174,18 @@ namespace YololCompetition.Services.Schedule
 
         private async Task SendEmbedToSubs(Embed embed, ulong? challengeId)
         {
+            var messages = new List<IUserMessage>();
+
             await foreach (var message in _broadcaster.Broadcast(embed))
             {
                 await Task.Delay(100);
                 if (challengeId != null)
-                    await _messages.TrackMessage(message, challengeId.Value, Messages.MessageType.Current);
+                    messages.Add(message);
             }
+
+            if (challengeId != null)
+                foreach (var message in messages)
+                    await _messages.TrackMessage(message, challengeId.Value, Messages.MessageType.Current);
         }
 
         public Task Poke()
