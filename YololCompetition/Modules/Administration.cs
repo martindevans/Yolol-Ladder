@@ -11,7 +11,7 @@ namespace YololCompetition.Modules
         [Command("kill"), RequireOwner, Summary("Immediately kill the bot")]
         public async Task Kill(int exitCode = 1)
         {
-            await Task.CompletedTask;
+            await ReplyAsync("x_x");
             Environment.Exit(exitCode);
         }
     }

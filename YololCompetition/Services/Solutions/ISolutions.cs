@@ -23,6 +23,8 @@ namespace YololCompetition.Services.Solutions
                     break;
             }
         }
+
+        Task<int> DeleteSolution(ulong challengeId, ulong userId);
     }
 
     public readonly struct RankedSolution

@@ -10,7 +10,9 @@ using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Schedule;
 using System.Linq;
 using BalderHash.Extensions;
+using Discord;
 using Discord.Addons.Interactive;
+using YololCompetition.Services.Solutions;
 
 namespace YololCompetition.Modules
 {
@@ -20,11 +22,13 @@ namespace YololCompetition.Modules
     {
         private readonly IChallenges _challenges;
         private readonly IScheduler _scheduler;
+        private readonly ISolutions _solutions;
 
-        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler)
+        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ISolutions solutions)
         {
             _challenges = challenges;
             _scheduler = scheduler;
+            _solutions = solutions;
         }
 
         [Command("create"), Summary("Create a new challenge")]
@@ -153,6 +157,20 @@ namespace YololCompetition.Modules
                 await _challenges.ChangeChallengeDifficulty(current, difficulty);
                 await ReplyAsync($"Changed difficulty from `{current.Difficulty}` to `{difficulty}`");
             }
+        }
+
+        [Command("remove-entry"), Summary("Remove the entry in the current competition for a user")]
+        public async Task RemoveEntry(IUser user)
+        {
+            var current = await _challenges.GetCurrentChallenge();
+            if (current == null)
+            {
+                await ReplyAsync("No challenge is currently running");
+                return;
+            }
+
+            var rows = await _solutions.DeleteSolution(current.Id, user.Id);
+            await ReplyAsync($"Deleted {rows} rows.");
         }
     }
 }

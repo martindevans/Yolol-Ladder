@@ -91,6 +91,17 @@ namespace YololCompetition.Services.Solutions
             return ParseRanked(results);
         }
 
+        public async Task<int> DeleteSolution(ulong challengeId, ulong userId)
+        {
+            await using var cmd = _database.CreateCommand();
+
+            cmd.CommandText = "DELETE FROM Solutions WHERE ChallengeId = @ChallengeId AND UserId = @UserId";
+            cmd.Parameters.Add(new SqliteParameter("@UserId", DbType.UInt64) { Value = userId });
+            cmd.Parameters.Add(new SqliteParameter("@ChallengeId", DbType.UInt64) { Value = challengeId });
+
+            return await cmd.ExecuteNonQueryAsync();
+        }
+
         private static RankedSolution ParseRanked(DbDataReader reader)
         {
             return new RankedSolution(

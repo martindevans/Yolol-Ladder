@@ -57,8 +57,6 @@ namespace YololCompetition.Services.Verification
 
             // Run through test cases one by one
             var overflowIters = (long)_config.MaxItersOverflow;
-            var totalRuntime = 0u;
-            var pc = 0;
             for (var i = 0; i < Math.Max(inputs.Count, outputs.Count); i++)
             {
                 // Set inputs (if there are any)
@@ -76,7 +74,6 @@ namespace YololCompetition.Services.Verification
                 state.Done = false;
 
                 // Run for max allowed number of lines
-                state.TotalLinesExecuted = 0;
                 var err1 = await state.Run(_config.MaxTestIters, TimeSpan.FromMilliseconds(100));
                 if (err1 != null)
                     return (null, new Failure(FailureType.Other, err1));
@@ -84,13 +81,13 @@ namespace YololCompetition.Services.Verification
                 // This test case didn't finish yet, run it some more with the overflow pool
                 if (!state.Done)
                 {
-                    state.TotalLinesExecuted = 0;
+                    var executed = state.TotalLinesExecuted;
                     var err2 = await state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(100));
                     if (err2 != null)
                         return (null, new Failure(FailureType.Other, err2));
 
                     // Shrink the overflow pool by however many ticks that just used
-                    overflowIters -= (uint)state.TotalLinesExecuted;
+                    overflowIters -= (uint)(state.TotalLinesExecuted - executed);
 
                     //Once the overflow pool is empty too, fail
                     if (overflowIters <= 0 || !state.Done)
@@ -103,17 +100,17 @@ namespace YololCompetition.Services.Verification
                     return (null, scoreFailure);
             }
 
-            Console.WriteLine($"Verified {totalRuntime} ticks, {timer.ElapsedMilliseconds}ms runtime");
+            Console.WriteLine($"Verified {state.TotalLinesExecuted} ticks, {timer.ElapsedMilliseconds}ms runtime");
 
             // Calculate score
             var codeLength = yolol.Replace("\n", "").Length;
             var score = scoreMode.FinalizeScore(
                 (uint)Math.Max(inputs.Count, outputs.Count),
-                totalRuntime,
+                (uint)state.TotalLinesExecuted,
                 codeLength
             );
 
-            return (new Success(score, totalRuntime, (uint)codeLength, scoreMode.Hint), null);
+            return (new Success(score, (uint)state.TotalLinesExecuted, (uint)codeLength, scoreMode.Hint), null);
         }
 
         private static (IReadOnlyList<IReadOnlyDictionary<string, Value>>, IReadOnlyList<IReadOnlyDictionary<string, Value>>) GetTests(Challenge.Challenge challenge)
