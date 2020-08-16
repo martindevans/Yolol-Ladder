@@ -28,7 +28,7 @@ namespace YololCompetition.Extensions
 
             if (network != null && network.Any())
             {
-                var globals = string.Join("\n", network.Select(a => $"`:{a.Item1}={a.Item2.ToHumanString()}`"));
+                var globals = string.Join("\n", network.Select(a => $"`{a.Item1}={a.Item2.ToHumanString()}`"));
                 embed.AddField("Globals", globals);
             }
 

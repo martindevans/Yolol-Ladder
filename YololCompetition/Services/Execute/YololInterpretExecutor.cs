@@ -34,7 +34,7 @@ namespace YololCompetition.Services.Execute
                 get => _done.Value.ToBool();
                 set => _done.Value = (Number)value;
             }
-            public ulong TotalLinesExecuted { get; set; }
+            public ulong TotalLinesExecuted { get; private set; }
 
             public InterpreterState(Yolol.Grammar.AST.Program program, string done)
             {
