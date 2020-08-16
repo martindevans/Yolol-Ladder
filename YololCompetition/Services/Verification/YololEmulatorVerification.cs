@@ -8,6 +8,7 @@ using Yolol.Grammar;
 using YololCompetition.Services.Scoring;
 using MoreLinq;
 using YololCompetition.Services.Challenge;
+using YololCompetition.Services.Execute;
 
 namespace YololCompetition.Services.Verification
 {
@@ -15,10 +16,12 @@ namespace YololCompetition.Services.Verification
         : IVerification
     {
         private readonly Configuration _config;
+        private readonly IYololExecutor _executor;
 
-        public YololEmulatorVerification(Configuration config)
+        public YololEmulatorVerification(Configuration config, IYololExecutor executor)
         {
             _config = config;
+            _executor = executor;
         }
 
         public async Task<(Success?, Failure?)> Verify(Challenge.Challenge challenge, string yolol)
@@ -45,7 +48,7 @@ namespace YololCompetition.Services.Verification
             if (!result.IsOk)
                 return (null, new Failure(FailureType.ParseFailed, result.Err.ToString()));
             var entry = result.Ok;
-            
+
             // Get the variable which the program uses to indicate it is ready to move to the next round
             var state = new MachineState(new DefaultValueDeviceNetwork());
             var done = state.GetVariable($":{challenge.CheckIndicator}");
@@ -114,7 +117,7 @@ namespace YololCompetition.Services.Verification
                     return (null, scoreFailure);
 
                 // Slow down verification to reduce load on server
-                if (i % 10 == 0)
+                if (i % 100 == 0)
                     await Task.Delay(1);
             }
 

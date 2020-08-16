@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Yolol.Execution;
 
-namespace YololCompetition.Services.Verification
+namespace YololCompetition.Services.Execute
 {
     public class DefaultValueDeviceNetwork
         : IDeviceNetwork, IEnumerable<(string, Value)>

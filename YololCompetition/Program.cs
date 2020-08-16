@@ -11,6 +11,7 @@ using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Cron;
 using YololCompetition.Services.Database;
+using YololCompetition.Services.Execute;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Schedule;
 using YololCompetition.Services.Scoring;
@@ -79,6 +80,7 @@ namespace YololCompetition
             di.AddSingleton<IRateLimit, InMemoryRateLimits>();
             di.AddSingleton<InteractiveService>();
 
+            di.AddTransient<IYololExecutor, YololInterpretExecutor>();
             di.AddTransient<IBroadcast, DiscordBroadcast>();
             di.AddTransient<IDatabase, SqliteDatabase>();
             di.AddTransient<ILeaderboard, DbLeaderboard>();
