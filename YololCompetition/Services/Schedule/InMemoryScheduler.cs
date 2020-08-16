@@ -140,6 +140,9 @@ namespace YololCompetition.Services.Schedule
         private async Task NotifyEnd(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
         {
             var top = await solutions.Take(10).ToArrayAsync();
+            if (top.Length == 0)
+                return;
+
             var (othersCount, othersScore) = await solutions.Skip(10).Select(a => (1, a.Solution.Score)).AggregateAsync((0u, 0L), (a, b) => ((uint)(a.Item1 + b.Item1), a.Item1 + b.Score));
 
             EmbedBuilder embed = new EmbedBuilder {

@@ -19,7 +19,7 @@ namespace YololCompetition.Services.Execute
     {
         public bool Done { get; set; }
         public int ProgramCounter { get; }
-        public ulong TotalLinesExecuted { get; set; }
+        public ulong TotalLinesExecuted { get; }
 
         /// <summary>
         /// Execute the program for a maximum amount of lines, time or until `:done` is non-zero

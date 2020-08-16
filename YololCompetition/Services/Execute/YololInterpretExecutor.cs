@@ -26,12 +26,14 @@ namespace YololCompetition.Services.Execute
             private readonly MachineState _state;
             private readonly IVariable _done;
 
+            private int _programCounter;
+            public int ProgramCounter => _programCounter + 1;
+
             public bool Done
             {
                 get => _done.Value.ToBool();
                 set => _done.Value = (Number)value;
             }
-            public int ProgramCounter { get; private set; }
             public ulong TotalLinesExecuted { get; set; }
 
             public InterpreterState(Yolol.Grammar.AST.Program program, string done)
@@ -56,19 +58,19 @@ namespace YololCompetition.Services.Execute
                         TotalLinesExecuted++;
 
                         // If line if blank, just move to the next line
-                        if (ProgramCounter >= _program.Lines.Count)
-                            ProgramCounter++;
+                        if (_programCounter >= _program.Lines.Count)
+                            _programCounter++;
                         else
-                            ProgramCounter = _program.Lines[ProgramCounter].Evaluate(ProgramCounter, _state);
+                            _programCounter = _program.Lines[_programCounter].Evaluate(_programCounter, _state);
                     }
                     catch (ExecutionException)
                     {
-                        ProgramCounter++;
+                        _programCounter++;
                     }
 
                     // loop around if program counter goes over max
-                    if (ProgramCounter >= 20)
-                        ProgramCounter = 0;
+                    if (_programCounter >= 20)
+                        _programCounter = 0;
 
                     // Occasionally delay the task a little to make sure it can't dominate other work
                     if (executed % 100 == 10)

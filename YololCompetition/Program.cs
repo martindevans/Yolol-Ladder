@@ -80,7 +80,9 @@ namespace YololCompetition
             di.AddSingleton<IRateLimit, InMemoryRateLimits>();
             di.AddSingleton<InteractiveService>();
 
-            di.AddTransient<IYololExecutor, YololInterpretExecutor>();
+            //di.AddTransient<IYololExecutor, YololInterpretExecutor>();
+            di.AddTransient<IYololExecutor, YololCompileExecutor>();
+
             di.AddTransient<IBroadcast, DiscordBroadcast>();
             di.AddTransient<IDatabase, SqliteDatabase>();
             di.AddTransient<ILeaderboard, DbLeaderboard>();
