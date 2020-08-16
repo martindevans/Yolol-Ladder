@@ -41,6 +41,8 @@ namespace YololCompetition.Services.Verification
 
     public enum FailureType
     {
+        Other,
+
         ParseFailed,
         RuntimeTooLong,
         IncorrectResult,

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Yolol.Execution;
+using YololCompetition.Services.Execute;
 using YololCompetition.Services.Verification;
 
 namespace YololCompetition.Services.Scoring
@@ -12,7 +13,7 @@ namespace YololCompetition.Services.Scoring
         /// <param name="inputs"></param>
         /// <param name="expectedOutputs"></param>
         /// <param name="state"></param>
-        Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, MachineState state);
+        Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state);
 
         /// <summary>
         /// Return the final score for this challenge

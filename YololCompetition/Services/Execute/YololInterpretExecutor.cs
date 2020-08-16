@@ -13,9 +13,9 @@ namespace YololCompetition.Services.Execute
     public class YololInterpretExecutor
         : IYololExecutor
     {
-        public IExecutionState Prepare(Yolol.Grammar.AST.Program program)
+        public IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done)
         {
-            return new InterpreterState(program);
+            return new InterpreterState(program, done);
         }
 
         private class InterpreterState
@@ -34,15 +34,15 @@ namespace YololCompetition.Services.Execute
             public int ProgramCounter { get; private set; }
             public ulong TotalLinesExecuted { get; set; }
 
-            public InterpreterState(Yolol.Grammar.AST.Program program)
+            public InterpreterState(Yolol.Grammar.AST.Program program, string done)
             {
                 _program = program;
                 _network = new DefaultValueDeviceNetwork();
                 _state = new MachineState(_network);
-                _done = _state.GetVariable(":done");
+                _done = _state.GetVariable(done);
             }
 
-            public async Task<string?> Run(int lineExecutionLimit, TimeSpan timeout)
+            public async Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout)
             {
                 var timer = new Stopwatch();
                 timer.Start();

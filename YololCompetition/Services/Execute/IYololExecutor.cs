@@ -11,7 +11,7 @@ namespace YololCompetition.Services.Execute
 {
     public interface IYololExecutor
     {
-        IExecutionState Prepare(Yolol.Grammar.AST.Program program);
+        IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done = ":done");
     }
 
     public interface IExecutionState
@@ -27,7 +27,7 @@ namespace YololCompetition.Services.Execute
         /// <param name="lineExecutionLimit">Max lines to run</param>
         /// <param name="timeout">Max time to execute for</param>
         /// <returns>The error which ended execution, or else null</returns>
-        public Task<string?> Run(int lineExecutionLimit, TimeSpan timeout);
+        public Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout);
 
         Value? TryGet(string name);
 

@@ -5,12 +5,7 @@ namespace YololCompetition.Services.Execute
     public class YololCompileExecutor
         : IYololExecutor
     {
-        public IExecutionState Prepare(Program program1)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IExecutionState Prepare(Yolol.Grammar.AST.Program program)
+        public IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done)
         {
             throw new NotImplementedException();
         }

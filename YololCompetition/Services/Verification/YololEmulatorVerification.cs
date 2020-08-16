@@ -47,18 +47,16 @@ namespace YololCompetition.Services.Verification
             var result = Parser.ParseProgram(yolol);
             if (!result.IsOk)
                 return (null, new Failure(FailureType.ParseFailed, result.Err.ToString()));
-            var entry = result.Ok;
 
-            // Get the variable which the program uses to indicate it is ready to move to the next round
-            var state = new MachineState(new DefaultValueDeviceNetwork());
-            var done = state.GetVariable($":{challenge.CheckIndicator}");
+            // Prepare a machine state for execution
+            var state = _executor.Prepare(result.Ok, $":{challenge.CheckIndicator}");
 
             // Begin counting how long it takes to verify (for profiling purposes)
             var timer = new Stopwatch();
             timer.Start();
 
             // Run through test cases one by one
-            var overflowIters = _config.MaxItersOverflow;
+            var overflowIters = (long)_config.MaxItersOverflow;
             var totalRuntime = 0u;
             var pc = 0;
             for (var i = 0; i < Math.Max(inputs.Count, outputs.Count); i++)
@@ -69,56 +67,40 @@ namespace YololCompetition.Services.Verification
                 {
                     input = inputs[i];
                     foreach (var (key, value) in input)
-                        state.GetVariable($":{key}").Value = value;
+                        state.TrySet($":{key}", value);
                 }
                 else
                     input = new Dictionary<string, Value>();
 
                 // Clear completion indicator
-                done.Value = 0;
+                state.Done = false;
 
-                // Run lines until completion indicator is set or execution time limit is exceeded
-                var limit = 0;
-                while (!done.Value.ToBool())
+                // Run for max allowed number of lines
+                state.TotalLinesExecuted = 0;
+                var err1 = await state.Run(_config.MaxTestIters, TimeSpan.FromMilliseconds(100));
+                if (err1 != null)
+                    return (null, new Failure(FailureType.Other, err1));
+
+                // This test case didn't finish yet, run it some more with the overflow pool
+                if (!state.Done)
                 {
-                    // Check if this test has exceed it's time limit
-                    if (limit++ > _config.MaxTestIters)
-                    {
-                        //If so use iterations from the overflow pool
-                        overflowIters--;
+                    state.TotalLinesExecuted = 0;
+                    var err2 = await state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(100));
+                    if (err2 != null)
+                        return (null, new Failure(FailureType.Other, err2));
 
-                        //Once the overflow pool is empty too, fail
-                        if (overflowIters <= 0)
-                            return (null, new Failure(FailureType.RuntimeTooLong, $"Completed {i}/{inputs.Count} tests."));
-                    }
+                    // Shrink the overflow pool by however many ticks that just used
+                    overflowIters -= (uint)state.TotalLinesExecuted;
 
-                    totalRuntime++;
-                    try
-                    {
-                        // If line if blank, just move to the next line
-                        if (pc >= entry.Lines.Count)
-                            pc++;
-                        else
-                            pc = entry.Lines[pc].Evaluate(pc, state);
-                    }
-                    catch (ExecutionException)
-                    {
-                        pc++;
-                    }
-
-                    // loop around if program counter goes over max
-                    if (pc >= 20)
-                        pc = 0;
+                    //Once the overflow pool is empty too, fail
+                    if (overflowIters <= 0 || !state.Done)
+                        return (null, new Failure(FailureType.RuntimeTooLong, $"Completed {i}/{inputs.Count} tests."));
                 }
 
                 // Check this test case with the current scoring mode
                 var scoreFailure = scoreMode.CheckCase(input, outputs[i], state);
                 if (scoreFailure != null)
                     return (null, scoreFailure);
-
-                // Slow down verification to reduce load on server
-                if (i % 100 == 0)
-                    await Task.Delay(1);
             }
 
             Console.WriteLine($"Verified {totalRuntime} ticks, {timer.ElapsedMilliseconds}ms runtime");

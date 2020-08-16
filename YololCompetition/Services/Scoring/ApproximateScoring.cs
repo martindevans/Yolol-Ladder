@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Yolol.Execution;
 using YololCompetition.Extensions;
+using YololCompetition.Services.Execute;
 using YololCompetition.Services.Verification;
 using Type = Yolol.Execution.Type;
 
@@ -17,12 +18,12 @@ namespace YololCompetition.Services.Scoring
         // Getting a better answer than that is worth this much:
         public const double ExactMultiplier = 9;
 
-        public override Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, MachineState state)
+        public override Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state)
         {
             // Check that the machine state is exactly correct for every expected output
             foreach (var (key, expected) in expectedOutputs)
             {
-                var actual = state.GetVariable($":{key}").Value;
+                var actual = state.TryGet($":{key}") ?? 0;
 
                 // Add bonus points averaged across all cases
                 switch (expected.Type, actual.Type)
