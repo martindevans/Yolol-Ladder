@@ -95,7 +95,7 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring);
+            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring, data.Chip ?? YololChip.Professional);
             await _challenges.Create(c);
             await ReplyAsync("Challenge added to queue");
         }
@@ -113,6 +113,9 @@ namespace YololCompetition.Modules
 
             [JsonProperty("mode")]
             public ScoreMode? Mode { get; set; }
+
+            [JsonProperty("chip")]
+            public YololChip? Chip { get; set; }
         }
 
         [Command("check-pool"), Summary("Check state of challenge pool")]

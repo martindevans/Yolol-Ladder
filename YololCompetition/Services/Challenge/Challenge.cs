@@ -28,6 +28,15 @@ namespace YololCompetition.Services.Challenge
         Approximate = 2,
     }
 
+    public enum YololChip
+    {
+        Unknown = 0,
+
+        Basic = 1,
+        Advanced = 2,
+        Professional = 3,
+    }
+
     public class Challenge
     {
         private static readonly JsonSerializerSettings JsonConfig = new JsonSerializerSettings {
@@ -51,8 +60,9 @@ namespace YololCompetition.Services.Challenge
 
         public bool ShuffleTests { get; }
         public ScoreMode ScoreMode { get; }
+        public YololChip Chip { get; }
 
-        public Challenge(ulong id, string name, string checkIndicator, IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs, IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs, DateTime? endTime, ChallengeDifficulty difficulty, string description, bool shuffle, ScoreMode scoreMode)
+        public Challenge(ulong id, string name, string checkIndicator, IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs, IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs, DateTime? endTime, ChallengeDifficulty difficulty, string description, bool shuffle, ScoreMode scoreMode, YololChip chip)
         {
             Id = id;
             Name = name;
@@ -64,6 +74,7 @@ namespace YololCompetition.Services.Challenge
             Description = description;
             ScoreMode = scoreMode;
             ShuffleTests = shuffle;
+            Chip = chip;
         }
 
         public void Write(DbParameterCollection output)
@@ -74,6 +85,7 @@ namespace YololCompetition.Services.Challenge
             output.Add(new SqliteParameter("@Description", DbType.String) { Value = Description });
             output.Add(new SqliteParameter("@Shuffle", DbType.UInt64) { Value = Convert.ToUInt64(ShuffleTests) });
             output.Add(new SqliteParameter("@ScoreMode", DbType.UInt64) { Value = (int)ScoreMode });
+            output.Add(new SqliteParameter("@Chip", DbType.UInt64) { Value = (int)ScoreMode });
 
             var i = JsonConvert.SerializeObject(Inputs, JsonConfig);
             output.Add(new SqliteParameter("@Inputs", DbType.String) { Value = i });
@@ -105,7 +117,8 @@ namespace YololCompetition.Services.Challenge
                 (ChallengeDifficulty)int.Parse(reader["Difficulty"].ToString()!),
                 reader["Description"].ToString()!,
                 Convert.ToBoolean(ulong.Parse(reader["Shuffle"].ToString()!)),
-                (ScoreMode)int.Parse(reader["ScoreMode"].ToString()!)
+                (ScoreMode)int.Parse(reader["ScoreMode"].ToString()!),
+                (YololChip)int.Parse(reader["Chip"].ToString()!)
             );
         }
     }

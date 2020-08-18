@@ -92,10 +92,6 @@ namespace YololCompetition.Services.Execute
                     if (_programCounter >= 20)
                         _programCounter = 0;
 
-                    // Occasionally delay the task a little to make sure it can't dominate other work
-                    if (executed % 100 == 10)
-                        await Task.Delay(1);
-
                     // Execution timeout
                     if (timer.Elapsed > timeout)
                         return "Execution Timed Out!";

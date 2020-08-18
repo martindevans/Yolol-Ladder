@@ -35,6 +35,9 @@ namespace YololCompetition.Services.Verification
                 _ => throw new NotImplementedException($"Score mode `{challenge.ScoreMode}` is not implemented")
             };
 
+            if (challenge.Chip == YololChip.Unknown)
+                throw new InvalidOperationException("Cannot submit to a challenge with `YololChip.Unknown`");
+
             // Retrieve the test cases for the challenge
             var (inputs, outputs) = GetTests(challenge);
 
@@ -47,6 +50,14 @@ namespace YololCompetition.Services.Verification
             var result = Parser.ParseProgram(yolol);
             if (!result.IsOk)
                 return (null, new Failure(FailureType.ParseFailed, result.Err.ToString()));
+
+            // Verify that code is allowed on the given chip level
+            if (challenge.Chip != YololChip.Professional)
+            {
+                var fail = CheckChipLevel(challenge.Chip, result.Ok);
+                if (fail != null)
+                    return (null, fail);
+            }
 
             // Prepare a machine state for execution
             var state = _executor.Prepare(result.Ok, $":{challenge.CheckIndicator}");
@@ -111,6 +122,23 @@ namespace YololCompetition.Services.Verification
             );
 
             return (new Success(score, (uint)state.TotalLinesExecuted, (uint)codeLength, scoreMode.Hint), null);
+        }
+
+        private static Failure? CheckChipLevel(YololChip level, Yolol.Grammar.AST.Program program)
+        {
+            if (level == YololChip.Unknown || level == YololChip.Professional)
+                return null;
+
+            var statements = from line in program.Lines
+                             from stmt in line.Statements.Statements
+                             select stmt;
+
+            var check = new ChipLevelChecker(level);
+            foreach (var statement in statements)
+                if (!check.Visit(statement))
+                    return new Failure(FailureType.InvalidProgramForChipType, null);
+
+            return null;
         }
 
         private static (IReadOnlyList<IReadOnlyDictionary<string, Value>>, IReadOnlyList<IReadOnlyDictionary<string, Value>>) GetTests(Challenge.Challenge challenge)

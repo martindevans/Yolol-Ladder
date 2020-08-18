@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using YololCompetition.Services.Database;
@@ -114,7 +113,7 @@ namespace YololCompetition.Services.Messages
             var msg = await GetMessage(currentChallenge, message);
             if (msg != null)
             {
-                var challenge = await _challenges.GetChallenges(id: message.ChallengeID).FirstAsync();
+                var challenge = (Challenge.Challenge?)await _challenges.GetChallenges(id: message.ChallengeID).FirstOrDefaultAsync();
                 if (challenge == null)
                 {
                     Console.WriteLine("Message exists for nonexistant challenge " + message.ChallengeID);
@@ -130,9 +129,6 @@ namespace YololCompetition.Services.Messages
         public void StartMessageWatch()
         {
             _cron.Schedule(TimeSpan.FromSeconds(120), default, async ct => {
-
-                var timer = new Stopwatch();
-                timer.Start();
 
                 // Get the current challenge
                 var current = await _challenges.GetCurrentChallenge();
@@ -163,8 +159,6 @@ namespace YololCompetition.Services.Messages
                     // Add in some delay between each event to make sure we don't get near the discord rate limit (2 events per second)
                     await Task.Delay(1000, ct);
                 }
-
-                Console.WriteLine($"[{DateTime.UtcNow}] Finished DBMessages in {timer.ElapsedMilliseconds}ms");
 
                 // When there is no challenge, keep checking every minute
                 if (current == null)

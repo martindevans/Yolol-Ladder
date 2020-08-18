@@ -49,6 +49,7 @@ namespace YololCompetition.Modules
                     FailureType.RuntimeTooLong => $"Program took too long to produce a result. {failure.Hint}",
                     FailureType.IncorrectResult => $"Program produced an incorrect value! {failure.Hint}",
                     FailureType.ProgramTooLarge => "Program is too large - it must be 20 lines by 70 characters per line",
+                    FailureType.InvalidProgramForChipType => $"Programed used a feature which is not available on this level of Yolol chip. {failure.Hint}",
                     FailureType.Other => failure.Hint,
                     _ => throw new ArgumentOutOfRangeException()
                 };

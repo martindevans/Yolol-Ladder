@@ -46,6 +46,7 @@ namespace YololCompetition.Services.Verification
         ParseFailed,
         RuntimeTooLong,
         IncorrectResult,
-        ProgramTooLarge
+        ProgramTooLarge,
+        InvalidProgramForChipType,
     }
 }

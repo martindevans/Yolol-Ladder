@@ -43,7 +43,8 @@ namespace YololCompetition.Services.Challenge
                                "`Shuffle` INTEGER NOT NULL, " +
                                "`ScoreMode` INTEGER NOT NULL, " +
                                "`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, " +
-                               "`EndUnixTime` INTEGER);");
+                               "`EndUnixTime` INTEGER, " +
+                               "`Chip` INTEGER NOT NULL);");
 
             }
             catch (Exception e)
@@ -55,7 +56,7 @@ namespace YololCompetition.Services.Challenge
         public async Task Create(Challenge challenge)
         {
             await using var cmd = _database.CreateCommand();
-            cmd.CommandText = "INSERT into Challenges (Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode) values(1, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode)";
+            cmd.CommandText = "INSERT into Challenges (Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode, Chip) values(1, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode, @Chip)";
             challenge.Write(cmd.Parameters);
             await cmd.ExecuteNonQueryAsync();
         }
@@ -82,7 +83,7 @@ namespace YololCompetition.Services.Challenge
 
         public async Task<Challenge?> StartNext()
         {
-            var pending = await GetPending(1).FirstOrDefaultAsync();
+            var pending = (Challenge?)await GetPending(1).FirstOrDefaultAsync();
             if (pending == null)
                 return null;
 

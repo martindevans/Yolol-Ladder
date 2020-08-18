@@ -31,6 +31,9 @@ namespace YololCompetition.Extensions
             embed.Description = $"{challenge.Description}.\n" +
                                 $"This challenge will present inputs in fields {inputs}. The output must be written into {outputs}. Set `:{challenge.CheckIndicator} = 1` to move to the next test case.";
 
+            if (challenge.Chip != YololChip.Professional)
+                embed.Description += $" This challenge is limited to operations available on a **{challenge.Chip}** level Yolol chip.";
+
             var examples = (from item in challenge.Inputs.Zip(challenge.Outputs)
                             let i = string.Join(" ", item.First.Select(a => $":{a.Key}={a.Value.ToHumanString()}"))
                             let o = string.Join(" ", item.Second.Select(a => $":{a.Key}={a.Value.ToHumanString()}"))
