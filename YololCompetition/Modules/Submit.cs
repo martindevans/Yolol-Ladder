@@ -61,62 +61,87 @@ namespace YololCompetition.Modules
             if (success == null)
                 throw new InvalidOperationException("Failed to verify solution (this is a bug, please contact @Martin#2468)");
 
-            var solution = await _solutions.GetSolution(Context.User.Id, challenge.Id);
-            if (solution.HasValue && success.Score < solution.Value.Score)
+            await SubmitAndReply(success, new Solution(challenge.Id, Context.User.Id, success.Score, code), save);
+        }
+
+        private async Task SubmitAndReply(Success verification, Solution submission, bool save)
+        {
+            var previous = await _solutions.GetSolution(Context.User.Id, submission.ChallengeId);
+
+            // Handle submitting something that scores worse than your existing solution
+            if (previous.HasValue && previous.Value.Score < submission.Score)
             {
-                await ReplyAsync($"Verification complete! You score {success.Score} points using {success.Length} chars and {success.Iterations} ticks. Less than your current best of {solution.Value.Score}");
+                await ReplyAsync($"Verification complete! You score {verification.Score} points using {verification.Length} chars and {verification.Iterations} ticks. Less than your current best of {previous.Value.Score}");
+                if (verification.Hint != null)
+                    await ReplyAsync(verification.Hint);
+                return;
+            }
+
+            // This submission was better than previous, but saving is not enabled (i.e. submitting to an old competition). Reply with score and early out.
+            if (!save)
+            {
+                await ReplyAsync($"Verification complete! You scored {verification.Score} points using {verification.Length} chars and {verification.Iterations} ticks.");
+                if (verification.Hint != null)
+                    await ReplyAsync(verification.Hint);
+                return;
+            }
+
+            // Submission was better than previous and saving is enabled.
+            // We might need to do a rank alert!
+
+            // Get the current top solution(s)
+            var topSolutionsBefore = await _solutions.GetTopRank(submission.ChallengeId).Select(a => a.Solution).ToListAsync();
+            var topUsersBefore = topSolutionsBefore.Select(a => a.UserId).ToList();
+
+            // Save this solution and reply to user with result
+            await _solutions.SetSolution(submission);
+            var rank = await _solutions.GetRank(submission.ChallengeId, Context.User.Id);
+            await ReplyAsync($"Verification complete! You scored {verification.Score} points using {verification.Length} chars and {verification.Iterations} ticks. You are currently rank {rank?.Rank} for this challenge.");
+            if (verification.Hint != null)
+                await ReplyAsync(verification.Hint);
+
+            // There should always be a rank after the call to `SetSolution`. if there isn't just early out here ¯\_(ツ)_/¯
+            if (!rank.HasValue)
+                return;
+
+            // If this is not the top ranking score, or there was no top ranking score before there is no need to put out a rank alert.
+            if (rank.Value.Rank != 1 || topUsersBefore.Count == 0)
+                return;
+            var topScoreBefore = topSolutionsBefore[0].Score;
+
+            // There are three possible rank alerts:
+            // 1) User moved from below to above: "X takes rank #1 from Y"
+            // 2) User moved from below to tie: "X ties for rank #1"
+            // 3) User moved from tie to above: "X breaks a tie to take #1 from Y"
+
+            // Create the embed to fill in with details of the rank alert later
+            var embed = new EmbedBuilder {Title = "Rank Alert", Color = Color.Gold, Footer = new EmbedFooterBuilder().WithText("A Cylon Project")};
+            var self = await _client.GetUserName(Context.User.Id);
+
+            // Case #1/#2
+            if (!topUsersBefore.Contains(Context.User.Id) && submission.Score > topScoreBefore)
+            {
+                var prev = (await topUsersBefore.ToAsyncEnumerable().SelectAwait(async a => await _client.GetUserName(a)).ToArrayAsync()).Humanize("&");
+
+                if (submission.Score > topScoreBefore)
+                    embed.Description = $"{self} takes rank #1 from {prev}!";
+                else if (submission.Score == topScoreBefore)
+                    embed.Description = $"{self} ties for rank #1";
+                else
+                    return;
+            }
+            else if (topUsersBefore.Contains(Context.User.Id) && topUsersBefore.Count > 1)
+            {
+                topUsersBefore.Remove(Context.User.Id);
+                var prev = (await topUsersBefore.ToAsyncEnumerable().SelectAwait(async a => await _client.GetUserName(a)).ToArrayAsync()).Humanize("&");
+
+                embed.Description = $"{self} breaks a tie to take #1 from {prev}!";
             }
             else
-            {
-                if (!save)
-                {
-                    await ReplyAsync($"Verification complete! You scored {success.Score} points using {success.Length} chars and {success.Iterations} ticks.");
-                }
-                else
-                {
-                    // Get the current top solution(s)
-                    var topSolutionsBefore = await _solutions.GetTopRank(challenge.Id).Select(a => a.Solution).ToListAsync();
-                    var topUsersBefore = topSolutionsBefore.Select(a => a.UserId).ToList();
+                return;
 
-                    // Submit this solution
-                    await _solutions.SetSolution(new Solution(challenge.Id, Context.User.Id, success.Score, code));
-                    var rank = await _solutions.GetRank(challenge.Id, Context.User.Id);
-                    var rankNum = uint.MaxValue;
-                    if (rank.HasValue)
-                        rankNum = rank.Value.Rank;
-                    await ReplyAsync($"Verification complete! You scored {success.Score} points using {success.Length} chars and {success.Iterations} ticks. You are currently rank {rankNum} for this challenge.");
-
-                    // If this is the top ranking score, and there was a top ranking score before, and it wasn't this user: alert everyone
-                    if (rankNum == 1 && topUsersBefore.Count > 0)
-                    {
-                        var embed = new EmbedBuilder {Title = "Rank Alert", Color = Color.Gold, Footer = new EmbedFooterBuilder().WithText("A Cylon Project")};
-                        if (!topUsersBefore.Contains(Context.User.Id))
-                        {
-                            var self = await _client.GetUserName(Context.User.Id);
-                            var prev = (await topUsersBefore.ToAsyncEnumerable().SelectAwait(async a => await _client.GetUserName(a)).ToArrayAsync()).Humanize("&");
-
-                            embed.Description = success.Score == topSolutionsBefore[0].Score
-                                ? $"{self} ties for rank #1"
-                                : $"{self} takes rank #1 from {prev}!";
-
-                            await _broadcast.Broadcast(embed.Build()).LastAsync();
-                        }
-                        else if (topUsersBefore.Count > 1 && topUsersBefore.Contains(Context.User.Id))
-                        {
-                            var self = await _client.GetUserName(Context.User.Id);
-                            topUsersBefore.Remove(Context.User.Id);
-                            var prev = (await topUsersBefore.ToAsyncEnumerable().SelectAwait(async a => await _client.GetUserName(a)).ToArrayAsync()).Humanize("&");
-
-                            embed.Description = $"{self} breaks a tie to take #1 from {prev}!";
-
-                            await _broadcast.Broadcast(embed.Build()).LastAsync();
-                        }
-                    }
-                }
-            }
-
-            if (success.Hint != null)
-                await ReplyAsync(success.Hint);
+            // Broadcast embed out to all subscribed channels
+            await _broadcast.Broadcast(embed.Build()).LastAsync();
         }
 
         [Command("submit"), Summary("Submit a new competition entry. Code must be enclosed in triple backticks.")]
