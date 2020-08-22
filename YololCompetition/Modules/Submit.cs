@@ -69,7 +69,7 @@ namespace YololCompetition.Modules
             var previous = await _solutions.GetSolution(Context.User.Id, submission.ChallengeId);
 
             // Handle submitting something that scores worse than your existing solution
-            if (previous.HasValue && previous.Value.Score < submission.Score)
+            if (previous.HasValue && previous.Value.Score > submission.Score)
             {
                 await ReplyAsync($"Verification complete! You score {verification.Score} points using {verification.Length} chars and {verification.Iterations} ticks. Less than your current best of {previous.Value.Score}");
                 if (verification.Hint != null)
