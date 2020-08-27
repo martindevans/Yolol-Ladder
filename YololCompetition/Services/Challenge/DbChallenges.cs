@@ -137,6 +137,14 @@ namespace YololCompetition.Services.Challenge
             return new SqlAsyncResult<Challenge>(_database, PrepareQuery, Challenge.Read);
         }
 
+        public async Task<int> Delete(ulong challengeId)
+        {
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "DELETE FROM Challenges WHERE ID = @ID";
+            cmd.Parameters.Add(new SqliteParameter("@ID", DbType.UInt64) { Value = challengeId });
+            return await cmd.ExecuteNonQueryAsync();
+        }
+
         public async Task<Challenge?> GetCurrentChallenge()
         {
             await using var cmd = _database.CreateCommand();

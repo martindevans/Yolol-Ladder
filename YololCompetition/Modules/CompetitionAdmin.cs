@@ -95,6 +95,14 @@ namespace YololCompetition.Modules
                 return;
             }
 
+            await ReplyAsync("Do you want to create this challenge (yes/no)?");
+            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Cancelled creating challenge!");
+                return;
+            }
+
             var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring, data.Chip ?? YololChip.Professional);
             await _challenges.Create(c);
             await ReplyAsync("Challenge added to queue");
@@ -131,6 +139,47 @@ namespace YololCompetition.Modules
 
             if (none)
                 await ReplyAsync("No challenges in pool :(");
+        }
+
+        [Command("delete"), Summary("Delete a pending challenge from the pool")]
+        public async Task DeleteChallenge(string id)
+        {
+            var uid = BalderHash.BalderHash64.Parse(id);
+            if (!uid.HasValue)
+            {
+                await ReplyAsync($"Cannot parse `{id}` as a challenge ID");
+                return;
+            }
+
+            var challenges = await _challenges.GetChallenges(id: uid.Value.Value, includeUnstarted: true).ToArrayAsync();
+
+            if (challenges.Length == 0)
+            {
+                await ReplyAsync("Cannot find challenge with given ID");
+                return;
+            }
+
+            await ReplyAsync("Found challenges:");
+            foreach (var challenge in challenges)
+            {
+                await ReplyAsync($" - {challenge.Name} (`{challenge.Id.BalderHash()}`)");
+                await Task.Delay(10);
+            }
+            await ReplyAsync("Delete those challenges (yes/no)?");
+            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Not deleting anything");
+                return;
+            }
+
+            foreach (var challenge in challenges)
+            {
+                await _challenges.Delete(challenge.Id);
+                await Task.Delay(10);
+            }
+
+            await ReplyAsync("Done.");
         }
 
         [Command("terminate-current-challenge"), Summary("Immediately terminate current challenge without scoring")]
