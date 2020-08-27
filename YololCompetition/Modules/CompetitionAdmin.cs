@@ -118,13 +118,6 @@ namespace YololCompetition.Modules
             public YololChip? Chip { get; set; }
         }
 
-        [Command("check-pool"), Summary("Check state of challenge pool")]
-        public async Task CheckPool()
-        {
-            var count = await _challenges.GetPendingCount();
-            await ReplyAsync($"There are {count} challenges pending");
-        }
-
         [Command("show-pool"), Summary("Show state of challenge pool")]
         public async Task ShowPool()
         {

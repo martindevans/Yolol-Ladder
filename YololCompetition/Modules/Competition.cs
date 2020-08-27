@@ -23,6 +23,13 @@ namespace YololCompetition.Modules
             _messages = messages;
         }
 
+        [Command("check-pool"), Summary("Check how may challenges there are ready to play")]
+        public async Task CheckPool()
+        {
+            var count = await _challenges.GetPendingCount();
+            await ReplyAsync($"There are {count} challenges pending");
+        }
+
         [Command("current"), Summary("Show the current competition details")]
         public async Task CurrentCompetition()
         {
