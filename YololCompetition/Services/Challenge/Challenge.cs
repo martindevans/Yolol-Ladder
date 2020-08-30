@@ -49,10 +49,10 @@ namespace YololCompetition.Services.Challenge
 
         public ulong Id { get; }
         public string Name { get; }
-        public ChallengeDifficulty Difficulty { get; }
+        public ChallengeDifficulty Difficulty { get; set; }
         public string Description { get; }
 
-        public DateTime? EndTime { get; }
+        public DateTime? EndTime { get; set; }
 
         public string CheckIndicator { get; }
         public IReadOnlyList<IReadOnlyDictionary<string, Value>> Inputs { get; }
@@ -79,6 +79,7 @@ namespace YololCompetition.Services.Challenge
 
         public void Write(DbParameterCollection output)
         {
+            output.Add(new SqliteParameter("@ID", DbType.UInt64) { Value = Id });
             output.Add(new SqliteParameter("@Name", DbType.String) { Value = Name });
             output.Add(new SqliteParameter("@CheckIndicator", DbType.String) { Value = CheckIndicator });
             output.Add(new SqliteParameter("@Difficulty", DbType.Int32) { Value = (int)Difficulty });

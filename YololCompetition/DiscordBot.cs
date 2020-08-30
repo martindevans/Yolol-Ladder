@@ -15,7 +15,7 @@ namespace YololCompetition
         private readonly IServiceProvider _services;
 
         private const int MaxWaitTimeMs = 2500;
-        private readonly SemaphoreSlim _commandConcurrencyLimit = new SemaphoreSlim(10);
+        private readonly SemaphoreSlim _commandConcurrencyLimit = new SemaphoreSlim(100);
 
         public DiscordBot(DiscordSocketClient client, CommandService commands, Configuration config, IServiceProvider services)
         {

@@ -8,6 +8,8 @@ namespace YololCompetition.Services.Challenge
     {
         Task Create(Challenge challenge);
 
+        Task Update(Challenge challenge);
+
         Task<long> GetPendingCount();
 
         Task<Challenge?> GetCurrentChallenge();

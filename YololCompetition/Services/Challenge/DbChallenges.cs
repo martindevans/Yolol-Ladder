@@ -61,6 +61,14 @@ namespace YololCompetition.Services.Challenge
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task Update(Challenge challenge)
+        {
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "UPDATE Challenges SET Difficulty = @Difficulty, EndUnixTime = @EndUnixTime WHERE ID = @ID";
+            challenge.Write(cmd.Parameters);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         public async Task<long> GetPendingCount()
         {
             await using var cmd = _database.CreateCommand();

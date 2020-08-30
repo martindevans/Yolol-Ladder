@@ -76,7 +76,7 @@ namespace YololCompetition.Services.Verification
                 {
                     input = inputs[i];
                     foreach (var (key, value) in input)
-                        state.TrySet($":{key}", value);
+                        state.Set($":{key}", value);
                 }
                 else
                     input = new Dictionary<string, Value>();

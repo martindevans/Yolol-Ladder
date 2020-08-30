@@ -84,6 +84,12 @@ namespace YololCompetition.Services.Schedule
                     }
                 }
 
+                // Refetch current challenge in case it has been updated
+                current = await _challenges.GetCurrentChallenge();
+                if (current == null)
+                    continue;
+                endTime = current.EndTime;
+
                 // If endtime is after now then something else poked the scheduler awake, reset scheduler logic
                 if (endTime != null && endTime > DateTime.UtcNow)
                     continue;

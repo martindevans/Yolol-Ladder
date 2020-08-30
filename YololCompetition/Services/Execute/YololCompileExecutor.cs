@@ -39,19 +39,22 @@ namespace YololCompetition.Services.Execute
             private readonly Dictionary<string, int> _internalsMap;
             private readonly Dictionary<string, int> _externalsMap;
             private readonly string _done;
-            private readonly Value[] _externals;
-            private readonly Value[] _internals;
+
+            private Value[] _externals;
+            private Value[] _internals;
 
             public bool Done
             {
                 get => TryGet(_done)?.ToBool() ?? false;
-                set => TrySet(_done, (Number)value);
+                set => Set(_done, (Number)value);
             }
 
             private int _programCounter;
             public int ProgramCounter => _programCounter + 1;
 
             public ulong TotalLinesExecuted { get; private set; }
+
+            public bool TerminateOnPcOverflow { get; set; }
 
             public ExecutionState(List<Func<ArraySegment<Value>, ArraySegment<Value>, int>> funcs, Dictionary<string, int> internalsMap, Dictionary<string, int> externalsMap, string done)
             {
@@ -68,6 +71,8 @@ namespace YololCompetition.Services.Execute
 
             public async Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout)
             {
+                await Task.CompletedTask;
+
                 var timer = new Stopwatch();
                 timer.Start();
 
@@ -92,7 +97,11 @@ namespace YololCompetition.Services.Execute
 
                     // loop around if program counter goes over max
                     if (_programCounter >= 20)
+                    {
                         _programCounter = 0;
+                        if (TerminateOnPcOverflow)
+                            return null;
+                    }
 
                     // Execution timeout
                     if (timer.Elapsed > timeout)
@@ -135,23 +144,29 @@ namespace YololCompetition.Services.Execute
                 }
             }
 
-            public bool TrySet(string name, Value value)
+            public void Set(string name, Value value)
             {
                 var vName = new VariableName(name);
                 if (vName.IsExternal)
                 {
                     if (!_externalsMap.TryGetValue(vName.Name, out var v))
-                        return false;
+                    {
+                        v = _externals.Length;
+                        _externalsMap.Add(vName.Name, v);
+                        Array.Resize(ref _externals, _externals.Length + 1);
+                    }
                     _externals[v] = value;
                 }
                 else
                 {
                     if (!_internalsMap.TryGetValue(vName.Name, out var v))
-                        return false;
+                    {
+                        v = _internals.Length;
+                        _internalsMap.Add(vName.Name, v);
+                        Array.Resize(ref _internals, _internals.Length + 1);
+                    }
                     _internals[v] = value;
                 }
-
-                return true;
             }
 
             public IEnumerator<KeyValuePair<VariableName, Value>> GetEnumerator()
@@ -165,6 +180,14 @@ namespace YololCompetition.Services.Execute
             IEnumerator IEnumerable.GetEnumerator()
             {
                 return GetEnumerator();
+            }
+
+            public void CopyTo(IExecutionState other)
+            {
+                foreach (var (name, index) in _internalsMap)
+                    other.Set(name, _internals[index]);
+                foreach (var (name, index) in _externalsMap)
+                    other.Set(name, _externals[index]);
             }
         }
     }

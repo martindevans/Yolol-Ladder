@@ -139,7 +139,7 @@ namespace YololCompetition.Modules
             }
 
             if (!seenExtra && count == 0)
-                builder.AppendLine("You do not have a rank yet!");
+                builder.AppendLine("Leaderboard is empty!");
 
             embed.WithDescription(builder.ToString());
 

@@ -141,7 +141,7 @@ namespace YololCompetition.Modules
                 await ReplyAsync("No challenges in pool :(");
         }
 
-        [Command("delete"), Summary("Delete a pending challenge from the pool")]
+        [Command("delete-challenge"), Summary("Delete a pending challenge from the pool")]
         public async Task DeleteChallenge(string id)
         {
             var uid = BalderHash.BalderHash64.Parse(id);
@@ -202,6 +202,22 @@ namespace YololCompetition.Modules
                 await _challenges.ChangeChallengeDifficulty(current, difficulty);
                 await ReplyAsync($"Changed difficulty from `{current.Difficulty}` to `{difficulty}`");
             }
+        }
+
+        [Command("extend-current"), Summary("Extend current challenge (specify time in hours)")]
+        public async Task Extend(int hours)
+        {
+            var current = await _challenges.GetCurrentChallenge();
+            if (current == null)
+            {
+                await ReplyAsync("No current challenge running");
+                return;
+            }
+
+            current.EndTime = (current.EndTime ?? DateTime.UtcNow) + TimeSpan.FromHours(hours);
+            await _challenges.Update(current);
+
+            await ReplyAsync("Updated");
         }
 
         [Command("remove-entry"), Summary("Remove the entry in the current competition for a user")]

@@ -36,6 +36,8 @@ namespace YololCompetition.Services.Execute
             }
             public ulong TotalLinesExecuted { get; private set; }
 
+            public bool TerminateOnPcOverflow { get; set; }
+
             public InterpreterState(Yolol.Grammar.AST.Program program, string done)
             {
                 _program = program;
@@ -70,7 +72,11 @@ namespace YololCompetition.Services.Execute
 
                     // loop around if program counter goes over max
                     if (_programCounter >= 20)
+                    {
                         _programCounter = 0;
+                        if (TerminateOnPcOverflow)
+                            return null;
+                    }
 
                     // Occasionally delay the task a little to make sure it can't dominate other work
                     if (executed % 100 == 10)
@@ -104,14 +110,15 @@ namespace YololCompetition.Services.Execute
                 return _state.GetVariable(name)?.Value;
             }
 
-            public bool TrySet(string name, Value value)
+            public void Set(string name, Value value)
             {
                 var v = _state.GetVariable(name);
-                if (v == null)
-                    return false;
-
                 v.Value = value;
-                return true;
+            }
+
+            public void CopyTo(IExecutionState other)
+            {
+                throw new NotImplementedException();
             }
 
             public IEnumerator<KeyValuePair<VariableName, Value>> GetEnumerator()
