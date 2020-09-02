@@ -130,7 +130,7 @@ namespace YololCompetition.Modules
                 else
                     return;
             }
-            else if (topUsersBefore.Contains(Context.User.Id) && topUsersBefore.Count > 1)
+            else if (topUsersBefore.Contains(Context.User.Id) && topUsersBefore.Count > 1 && submission.Score > topScoreBefore)
             {
                 topUsersBefore.Remove(Context.User.Id);
                 var prev = (await topUsersBefore.ToAsyncEnumerable().SelectAwait(async a => await _client.GetUserName(a)).ToArrayAsync()).Humanize("&");

@@ -12,7 +12,7 @@ namespace YololCompetition.Services.Scoring
     public class ApproximateScoring
         : BasicScoring
     {
-        public const double AccuracyPoints = PointsPerTick * 5;
+        public const double AccuracyPoints = PointsPerTick * 9;
 
         // Max multiplier for an almost accurate answer (0.001) is 6
         // Getting a better answer than that is worth this much:
@@ -42,7 +42,9 @@ namespace YololCompetition.Services.Scoring
             return null;
 
             string InputString() => string.Join(",", inputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
+
             string OutputString() => string.Join(",", expectedOutputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
+
             double AccuracyScoreNumbers(string key, Number expected, Number actual)
             {
                 var error = Math.Abs((double)((decimal)expected - (decimal)actual));
