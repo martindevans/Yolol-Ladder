@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -29,6 +30,17 @@ namespace YololCompetition.Modules
         public async Task CharCount([Remainder] string message)
         {
             await ReplyAsync($"{message.Trim('`').Replace("\n", "").Replace("\r", "").Length} characters");
+        }
+
+        [Command("ast"), Summary("Print of the Abstract Syntax Tree of some code")]
+        public async Task PrintAst([Remainder] string message)
+        {
+            var result = await Parse(message);
+            if (result == null)
+                return;
+
+            var output = result.PrintAst();
+            await ReplyAsync(output);
         }
 
         [Command("check"), Summary("Attempt to parse some Yolol code, report syntax errors")]
@@ -72,14 +84,14 @@ namespace YololCompetition.Modules
             await RunYolol(input, new YololInterpretExecutor());
         }
 
-        private async Task RunYolol(string input, IYololExecutor executor)
+        private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
         {
             // Try to get code from message
             var code = input.ExtractYololCodeBlock();
             if (code == null)
             {
                 await ReplyAsync(@"Failed to parse a yolol program from message - ensure you have enclosed your solution in triple backticks \`\`\`like this\`\`\`");
-                return;
+                return null;
             }
             
             // Try to parse code as Yolol
@@ -87,13 +99,23 @@ namespace YololCompetition.Modules
             if (!result.IsOk)
             {
                 await ReplyAsync(result.Err.ToString());
-                return;
+                return null;
             }
+
+            return result.Ok;
+        }
+
+        private async Task RunYolol(string input, IYololExecutor executor)
+        {
+            // Try to parse code as Yolol
+            var result = await Parse(input);
+            if (result == null)
+                return;
 
             // Prep execution state
             var compileTimer = new Stopwatch();
             compileTimer.Start();
-            var state = executor.Prepare(result.Ok);
+            var state = executor.Prepare(result);
             compileTimer.Stop();
 
             // Run for 2000 lines, 500ms or until `:done!=0`
