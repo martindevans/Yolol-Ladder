@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -54,7 +55,7 @@ namespace YololCompetition.Modules
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
-                await ReplyAsync($"Verification failed! {message}.");
+                await ReplyWithHint("Verification Failed!", message);
                 return;
             }
 
@@ -142,6 +143,27 @@ namespace YololCompetition.Modules
 
             // Broadcast embed out to all subscribed channels
             await _broadcast.Broadcast(embed.Build()).LastAsync();
+        }
+
+        private async Task ReplyWithHint(string prefix, string? hint)
+        {
+            if (hint != null && prefix.Length + hint.Length > 1000)
+            {
+                await ReplyAsync(prefix);
+                await using (var stream = new MemoryStream(hint.Length))
+                await using (var writer = new StreamWriter(stream))
+                {
+                    await writer.WriteAsync(hint);
+                    await writer.FlushAsync();
+                    stream.Position = 0;
+
+                    await Context.Channel.SendFileAsync(stream, "hint.txt", "Message is too long!");
+                }
+            }
+            else
+            {
+                await ReplyAsync($"{prefix} {hint}");
+            }
         }
 
         [Command("submit"), Summary("Submit a new competition entry. Code must be enclosed in triple backticks.")]

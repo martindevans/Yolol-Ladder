@@ -14,7 +14,6 @@ using YololCompetition.Services.Database;
 using YololCompetition.Services.Execute;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Schedule;
-using YololCompetition.Services.Scoring;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Subscription;
 using YololCompetition.Services.Verification;
