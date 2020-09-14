@@ -202,7 +202,7 @@ namespace YololCompetition.Extensions
 
             protected override BaseExpression Visit(Negate neg)
             {
-                using (AppendLine("-"))
+                using (AppendLine("negate"))
                     return base.Visit(neg);
             }
 
@@ -214,26 +214,26 @@ namespace YololCompetition.Extensions
 
             protected override BaseExpression Visit(PostDecrement dec)
             {
-                using (AppendLine("POSTDEC"))
-                    return base.Visit(dec);
+                using (AppendLine($"{dec.Name}--"))
+                    return dec;
             }
 
             protected override BaseExpression Visit(PostIncrement inc)
             {
-                using (AppendLine("POSTINC"))
-                    return base.Visit(inc);
+                using (AppendLine($"{inc.Name}++"))
+                    return inc;
             }
 
             protected override BaseExpression Visit(PreDecrement dec)
             {
-                using (AppendLine("PREDEC"))
-                    return base.Visit(dec);
+                using (AppendLine($"--{dec.Name}"))
+                    return dec;
             }
 
             protected override BaseExpression Visit(PreIncrement inc)
             {
-                using (AppendLine("PREINC"))
-                    return base.Visit(inc);
+                using (AppendLine($"++{inc.Name}"))
+                    return inc;
             }
 
             protected override BaseExpression Visit(Sine app)
@@ -256,7 +256,7 @@ namespace YololCompetition.Extensions
 
             protected override BaseExpression Visit(Variable var)
             {
-                using (AppendLine("VAR(" + var.Name + ")"))
+                using (AppendLine("var(" + var.Name + ")"))
                     return base.Visit(var);
             }
 

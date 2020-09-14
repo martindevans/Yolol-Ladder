@@ -72,7 +72,7 @@ namespace YololCompetition.Services.Execute
 
             var globals = state.Where(a => a.Key.IsExternal).ToArray();
             if (globals.Length > 0)
-                embed.AddField("Globals", string.Join("\n", globals.OrderBy(a => a.Key.Name).Select(a => $"`:{a.Key}={a.Value.ToHumanString()}`")));
+                embed.AddField("Globals", string.Join("\n", globals.OrderBy(a => a.Key.Name).Select(a => $"`{a.Key}={a.Value.ToHumanString()}`")));
 
             return embed;
         }

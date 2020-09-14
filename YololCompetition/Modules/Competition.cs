@@ -45,7 +45,7 @@ namespace YololCompetition.Modules
             }
         }
 
-        [Command("competition"), Summary("Search previous competitions")]
+        [Command("competition"), Alias("challenge"), Summary("Search previous competitions")]
         public async Task GetCompetition(string search)
         {
             var results = await _challenges.FuzzyFindChallenge(search).ToArrayAsync();
@@ -61,7 +61,7 @@ namespace YololCompetition.Modules
             }
         }
 
-        [Command("competitions"), Summary("List all previous competitions")]
+        [Command("competitions"), Alias("challenges"), Summary("List all previous competitions")]
         public async Task ListCompetitions()
         {
             await DisplayItemList(
