@@ -86,7 +86,7 @@ namespace YololCompetition.Services.Challenge
             output.Add(new SqliteParameter("@Description", DbType.String) { Value = Description });
             output.Add(new SqliteParameter("@Shuffle", DbType.UInt64) { Value = Convert.ToUInt64(ShuffleTests) });
             output.Add(new SqliteParameter("@ScoreMode", DbType.UInt64) { Value = (int)ScoreMode });
-            output.Add(new SqliteParameter("@Chip", DbType.UInt64) { Value = (int)ScoreMode });
+            output.Add(new SqliteParameter("@Chip", DbType.UInt64) { Value = (int)Chip });
 
             var i = JsonConvert.SerializeObject(Inputs, JsonConfig);
             output.Add(new SqliteParameter("@Inputs", DbType.String) { Value = i });
