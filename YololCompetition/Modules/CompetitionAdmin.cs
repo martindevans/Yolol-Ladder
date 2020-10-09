@@ -9,10 +9,13 @@ using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Schedule;
 using System.Linq;
+using System.Text;
 using BalderHash.Extensions;
 using Discord;
 using Discord.Addons.Interactive;
+using Discord.WebSocket;
 using YololCompetition.Services.Solutions;
+using YololCompetition.Services.Verification;
 
 namespace YololCompetition.Modules
 {
@@ -22,12 +25,16 @@ namespace YololCompetition.Modules
     {
         private readonly IChallenges _challenges;
         private readonly IScheduler _scheduler;
+        private readonly IVerification _verification;
+        private readonly DiscordSocketClient _client;
         private readonly ISolutions _solutions;
 
-        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ISolutions solutions)
+        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ISolutions solutions, IVerification verification, DiscordSocketClient client)
         {
             _challenges = challenges;
             _scheduler = scheduler;
+            _verification = verification;
+            _client = client;
             _solutions = solutions;
         }
 
@@ -144,7 +151,7 @@ namespace YololCompetition.Modules
         [Command("delete-challenge"), Summary("Delete a pending challenge from the pool")]
         public async Task DeleteChallenge(string id)
         {
-            var uid = BalderHash.BalderHash64.Parse(id);
+            var uid = BalderHash.BalderHash32.Parse(id);
             if (!uid.HasValue)
             {
                 await ReplyAsync($"Cannot parse `{id}` as a challenge ID");
@@ -152,7 +159,6 @@ namespace YololCompetition.Modules
             }
 
             var challenges = await _challenges.GetChallenges(id: uid.Value.Value, includeUnstarted: true).ToArrayAsync();
-
             if (challenges.Length == 0)
             {
                 await ReplyAsync("Cannot find challenge with given ID");
@@ -162,7 +168,7 @@ namespace YololCompetition.Modules
             await ReplyAsync("Found challenges:");
             foreach (var challenge in challenges)
             {
-                await ReplyAsync($" - {challenge.Name} (`{challenge.Id.BalderHash()}`)");
+                await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`)");
                 await Task.Delay(10);
             }
             await ReplyAsync("Delete those challenges (yes/no)?");
@@ -232,6 +238,124 @@ namespace YololCompetition.Modules
 
             var rows = await _solutions.DeleteSolution(current.Id, user.Id);
             await ReplyAsync($"Deleted {rows} rows.");
+        }
+
+        [Command("rescore"), Summary("Recalculate all scores for a previous competition")]
+        public async Task Rescore(string id)
+        {
+            var uid = BalderHash.BalderHash32.Parse(id);
+            if (!uid.HasValue)
+            {
+                await ReplyAsync($"Cannot parse `{id}` as a challenge ID");
+                return;
+            }
+
+            var challenges = await _challenges.GetChallenges(id: uid.Value.Value, includeUnstarted: true).ToArrayAsync();
+            if (challenges.Length == 0)
+            {
+                await ReplyAsync("Cannot find challenge with given ID");
+                return;
+            }
+
+            if (challenges.Length > 1)
+            {
+                await ReplyAsync("Found more than one challenge, please disambiguate:");
+                foreach (var challenge in challenges)
+                {
+                    await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`)");
+                    await Task.Delay(10);
+                }
+                return;
+            }
+
+            var c = challenges.Single();
+            await ReplyAsync($" - {c.Name} (`{c.Id.BalderHash()}`)");
+
+            await ReplyAsync("Rescore this challenge (yes/no)?");
+            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Not rescoring anything");
+                return;
+            }
+
+            var solutions = await _solutions.GetSolutions(c.Id, uint.MaxValue).ToArrayAsync();
+            const string pbarHeader = "Rescoring: ";
+            var progress = await ReplyAsync(pbarHeader + new string('_', solutions.Length));
+
+            var failures = 0;
+            var results = new List<RescoreItem>(solutions.Length);
+            for (var i = 0; i < solutions.Length; i++)
+            {
+                var s = solutions[i];
+                var (success, failure) = await _verification.Verify(c, s.Solution.Yolol);
+
+                if (success != null)
+                {
+                    results.Add(new RescoreItem(
+                        s.Solution,
+                        new Solution(s.Solution.ChallengeId, s.Solution.UserId, success.Score, s.Solution.Yolol)
+                    ));
+                }
+                else if (failure != null)
+                {
+                    failures++;
+                    results.Add(new RescoreItem(
+                        s.Solution,
+                        new Solution(s.Solution.ChallengeId, s.Solution.UserId, s.Solution.Score, s.Solution.Yolol),
+                        failure.Hint
+                    ));
+                }
+                else
+                    throw new InvalidOperationException("Verification did not return success or failure");
+
+                await Task.Delay(100);
+                await progress.ModifyAsync(a => a.Content = pbarHeader + new string('#', i + 1) + new string('_', solutions.Length - i - 1));
+            }
+
+            if (failures > 0)
+                await ReplyAsync($"{failures} solutions failed to verify");
+
+            await ReplyAsync("Rescore this challenge (yes/no)?");
+            var confirm2 = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm2.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Not applying rescoring");
+                return;
+            }
+
+            var report = new StringBuilder();
+            foreach (var rescore in results)
+            {
+                report.AppendLine($"Rescoring `{c.Name}`");
+                report.AppendLine($"{UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.After.Score}");
+            }
+            await ReplyAsync(report.ToString());
+
+            foreach (var rescore in results)
+                await _solutions.SetSolution(rescore.After);
+
+            await ReplyAsync("Done.");
+        }
+
+        private readonly struct RescoreItem
+        {
+            public readonly Solution Before;
+            public readonly Solution After;
+            public readonly string? Failure;
+
+            public RescoreItem(Solution before, Solution after, string? failure = null)
+            {
+                Before = before;
+                After = after;
+                Failure = failure;
+            }
+        }
+
+        private async Task<string> UserName(ulong userId)
+        {
+            var user = (IUser)_client.GetUser(userId) ?? await _client.Rest.GetUserAsync(userId);
+            return user?.Username ?? userId.ToString();
         }
     }
 }
