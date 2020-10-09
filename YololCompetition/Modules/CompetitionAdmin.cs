@@ -269,7 +269,7 @@ namespace YololCompetition.Modules
             }
 
             var c = challenges.Single();
-            await ReplyAsync($" - {c.Name} (`{c.Id.BalderHash()}`)");
+            await ReplyAsync($" - {c.Name} (`{((uint)c.Id).BalderHash()}`)");
 
             await ReplyAsync("Rescore this challenge (yes/no)?");
             var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
@@ -281,17 +281,21 @@ namespace YololCompetition.Modules
 
             var solutions = await _solutions.GetSolutions(c.Id, uint.MaxValue).ToArrayAsync();
             const string pbarHeader = "Rescoring: ";
-            var progress = await ReplyAsync(pbarHeader + new string('_', solutions.Length));
+            var progress = await ReplyAsync(pbarHeader);
 
+            var totalTicks = 0l;
             var failures = 0;
             var results = new List<RescoreItem>(solutions.Length);
             for (var i = 0; i < solutions.Length; i++)
             {
+                await progress.ModifyAsync(a => a.Content = $"{pbarHeader} {i}/{solutions.Length}");
+
                 var s = solutions[i];
                 var (success, failure) = await _verification.Verify(c, s.Solution.Yolol);
 
                 if (success != null)
                 {
+                    totalTicks += success.Iterations;
                     results.Add(new RescoreItem(
                         s.Solution,
                         new Solution(s.Solution.ChallengeId, s.Solution.UserId, success.Score, s.Solution.Yolol)
@@ -310,27 +314,26 @@ namespace YololCompetition.Modules
                     throw new InvalidOperationException("Verification did not return success or failure");
 
                 await Task.Delay(100);
-                await progress.ModifyAsync(a => a.Content = pbarHeader + new string('#', i + 1) + new string('_', solutions.Length - i - 1));
             }
+
+            await progress.ModifyAsync(a => a.Content = $"Completed rescoring ({totalTicks} total ticks)");
 
             if (failures > 0)
                 await ReplyAsync($"{failures} solutions failed to verify");
 
-            await ReplyAsync("Rescore this challenge (yes/no)?");
+            var report = new StringBuilder();
+            report.AppendLine($"Rescoring `{c.Name}`");
+            foreach (var rescore in results)
+                report.AppendLine($"{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.After.Score}");
+            await ReplyAsync(report.ToString());
+
+            await ReplyAsync("Apply rescoring to this challenge (yes/no)?");
             var confirm2 = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
             if (!confirm2.Equals("yes", StringComparison.OrdinalIgnoreCase))
             {
                 await ReplyAsync("Not applying rescoring");
                 return;
             }
-
-            var report = new StringBuilder();
-            foreach (var rescore in results)
-            {
-                report.AppendLine($"Rescoring `{c.Name}`");
-                report.AppendLine($"{UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.After.Score}");
-            }
-            await ReplyAsync(report.ToString());
 
             foreach (var rescore in results)
                 await _solutions.SetSolution(rescore.After);
