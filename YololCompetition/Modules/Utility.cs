@@ -55,12 +55,9 @@ namespace YololCompetition.Modules
 
             var result = Yolol.Grammar.Parser.ParseProgram(code);
             if (!result.IsOk)
-            {
-                await ReplyAsync(result.Err.ToString());
-                return;
-            }
-
-            await ReplyAsync($"Successfully parsed program! ```{result.Ok}```");
+                await ReplyAsync($"```{result.Err}```");
+            else
+                await ReplyAsync($"Successfully parsed program! ```{result.Ok}```");
         }
 
         [Command("yolol"), Summary("Run some Yolol code. The program will run for 2000 iterations or until `done` is set to a true value.")]
@@ -98,11 +95,11 @@ namespace YololCompetition.Modules
             var result = Yolol.Grammar.Parser.ParseProgram(code);
             if (!result.IsOk)
             {
-                await ReplyAsync(result.Err.ToString());
+                await ReplyAsync($"```{result.Err}```");
                 return null;
             }
-
-            return result.Ok;
+            else
+                return result.Ok;
         }
 
         private async Task RunYolol(string input, IYololExecutor executor)

@@ -69,10 +69,10 @@ namespace YololCompetition.Services.Execute
                 Array.Fill(_externals, new Value(0));
             }
 
+#pragma warning disable 1998
             public async Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout)
+#pragma warning restore 1998
             {
-                await Task.CompletedTask;
-
                 var timer = new Stopwatch();
                 timer.Start();
 
@@ -105,7 +105,7 @@ namespace YololCompetition.Services.Execute
 
                     // Execution timeout
                     if (timer.Elapsed > timeout)
-                        return "Execution Timed Out";
+                        return $"Execution Timed Out (executed {executed} ticks in {timer.Elapsed.TotalMilliseconds}ms)";
 
                     // Sanity check strings are not getting too long
                     for (var i = 0; i < _internals.Length; i++)

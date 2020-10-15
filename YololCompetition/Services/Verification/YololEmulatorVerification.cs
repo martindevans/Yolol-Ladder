@@ -85,7 +85,7 @@ namespace YololCompetition.Services.Verification
                 state.Done = false;
 
                 // Run for max allowed number of lines
-                var err1 = await state.Run(_config.MaxTestIters, TimeSpan.FromMilliseconds(100));
+                var err1 = await state.Run(_config.MaxTestIters, TimeSpan.FromMilliseconds(600));
                 if (err1 != null)
                     return (null, new Failure(FailureType.Other, err1));
 
@@ -93,7 +93,7 @@ namespace YololCompetition.Services.Verification
                 if (!state.Done)
                 {
                     var executed = state.TotalLinesExecuted;
-                    var err2 = await state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(100));
+                    var err2 = await state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(600));
                     if (err2 != null)
                         return (null, new Failure(FailureType.Other, err2));
 
