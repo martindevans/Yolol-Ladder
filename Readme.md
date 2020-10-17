@@ -1,6 +1,6 @@
 ## Yolol Ladder
 
-This is a Discord bot providing helpful utilities and a code-gold competition for the [Yolol](https://wiki.starbasegame.com/index.php/YOLOL) language.
+This is a Discord bot providing helpful utilities and a code-golf competition for the [Yolol](https://wiki.starbasegame.com/index.php/YOLOL) language.
 
 ## Installation
 
