@@ -61,12 +61,6 @@ namespace YololCompetition
                 return;
             }
 
-            if (result.Error == CommandError.Exception)
-            {
-                await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
-                return;
-            }
-
             if (result.Error == CommandError.UnmetPrecondition)
             {
                 await context.Channel.SendMessageAsync(result.ErrorReason);
@@ -75,6 +69,9 @@ namespace YololCompetition
 
             if (result.Error == CommandError.Exception)
             {
+                if (result is ExecuteResult exr)
+                    Console.WriteLine(exr.Exception);
+
                 await context.Channel.SendMessageAsync($"Command Failed! {result.ErrorReason}");
                 return;
             }
