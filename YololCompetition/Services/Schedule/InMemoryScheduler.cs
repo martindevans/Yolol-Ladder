@@ -12,6 +12,7 @@ using YololCompetition.Extensions;
 using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Messages;
+using YololCompetition.Services.Trueskill;
 
 namespace YololCompetition.Services.Schedule
 {
@@ -24,18 +25,20 @@ namespace YololCompetition.Services.Schedule
         private readonly ILeaderboard _leaderboard;
         private readonly DiscordSocketClient _client;
         private readonly IMessages _messages;
+        private readonly ITrueskillUpdater _skillUpdate;
 
         private readonly AsyncAutoResetEvent _poker = new AsyncAutoResetEvent();
 
         public SchedulerState State { get; private set; }
         
-        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client, IMessages messages)
+        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client, IMessages messages, ITrueskillUpdater skillUpdate)
         {
             _challenges = challenges;
             _solutions = solutions;
             _broadcaster = broadcaster;
             _client = client;
             _messages = messages;
+            _skillUpdate = skillUpdate;
             _leaderboard = leaderboard;
         }
 
@@ -113,6 +116,9 @@ namespace YololCompetition.Services.Schedule
 
         private async Task UpdateLeaderboard(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
         {
+            // Update trueskill
+            await _skillUpdate.ApplyChallengeResults(challenge.Id);
+
             const uint maxScore = 10;
             var score = maxScore;
 

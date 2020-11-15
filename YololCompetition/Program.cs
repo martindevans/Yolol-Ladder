@@ -7,6 +7,7 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Moserware.Skills;
 using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Cron;
@@ -19,6 +20,7 @@ using YololCompetition.Services.Subscription;
 using YololCompetition.Services.Verification;
 using YololCompetition.Services.Messages;
 using YololCompetition.Services.Rates;
+using YololCompetition.Services.Trueskill;
 
 namespace YololCompetition
 {
@@ -38,13 +40,13 @@ namespace YololCompetition
             var provider = services.BuildServiceProvider();
             services.AddSingleton(provider);
 
-            var commands = provider.GetService<CommandService>();
+            var commands = provider.GetRequiredService<CommandService>();
             await commands.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
 
-            var bot = provider.GetService<DiscordBot>();
+            var bot = provider.GetRequiredService<DiscordBot>();
             await bot.Start();
 
-            var messages = provider.GetService<IMessages>();
+            var messages = provider.GetRequiredService<IMessages>();
             messages.StartMessageWatch();
 
             Console.WriteLine("Bot Started");
@@ -89,6 +91,10 @@ namespace YololCompetition
             di.AddTransient<IChallenges, DbChallenges>();
             di.AddTransient<ISubscription, DbSubscription>();
             di.AddTransient<IMessages, DbMessages>();
+            di.AddTransient<ITrueskill, DbTrueskill>();
+
+            di.AddSingleton(GameInfo.DefaultGameInfo);
+            di.AddTransient<ITrueskillUpdater, MoserwareTrueskillUpdater>();
 
             di.AddTransient<IVerification, YololEmulatorVerification>();
 

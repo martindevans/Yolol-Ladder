@@ -9,6 +9,7 @@ using Discord.WebSocket;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Solutions;
+using YololCompetition.Services.Trueskill;
 
 namespace YololCompetition.Modules
 {
@@ -19,19 +20,22 @@ namespace YololCompetition.Modules
         private readonly DiscordSocketClient _client;
         private readonly IChallenges _challenges;
         private readonly ISolutions _solutions;
+        private readonly ITrueskill _skills;
 
-        public Leaderboard(ILeaderboard leaderboard, DiscordSocketClient client, IChallenges challenges, ISolutions solutions)
+        public Leaderboard(ILeaderboard leaderboard, DiscordSocketClient client, IChallenges challenges, ISolutions solutions, ITrueskill skills)
         {
             _leaderboard = leaderboard;
             _client = client;
             _challenges = challenges;
             _solutions = solutions;
+            _skills = skills;
         }
 
         public enum LeaderboardType
         {
             Global,
-            Current
+            Current,
+            Trueskill,
         }
 
         [Command("leaderboard"), Summary("Display the top Yolol programmers")]
@@ -52,6 +56,11 @@ namespace YololCompetition.Modules
                 }
 
                 await DisplayChallengeLeaderboard(challenge);
+            }
+            else if (type == LeaderboardType.Trueskill)
+            {
+                var top = _skills.GetTopRanks(15);
+                await ReplyAsync(embed: await FormatLeaderboard(top));
             }
             else
                 throw new InvalidOperationException("Unknown leaderboard type");
@@ -139,6 +148,37 @@ namespace YololCompetition.Modules
             }
 
             if (!seenExtra && count == 0)
+                builder.AppendLine("Leaderboard is empty!");
+
+            embed.WithDescription(builder.ToString());
+
+            return embed.Build();
+        }
+
+        private async Task<Embed> FormatLeaderboard(IAsyncEnumerable<TrueskillRating> ranks)
+        {
+            async Task<string> FormatRankInfo(TrueskillRating info)
+            {
+                var user = (IUser)_client.GetUser(info.UserId) ?? await _client.Rest.GetUserAsync(info.UserId);
+                var name = user?.Username ?? info.UserId.ToString();
+                return $"{info.Rank}. **{name}**\n\u2003Skill:{(100 * Math.Max(0, info.ConservativeEstimate)):0000}";
+            }
+
+            var embed = new EmbedBuilder {
+                Title = "Yolol Trueskill Leaderboard",
+                Color = Color.Green,
+                Footer = new EmbedFooterBuilder().WithText("A Cylon Project")
+            };
+
+            var count = 0;
+            var builder = new StringBuilder();
+            await foreach (var rank in ranks)
+            {
+                builder.AppendLine(await FormatRankInfo(rank));
+                count++;
+            }
+
+            if (count == 0)
                 builder.AppendLine("Leaderboard is empty!");
 
             embed.WithDescription(builder.ToString());
