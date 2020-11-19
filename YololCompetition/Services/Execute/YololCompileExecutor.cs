@@ -64,9 +64,9 @@ namespace YololCompetition.Services.Execute
                 _done = done;
 
                 _internals = new Value[internalsMap.Count];
-                Array.Fill(_internals, new Value(0));
+                Array.Fill(_internals, new Value((Number)0));
                 _externals = new Value[externalsMap.Count];
-                Array.Fill(_externals, new Value(0));
+                Array.Fill(_externals, new Value((Number)0));
             }
 
 #pragma warning disable 1998
