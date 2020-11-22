@@ -159,13 +159,14 @@ namespace YololCompetition.Modules
         {
             async Task<string> FormatRankInfo(TrueskillRating info)
             {
+                var skill = 100 * Math.Max(0, info.ConservativeEstimate);
                 var user = (IUser)_client.GetUser(info.UserId) ?? await _client.Rest.GetUserAsync(info.UserId);
                 var name = user?.Username ?? info.UserId.ToString();
-                return $"{info.Rank}. **{name}**\n\u2003Skill:{(100 * Math.Max(0, info.ConservativeEstimate)):0000}";
+                return $"{info.Rank}. ({skill:0000}) **{name}**";
             }
 
             var embed = new EmbedBuilder {
-                Title = "Yolol Trueskill Leaderboard",
+                Title = "Yolol Leaderboard",
                 Color = Color.Green,
                 Footer = new EmbedFooterBuilder().WithText("A Cylon Project")
             };

@@ -21,7 +21,7 @@
     <PackageReference Include="Nito.AsyncEx" Version="5.1.0" />
     <PackageReference Include="System.Linq.Async" Version="5.0.0" />
     <PackageReference Include="Yolol" Version="11.0.4" />
-    <PackageReference Include="Yolol.IL" Version="4.0.4" />
+    <PackageReference Include="Yolol.IL" Version="4.0.5" />
   </ItemGroup>
 
   <!--<Target Name="ChangeAliasesOfReactiveExtensions" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
