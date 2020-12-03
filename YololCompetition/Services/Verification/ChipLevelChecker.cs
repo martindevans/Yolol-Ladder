@@ -97,6 +97,8 @@ namespace YololCompetition.Services.Verification
 
         protected override bool Visit(Not not) => Visit(not.Parameter);
 
+        protected override bool Visit(Factorial fac) => Visit(fac.Parameter) && _level >= YololChip.Advanced;
+
         protected override bool Visit(ErrorExpression err) => true;
 
         protected override bool Visit(Increment inc) => true;

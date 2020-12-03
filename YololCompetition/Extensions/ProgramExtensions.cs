@@ -212,6 +212,12 @@ namespace YololCompetition.Extensions
                     return base.Visit(not);
             }
 
+            protected override BaseExpression Visit(Factorial fac)
+            {
+                using (AppendLine("FACTORIAL"))
+                    return base.Visit(fac);
+            }
+
             protected override BaseExpression Visit(PostDecrement dec)
             {
                 using (AppendLine($"{dec.Name}--"))
