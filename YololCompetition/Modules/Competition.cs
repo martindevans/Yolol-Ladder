@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BalderHash.Extensions;
+using Discord;
 using Discord.Commands;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Messages;
+using MessageType = YololCompetition.Services.Messages.MessageType;
 
 namespace YololCompetition.Modules
 {
@@ -27,7 +29,10 @@ namespace YololCompetition.Modules
         public async Task CheckPool()
         {
             var count = await _challenges.GetPendingCount();
-            await ReplyAsync($"There are {count} challenges pending");
+            var msg = await ReplyAsync($"There are {count} challenges pending");
+
+            if (count == 0)
+                await msg.AddReactionAsync(new Emoji("😰"));
         }
 
         [Command("current"), Summary("Show the current competition details")]

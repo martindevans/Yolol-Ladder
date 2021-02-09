@@ -12,17 +12,17 @@
     <PackageReference Include="Discord.Addons.Interactive" Version="2.0.0" />
     <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="Humanizer.Core" Version="2.8.26" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="Moserware.Skills" Version="1.0.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="Nito.AsyncEx" Version="5.1.0" />
     <PackageReference Include="System.Linq.Async" Version="5.0.0" />
-    <PackageReference Include="Yolol" Version="11.1.2" />
-    <PackageReference Include="Yolol.Analysis" Version="6.2.2" />
-    <PackageReference Include="Yolol.IL" Version="4.1.1" />
+    <PackageReference Include="Yolol" Version="11.3.0" />
+    <PackageReference Include="Yolol.Analysis" Version="6.2.3" />
+    <PackageReference Include="Yolol.IL" Version="4.2.0" />
   </ItemGroup>
 
   <!--<Target Name="ChangeAliasesOfReactiveExtensions" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">

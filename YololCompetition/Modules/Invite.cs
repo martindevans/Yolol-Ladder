@@ -52,12 +52,13 @@ namespace YololCompetition.Modules
             var subs = _subscriptions.GetSubscriptions();
 
             var output = new StringBuilder();
+            output.AppendLine("Bot Subscroptions:");
             await foreach (var sub in subs)
             {
                 var guild = _client.GetGuild(sub.Guild);
                 var channel = guild.GetTextChannel(sub.Channel);
 
-                var next = $" - {guild?.Name ?? sub.Guild.ToString()} @ {channel?.Name ?? sub.Channel.ToString()}";
+                var next = $" - Guild:`{guild.Name ?? sub.Guild.ToString()}` @ Channel:`{channel?.Name ?? sub.Channel.ToString()}`";
 
                 if (output.Length + next.Length > 1000)
                 {
@@ -76,9 +77,11 @@ namespace YololCompetition.Modules
         public async Task DumpGuilds()
         {
             var output = new StringBuilder();
+            output.AppendLine("Bot Guilds:");
             foreach (var guild in _client.Guilds)
             {
-                var next = $" - {guild?.Name}";
+                await guild.DownloadUsersAsync();
+                var next = $" - {guild.Name} (Owner:{guild.Owner.Username}#{guild.Owner.Discriminator})";
 
                 if (output.Length + next.Length > 1000)
                 {

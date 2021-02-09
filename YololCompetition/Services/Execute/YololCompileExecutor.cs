@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Yolol.Execution;
 using Yolol.Grammar;
+using Yolol.IL.Compiler;
 using Yolol.IL.Extensions;
 
 namespace YololCompetition.Services.Execute
@@ -16,9 +17,10 @@ namespace YololCompetition.Services.Execute
 
         public IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done)
         {
-            var internalsMap = new Dictionary<string, int>();
-            var externalsMap = new Dictionary<string, int>();
+            var internalsMap = new InternalsMap();
+            var externalsMap = new ExternalsMap();
             var lines = new List<Func<ArraySegment<Value>, ArraySegment<Value>, int>>();
+
             for (var i = 0; i < program.Lines.Count; i++)
             {
                 lines.Add(program.Lines[i].Compile(

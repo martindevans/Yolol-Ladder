@@ -52,20 +52,24 @@ namespace YololCompetition.Services.Trueskill
                     a.rank
                 }).ToArrayAsync();
 
-            // Extract the data out of that into separate collections
-            var teams = teamRanks.Select(a => a.team).ToArray();
-            var ranks = teamRanks.Select(a => (int)a.rank).ToArray();
+            // Trueskill can't be applied if there were less than 2 entrants
+            if (teamRanks.Length > 1)
+            {
+                // Extract the data out of that into separate collections
+                var teams = teamRanks.Select(a => a.team).ToArray();
+                var ranks = teamRanks.Select(a => (int)a.rank).ToArray();
 
-            // Calculate trueskill ratings
-            var results = TrueSkillCalculator.CalculateNewRatings(
-                GameInfo.DefaultGameInfo,
-                teams,
-                ranks
-            );
+                // Calculate trueskill ratings
+                var results = TrueSkillCalculator.CalculateNewRatings(
+                    GameInfo.DefaultGameInfo,
+                    teams,
+                    ranks
+                );
 
-            // Update database with new ratings
-            foreach (var (key, rating) in results)
-                await _ratings.SetRating(key, rating.Mean, rating.StandardDeviation);
+                // Update database with new ratings
+                foreach (var (key, rating) in results)
+                    await _ratings.SetRating(key, rating.Mean, rating.StandardDeviation);
+            }
 
             // Decay rank of all players who did not participate in this challenge
             await _ratings.Decay(4);
