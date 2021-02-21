@@ -58,7 +58,7 @@ namespace YololCompetition.Modules
                 var guild = _client.GetGuild(sub.Guild);
                 var channel = guild.GetTextChannel(sub.Channel);
 
-                var next = $" - Guild:`{guild.Name ?? sub.Guild.ToString()}` @ Channel:`{channel?.Name ?? sub.Channel.ToString()}`";
+                var next = $" - Guild:`{guild.Name ?? sub.Guild.ToString()}`, Channel:`{channel?.Name ?? sub.Channel.ToString()}`";
 
                 if (output.Length + next.Length > 1000)
                 {
@@ -81,7 +81,7 @@ namespace YololCompetition.Modules
             foreach (var guild in _client.Guilds)
             {
                 await guild.DownloadUsersAsync();
-                var next = $" - {guild.Name} (Owner:{guild.Owner.Username}#{guild.Owner.Discriminator})";
+                var next = $" - Guild:`{guild.Name}`, Owner:`{guild.Owner.Username}#{guild.Owner.Discriminator}`";
 
                 if (output.Length + next.Length > 1000)
                 {

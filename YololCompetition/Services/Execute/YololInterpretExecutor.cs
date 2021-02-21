@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using Yolol.Execution;
 using Yolol.Grammar;
 using Type = Yolol.Execution.Type;
@@ -46,7 +45,7 @@ namespace YololCompetition.Services.Execute
                 _done = _state.GetVariable(done);
             }
 
-            public async Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout)
+            public string? Run(uint lineExecutionLimit, TimeSpan timeout)
             {
                 var timer = new Stopwatch();
                 timer.Start();
@@ -77,10 +76,6 @@ namespace YololCompetition.Services.Execute
                         if (TerminateOnPcOverflow)
                             return null;
                     }
-
-                    // Occasionally delay the task a little to make sure it can't dominate other work
-                    if (executed % 100 == 10)
-                        await Task.Delay(1);
 
                     // Execution timeout
                     if (timer.Elapsed > timeout)
@@ -116,14 +111,24 @@ namespace YololCompetition.Services.Execute
                 v.Value = value;
             }
 
-            public void CopyTo(IExecutionState other)
+            public void CopyTo(IExecutionState other, bool externalsOnly = false)
             {
-                throw new NotImplementedException();
+                foreach (var (name, value) in this)
+                {
+                    if (!name.IsExternal && externalsOnly)
+                        continue;
+
+                    other.Set(name.Name, value);
+                }
             }
 
             public IEnumerator<KeyValuePair<VariableName, Value>> GetEnumerator()
             {
-                return _state.Select(a => new KeyValuePair<VariableName, Value>(new VariableName(a.Key), a.Value.Value)).GetEnumerator();
+                foreach (var (key, value) in _state)
+                    yield return new KeyValuePair<VariableName, Value>(new VariableName(key), value.Value);
+
+                foreach (var (key, value) in _network)
+                    yield return new KeyValuePair<VariableName, Value>(new VariableName(":" + key), value);
             }
 
             IEnumerator IEnumerable.GetEnumerator()

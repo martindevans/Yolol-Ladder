@@ -112,7 +112,7 @@ namespace YololCompetition.Services.Jupyter
                 prevState?.CopyTo(state);
 
                 // Execute for 2000 ticks
-                var err = await state.Run(2000, TimeSpan.FromMilliseconds(150));
+                var err = state.Run(2000, TimeSpan.FromMilliseconds(150));
 
                 // Print out result
                 if (err != null)

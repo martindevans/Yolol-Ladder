@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using Yolol.Execution;
 using Yolol.Grammar;
 using Yolol.IL.Compiler;
@@ -71,9 +70,7 @@ namespace YololCompetition.Services.Execute
                 Array.Fill(_externals, new Value((Number)0));
             }
 
-#pragma warning disable 1998
-            public async Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout)
-#pragma warning restore 1998
+            public string? Run(uint lineExecutionLimit, TimeSpan timeout)
             {
                 var timer = new Stopwatch();
                 timer.Start();
@@ -184,10 +181,12 @@ namespace YololCompetition.Services.Execute
                 return GetEnumerator();
             }
 
-            public void CopyTo(IExecutionState other)
+            public void CopyTo(IExecutionState other, bool externalsOnly = false)
             {
-                foreach (var (name, index) in _internalsMap)
-                    other.Set(name, _internals[index]);
+                if (!externalsOnly)
+                    foreach (var (name, index) in _internalsMap)
+                        other.Set(name, _internals[index]);
+
                 foreach (var (name, index) in _externalsMap)
                     other.Set(name, _externals[index]);
             }

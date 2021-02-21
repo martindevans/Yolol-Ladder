@@ -5,7 +5,12 @@ VisualStudioVersion = 16.0.30002.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YololCompetition", "YololCompetition\YololCompetition.csproj", "{32BF449D-558C-4851-89C4-347ACA76E9E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YololCompetitionTests", "YololCompetitionTests\YololCompetitionTests.csproj", "{645F103B-8AA5-4BF6-9A65-09CABB8D983C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YololCompetitionTests", "YololCompetitionTests\YololCompetitionTests.csproj", "{645F103B-8AA5-4BF6-9A65-09CABB8D983C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A720AF1F-C565-40A2-9ED9-1BB5EE6115D9}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

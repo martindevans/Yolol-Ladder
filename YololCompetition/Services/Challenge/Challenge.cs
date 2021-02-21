@@ -39,7 +39,7 @@ namespace YololCompetition.Services.Challenge
 
     public class Challenge
     {
-        private static readonly JsonSerializerSettings JsonConfig = new JsonSerializerSettings {
+        private static readonly JsonSerializerSettings JsonConfig = new() {
             Converters = new JsonConverter[] {
                 new YololValueConverter()
             },
@@ -62,7 +62,22 @@ namespace YololCompetition.Services.Challenge
         public ScoreMode ScoreMode { get; }
         public YololChip Chip { get; }
 
-        public Challenge(ulong id, string name, string checkIndicator, IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs, IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs, DateTime? endTime, ChallengeDifficulty difficulty, string description, bool shuffle, ScoreMode scoreMode, YololChip chip)
+        public Yolol.Grammar.AST.Program Intermediate { get; }
+
+        public Challenge(
+            ulong id,
+            string name,
+            string checkIndicator,
+            IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs,
+            IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs,
+            DateTime? endTime,
+            ChallengeDifficulty difficulty,
+            string description,
+            bool shuffle,
+            ScoreMode scoreMode,
+            YololChip chip,
+            Yolol.Grammar.AST.Program intermediate
+        )
         {
             Id = id;
             Name = name;
@@ -75,6 +90,7 @@ namespace YololCompetition.Services.Challenge
             ScoreMode = scoreMode;
             ShuffleTests = shuffle;
             Chip = chip;
+            Intermediate = intermediate;
         }
 
         public void Write(DbParameterCollection output)
@@ -95,6 +111,8 @@ namespace YololCompetition.Services.Challenge
             output.Add(new SqliteParameter("@Outputs", DbType.String) { Value = o });
 
             output.Add(new SqliteParameter("@EndUnixTime", DbType.UInt64) { Value = EndTime?.UnixTimestamp() });
+
+            output.Add(new SqliteParameter("@IntermediateCode", DbType.String) { Value = Intermediate?.ToString() });
         }
 
         public static Challenge Read(DbDataReader reader)
@@ -103,10 +121,15 @@ namespace YololCompetition.Services.Challenge
             DateTime? end = null;
             if (endUnixTimeObj != DBNull.Value)
             {
-                var endStr = endUnixTimeObj?.ToString();
+                var endStr = endUnixTimeObj.ToString();
                 if (endStr != null)
                     end = ulong.Parse(endStr).FromUnixTimestamp();
             }
+
+            var code = reader["IntermediateCode"].ToString() ?? "";
+            var parse = Yolol.Grammar.Parser.ParseProgram(code);
+            if (!parse.IsOk)
+                throw new InvalidOperationException($"Failed to parse program stored in DB:\n{parse.Err}");
 
             return new Challenge(
                 ulong.Parse(reader["ID"].ToString()!),
@@ -119,7 +142,8 @@ namespace YololCompetition.Services.Challenge
                 reader["Description"].ToString()!,
                 Convert.ToBoolean(ulong.Parse(reader["Shuffle"].ToString()!)),
                 (ScoreMode)int.Parse(reader["ScoreMode"].ToString()!),
-                (YololChip)int.Parse(reader["Chip"].ToString()!)
+                (YololChip)int.Parse(reader["Chip"].ToString()!),
+                parse.Ok
             );
         }
     }

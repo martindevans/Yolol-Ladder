@@ -48,5 +48,7 @@ namespace YololCompetition.Services.Verification
         IncorrectResult,
         ProgramTooLarge,
         InvalidProgramForChipType,
+        ChallengeCodeFailed,
+        ChallengeForceFail
     }
 }

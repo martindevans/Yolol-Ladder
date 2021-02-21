@@ -14,6 +14,7 @@ using BalderHash.Extensions;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.WebSocket;
+using YololCompetition.Services.Parsing;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Verification;
 
@@ -27,14 +28,16 @@ namespace YololCompetition.Modules
         private readonly IScheduler _scheduler;
         private readonly IVerification _verification;
         private readonly DiscordSocketClient _client;
+        private readonly IYololParser _parser;
         private readonly ISolutions _solutions;
 
-        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ISolutions solutions, IVerification verification, DiscordSocketClient client)
+        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ISolutions solutions, IVerification verification, DiscordSocketClient client, IYololParser parser)
         {
             _challenges = challenges;
             _scheduler = scheduler;
             _verification = verification;
             _client = client;
+            _parser = parser;
             _solutions = solutions;
         }
 
@@ -102,6 +105,13 @@ namespace YololCompetition.Modules
                 return;
             }
 
+            var program = await Parse(data.Code ?? "");
+            if (program == null)
+            {
+                await ReplyAsync("Invalid Program. Cancelling creation.");
+                return;
+            }
+
             await ReplyAsync("Do you want to create this challenge (yes/no)?");
             var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
             if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
@@ -110,9 +120,20 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring, data.Chip ?? YololChip.Professional);
+            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring, data.Chip ?? YololChip.Professional, program);
             await _challenges.Create(c);
             await ReplyAsync("Challenge added to queue");
+        }
+
+        private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
+        {
+            var (program, error) = await _parser.Parse(input);
+
+            if (program != null)
+                return program;
+
+            await ReplyAsync(error);
+            return null;
         }
 
         private class Data
@@ -131,6 +152,9 @@ namespace YololCompetition.Modules
 
             [JsonProperty("chip")]
             public YololChip? Chip { get; set; }
+
+            [JsonProperty("code")]
+            public string? Code { get; set; }
         }
 
         [Command("show-pool"), Summary("Show state of challenge pool")]

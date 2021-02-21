@@ -1,18 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
-using Yolol.Execution;
-using Yolol.IL.Extensions;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Execute;
-using YololCompetition.Services.Verification;
-using Type = Yolol.Execution.Type;
+using YololCompetition.Services.Parsing;
 
 namespace YololCompetition.Modules
 {
@@ -20,10 +13,12 @@ namespace YololCompetition.Modules
         : ModuleBase
     {
         private readonly IYololExecutor _executor;
+        private readonly IYololParser _parser;
 
-        public Utility(IYololExecutor executor)
+        public Utility(IYololExecutor executor, IYololParser parser)
         {
             _executor = executor;
+            _parser = parser;
         }
 
         [Command("chars"), Summary("Count the letters in a string")]
@@ -83,23 +78,13 @@ namespace YololCompetition.Modules
 
         private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
         {
-            // Try to get code from message
-            var code = input.ExtractYololCodeBlock();
-            if (code == null)
-            {
-                await ReplyAsync(@"Failed to parse a yolol program from message - ensure you have enclosed your solution in triple backticks \`\`\`like this\`\`\`");
-                return null;
-            }
-            
-            // Try to parse code as Yolol
-            var result = Yolol.Grammar.Parser.ParseProgram(code);
-            if (!result.IsOk)
-            {
-                await ReplyAsync($"```{result.Err}```");
-                return null;
-            }
-            else
-                return result.Ok;
+            var (program, error) = await _parser.Parse(input);
+
+            if (program != null)
+                return program;
+
+            await ReplyAsync(error);
+            return null;
         }
 
         private async Task RunYolol(string input, IYololExecutor executor)
@@ -118,7 +103,7 @@ namespace YololCompetition.Modules
             // Run for 2000 lines, 500ms or until `:done!=0`
             var exeTimer = new Stopwatch();
             exeTimer.Start();
-            var err = await state.Run(2000, TimeSpan.FromMilliseconds(500));
+            var err = state.Run(2000, TimeSpan.FromMilliseconds(500));
 
             // Print out error if execution terminated for some reason
             if (err != null)

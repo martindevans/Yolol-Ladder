@@ -19,6 +19,7 @@ using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Subscription;
 using YololCompetition.Services.Verification;
 using YololCompetition.Services.Messages;
+using YololCompetition.Services.Parsing;
 using YololCompetition.Services.Rates;
 using YololCompetition.Services.Trueskill;
 
@@ -92,11 +93,12 @@ namespace YololCompetition
             di.AddTransient<ISubscription, DbSubscription>();
             di.AddTransient<IMessages, DbMessages>();
             di.AddTransient<ITrueskill, DbTrueskill>();
+            di.AddTransient<IYololParser, YololEmulatorParser>();
 
             di.AddSingleton(GameInfo.DefaultGameInfo);
             di.AddTransient<ITrueskillUpdater, MoserwareTrueskillUpdater>();
 
-            di.AddTransient<IVerification, YololEmulatorVerification>();
+            di.AddTransient<IVerification, BasicVerification>();
 
             return di;
         }

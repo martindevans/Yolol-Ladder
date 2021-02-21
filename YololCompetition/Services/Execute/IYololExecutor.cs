@@ -43,13 +43,28 @@ namespace YololCompetition.Services.Execute
         /// <param name="lineExecutionLimit">Max lines to run</param>
         /// <param name="timeout">Max time to execute for</param>
         /// <returns>The error which ended execution, or else null</returns>
-        public Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout);
+        public string? Run(uint lineExecutionLimit, TimeSpan timeout);
 
+        /// <summary>
+        /// Try to get the value of a given variable
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         Value? TryGet(string name);
 
+        /// <summary>
+        /// Set a specific variable to a given value
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
         void Set(string name, Value value);
 
-        void CopyTo(IExecutionState other);
+        /// <summary>
+        /// Copy all the variable values from this state to another state
+        /// </summary>
+        /// <param name="other"></param>
+        /// <param name="externalsOnly"></param>
+        void CopyTo(IExecutionState other, bool externalsOnly = false);
     }
 
     public static class IExecutionStateExtensions

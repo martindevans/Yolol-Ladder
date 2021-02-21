@@ -44,6 +44,7 @@ namespace YololCompetition.Services.Challenge
                                "`ScoreMode` INTEGER NOT NULL, " +
                                "`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, " +
                                "`EndUnixTime` INTEGER, " +
+                               "`IntermediateCode` TEXT NOT NULL, " +
                                "`Chip` INTEGER NOT NULL);");
 
             }
@@ -56,7 +57,9 @@ namespace YololCompetition.Services.Challenge
         public async Task Create(Challenge challenge)
         {
             await using var cmd = _database.CreateCommand();
-            cmd.CommandText = "INSERT into Challenges (Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode, Chip) values(1, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode, @Chip)";
+            cmd.CommandText = "INSERT into Challenges" +
+                              "(Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode, Chip, IntermediateCode)" +
+                              "values(1, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode, @Chip, @IntermediateCode)";
             challenge.Write(cmd.Parameters);
             await cmd.ExecuteNonQueryAsync();
         }
@@ -73,7 +76,7 @@ namespace YololCompetition.Services.Challenge
         {
             await using var cmd = _database.CreateCommand();
             cmd.CommandText = "SELECT Count(*) FROM Challenges WHERE Status = 1";
-            return (long)await cmd.ExecuteScalarAsync();
+            return (long)(await cmd.ExecuteScalarAsync() ?? 0L);
         }
 
         private IAsyncEnumerable<Challenge> GetPending(int limit)

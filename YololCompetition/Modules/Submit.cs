@@ -51,6 +51,8 @@ namespace YololCompetition.Modules
                     FailureType.IncorrectResult => $"Program produced an incorrect value! {failure.Hint}",
                     FailureType.ProgramTooLarge => "Program is too large - it must be 20 lines by 70 characters per line",
                     FailureType.InvalidProgramForChipType => $"Program used a feature which is not available on this level of Yolol chip. {failure.Hint}",
+                    FailureType.ChallengeCodeFailed => $"Challenge code crashed! Please contact Martin#2468. {failure.Hint}",
+                    FailureType.ChallengeForceFail => $"{failure.Hint}",
                     FailureType.Other => failure.Hint,
                     _ => throw new ArgumentOutOfRangeException()
                 };
@@ -120,7 +122,7 @@ namespace YololCompetition.Modules
             var self = await _client.GetUserName(Context.User.Id);
 
             // Case #1/#2
-            if (!topUsersBefore.Contains(Context.User.Id) && submission.Score > topScoreBefore)
+            if (!topUsersBefore.Contains(Context.User.Id) && submission.Score >= topScoreBefore)
             {
                 var prev = (await topUsersBefore.ToAsyncEnumerable().SelectAwait(async a => await _client.GetUserName(a)).ToArrayAsync()).Humanize("&");
 
