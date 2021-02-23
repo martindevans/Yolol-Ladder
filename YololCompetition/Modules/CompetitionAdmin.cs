@@ -127,13 +127,15 @@ namespace YololCompetition.Modules
 
         private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
         {
-            var (program, error) = await _parser.Parse(input);
+            // Try to parse code as Yolol
+            var result = Yolol.Grammar.Parser.ParseProgram(input);
+            if (!result.IsOk)
+            {
+                await ReplyAsync($"```{result.Err}```");
+                return null;
+            }
 
-            if (program != null)
-                return program;
-
-            await ReplyAsync(error);
-            return null;
+            return result.Ok;
         }
 
         private class Data

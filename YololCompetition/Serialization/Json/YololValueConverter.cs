@@ -20,7 +20,7 @@ namespace YololCompetition.Serialization.Json
         {
             return reader.TokenType switch {
                 JsonToken.String => new Value((string)reader.Value!),
-                JsonToken.Integer => new Value((Number)(decimal)reader.Value!),
+                JsonToken.Integer => new Value((Number)(int)(long)reader.Value!),
                 JsonToken.Float => new Value((Number)(decimal)reader.Value!),
                 _ => throw new InvalidOperationException($"Unexpected token type `{reader.TokenType}` for Yolol value")
             };
