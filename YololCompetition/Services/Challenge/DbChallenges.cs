@@ -13,15 +13,6 @@ namespace YololCompetition.Services.Challenge
     public class DbChallenges
         : IChallenges
     {
-        private enum Status
-        {
-            None = 0,
-
-            Pending = 1,
-            Running = 2,
-            Complete = 3,
-        }
-
         private readonly IDatabase _database;
         private readonly Configuration _config;
 
@@ -56,12 +47,14 @@ namespace YololCompetition.Services.Challenge
 
         public async Task Create(Challenge challenge)
         {
-            await using var cmd = _database.CreateCommand();
-            cmd.CommandText = "INSERT into Challenges" +
-                              "(Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode, Chip, IntermediateCode)" +
-                              "values(1, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode, @Chip, @IntermediateCode)";
-            challenge.Write(cmd.Parameters);
-            await cmd.ExecuteNonQueryAsync();
+            await using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = "INSERT into Challenges" +
+                                  "(Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode, Chip, IntermediateCode)" +
+                                  "values(@Status, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode, @Chip, @IntermediateCode)";
+                challenge.Write(cmd.Parameters);
+                await cmd.ExecuteNonQueryAsync();
+            }
         }
 
         public async Task Update(Challenge challenge)
@@ -108,6 +101,15 @@ namespace YololCompetition.Services.Challenge
             await cmd.ExecuteNonQueryAsync();
 
             return await GetCurrentChallenge();
+        }
+
+        public async Task<int> SetToPending(ulong challengeId)
+        {
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "UPDATE Challenges SET Status = 1 WHERE ID = @ID";
+            cmd.Parameters.Add(new SqliteParameter("@ID", DbType.UInt64) { Value = challengeId }); 
+
+            return await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task EndCurrentChallenge()

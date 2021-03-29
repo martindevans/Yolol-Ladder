@@ -83,6 +83,10 @@ namespace YololCompetition.Services.Verification
                 // Copy all externals user->challenge
                 stateUser.CopyTo(stateChallenge, true);
 
+                // Set the challenge inputs _and_ outputs into the challenge state
+                SetInputs(input, stateChallenge, "input_");
+                SetInputs(outputs[i], stateChallenge, "output_");
+
                 // Run the challenge code
                 var overflow = (long)_config.MaxItersOverflow;
                 failure = RunToDone(stateChallenge, _config.MaxTestIters, 0, 0, ref overflow);
@@ -91,10 +95,6 @@ namespace YololCompetition.Services.Verification
 
                 // Copy all externals challenge->user
                 stateChallenge.CopyTo(stateUser, true);
-
-                // Set the challenge inputs _and_ outputs into the challenge state
-                SetInputs(input, stateChallenge, "input_");
-                SetInputs(outputs[i], stateChallenge, "output_");
 
                 // Check if the challenge code has forced a failure
                 var forceFail = stateChallenge.TryGet(":fail");

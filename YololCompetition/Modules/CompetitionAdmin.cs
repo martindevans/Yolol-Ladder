@@ -54,6 +54,16 @@ namespace YololCompetition.Modules
             await ReplyAsync($"What is the challenge difficulty ({levels})?");
             var difficulty = Enum.Parse<ChallengeDifficulty>((await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content);
 
+            await ReplyAsync("What's the Challenge code?");
+            var code = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var (parseOk, parseErr) = await _parser.Parse(code);
+            if (parseOk == null)
+            {
+                await ReplyAsync("Parse Error! Aborting challenge creation");
+                await ReplyAsync(parseErr ?? "Null Error");
+                return;
+            }
+
             await ReplyAsync("What is the challenge URL (raw JSON)?");
             var url = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
 
@@ -105,13 +115,6 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var program = await Parse(data.Code ?? "");
-            if (program == null)
-            {
-                await ReplyAsync("Invalid Program. Cancelling creation.");
-                return;
-            }
-
             await ReplyAsync("Do you want to create this challenge (yes/no)?");
             var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
             if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
@@ -120,9 +123,49 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring, data.Chip ?? YololChip.Professional, program);
+            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring, data.Chip ?? YololChip.Professional, parseOk, ChallengeStatus.TestMode);
             await _challenges.Create(c);
-            await ReplyAsync("Challenge added to queue");
+            await ReplyAsync("Challenge has been created in test mode. Use `>promote $challengeid` to add it to the queue");
+        }
+
+        [Command("promote"), Summary("Promote challenge from test mode")]
+        public async Task Promote(string id)
+        {
+            var uid = BalderHash.BalderHash32.Parse(id);
+            if (!uid.HasValue)
+            {
+                await ReplyAsync($"Cannot parse `{id}` as a challenge ID");
+                return;
+            }
+
+            var challenges = await _challenges.GetChallenges(id: uid.Value.Value, includeUnstarted: true).ToArrayAsync();
+            if (challenges.Length == 0)
+            {
+                await ReplyAsync("Cannot find challenge with given ID");
+                return;
+            }
+
+            await ReplyAsync("Found challenges:");
+            foreach (var challenge in challenges)
+            {
+                await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`)");
+                await Task.Delay(10);
+            }
+            await ReplyAsync("Promote those challenges (yes/no)?");
+            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Not promoting anything");
+                return;
+            }
+
+            foreach (var challenge in challenges)
+            {
+                await _challenges.SetToPending(challenge.Id);
+                await Task.Delay(10);
+            }
+
+            await ReplyAsync("Done.");
         }
 
         private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
@@ -166,7 +209,7 @@ namespace YololCompetition.Modules
             await foreach (var challenge in _challenges.GetChallenges(includeUnstarted: true).Where(a => a.EndTime == null))
             {
                 none = false;
-                await ReplyAsync($" - {challenge.Name} (`{challenge.Id.BalderHash()}`)");
+                await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`) {(challenge.Status == ChallengeStatus.TestMode ? "**TEST MODE**" : "")}");
                 await Task.Delay(10);
             }
 
@@ -309,7 +352,7 @@ namespace YololCompetition.Modules
             const string pbarHeader = "Rescoring: ";
             var progress = await ReplyAsync(pbarHeader);
 
-            var totalTicks = 0l;
+            var totalTicks = 0L;
             var failures = 0;
             var results = new List<RescoreItem>(solutions.Length);
             for (var i = 0; i < solutions.Length; i++)

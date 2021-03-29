@@ -186,7 +186,7 @@ namespace YololCompetition.Modules
         [RateLimit("b7083f80-8979-450f-a6ff-e7e5886b038b", 5, "Please wait a short while before submitting another solution")]
         public async Task SubmitSolution(string id, [Remainder] string input)
         {
-            var c = await _challenges.FuzzyFindChallenge(id).Take(5).ToArrayAsync();
+            var c = await _challenges.FuzzyFindChallenge(id, true).Take(5).ToArrayAsync();
             if (c.Length > 1)
             {
                 await ReplyAsync("Found more than one challenge matching that search string, please be more specific");

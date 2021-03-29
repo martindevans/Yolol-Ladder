@@ -51,6 +51,7 @@ namespace YololCompetition.Services.Challenge
         public string Name { get; }
         public ChallengeDifficulty Difficulty { get; set; }
         public string Description { get; }
+        public ChallengeStatus Status { get; }
 
         public DateTime? EndTime { get; set; }
 
@@ -76,7 +77,8 @@ namespace YololCompetition.Services.Challenge
             bool shuffle,
             ScoreMode scoreMode,
             YololChip chip,
-            Yolol.Grammar.AST.Program intermediate
+            Yolol.Grammar.AST.Program intermediate,
+            ChallengeStatus status
         )
         {
             Id = id;
@@ -91,6 +93,7 @@ namespace YololCompetition.Services.Challenge
             ShuffleTests = shuffle;
             Chip = chip;
             Intermediate = intermediate;
+            Status = status;
         }
 
         public void Write(DbParameterCollection output)
@@ -113,6 +116,8 @@ namespace YololCompetition.Services.Challenge
             output.Add(new SqliteParameter("@EndUnixTime", DbType.UInt64) { Value = EndTime?.UnixTimestamp() });
 
             output.Add(new SqliteParameter("@IntermediateCode", DbType.String) { Value = Intermediate?.ToString() });
+
+            output.Add(new SqliteParameter("@Status", DbType.UInt64) { Value = (int)Status });
         }
 
         public static Challenge Read(DbDataReader reader)
@@ -143,7 +148,8 @@ namespace YololCompetition.Services.Challenge
                 Convert.ToBoolean(ulong.Parse(reader["Shuffle"].ToString()!)),
                 (ScoreMode)int.Parse(reader["ScoreMode"].ToString()!),
                 (YololChip)int.Parse(reader["Chip"].ToString()!),
-                parse.Ok
+                parse.Ok,
+                (ChallengeStatus)int.Parse(reader["Status"].ToString()!)
             );
         }
     }

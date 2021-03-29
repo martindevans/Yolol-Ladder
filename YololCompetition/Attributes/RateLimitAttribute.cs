@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
 using YololCompetition.Services.Rates;
 
 namespace YololCompetition.Attributes
@@ -22,7 +23,7 @@ namespace YololCompetition.Attributes
         public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
             // If there's no rate limit service always succeed
-            var limit = (IRateLimit)services.GetService(typeof(IRateLimit));
+            var limit = (IRateLimit?)services.GetService(typeof(IRateLimit));
             if (limit == null)
                 return PreconditionResult.FromSuccess();
 
