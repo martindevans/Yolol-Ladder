@@ -89,17 +89,27 @@ namespace YololCompetition.Services.Messages
                 return cached;
 
             // Try to get the message from Discord
-            if (!(_client.GetChannel(message.ChannelID) is ISocketMessageChannel channel))
+            if (_client.GetChannel(message.ChannelID) is not ISocketMessageChannel channel)
             {
                 Console.WriteLine($"No such channel: {message.ChannelID}");
                 await RemoveMessage(message);
                 return null;
             }
 
-            if (!((await channel.GetMessageAsync(message.MessageID)) is IUserMessage msg))
+            IUserMessage? msg;
+            try
             {
-                Console.WriteLine($"No such message: {message.MessageID}");
-                await RemoveMessage(message);
+                msg = await channel.GetMessageAsync(message.MessageID) as IUserMessage;
+                if (msg == null)
+                {
+                    Console.WriteLine($"No such message: {message.MessageID}");
+                    await RemoveMessage(message);
+                    return null;
+                }
+            }
+            catch (Discord.Net.HttpException ex)
+            {
+                Console.WriteLine($"Failed to get message {message.MessageID} in channel {message.ChannelID}: {ex.Message}");
                 return null;
             }
 
@@ -113,7 +123,7 @@ namespace YololCompetition.Services.Messages
             var msg = await GetMessage(currentChallenge, message);
             if (msg != null)
             {
-                var challenge = (Challenge.Challenge?)await _challenges.GetChallenges(id: message.ChallengeID).FirstOrDefaultAsync();
+                var challenge = await _challenges.GetChallenges(id: message.ChallengeID).FirstOrDefaultAsync();
                 if (challenge == null)
                 {
                     Console.WriteLine("Message exists for nonexistant challenge " + message.ChallengeID);

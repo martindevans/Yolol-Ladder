@@ -7,9 +7,9 @@ namespace YololCompetition.Services.Rates
     public class InMemoryRateLimits
         : IRateLimit
     {
-        private ConcurrentDictionary<(Guid, ulong), DateTime> _used = new ConcurrentDictionary<(Guid, ulong), DateTime>();
+        private readonly ConcurrentDictionary<(Guid, ulong), RateLimitState> _used = new ConcurrentDictionary<(Guid, ulong), RateLimitState>();
 
-        public async Task<DateTime?> TryGetLastUsed(Guid rateId, ulong userId)
+        public async Task<RateLimitState?> TryGetLastUsed(Guid rateId, ulong userId)
         {
             await Task.CompletedTask;
 
@@ -20,7 +20,16 @@ namespace YololCompetition.Services.Rates
 
         public Task Use(Guid rateId, ulong userId)
         {
-            _used[(rateId, userId)] = DateTime.UtcNow;
+            if (!_used.TryGetValue((rateId, userId), out var value))
+                value = new RateLimitState(DateTime.UtcNow, 0);
+
+            _used[(rateId, userId)] = new RateLimitState(DateTime.UtcNow, value.UseCount + 1);
+            return Task.CompletedTask;
+        }
+
+        public Task Reset(Guid rateId, ulong userId)
+        {
+            _used.TryRemove((rateId, userId), out _);
             return Task.CompletedTask;
         }
     }

@@ -16,7 +16,7 @@ namespace YololCompetition.Services.Scoring
 
         // Max multiplier for an almost accurate answer (0.001) is 6
         // Getting a better answer than that is worth this much:
-        public const double ExactMultiplier = 9;
+        public const double ExactMultiplier = 7.5f;
 
         public override Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state)
         {
