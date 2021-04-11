@@ -88,12 +88,22 @@ namespace YololCompetition.Services.Messages
             if (_messageCache.TryGetValue(key, out var cached))
                 return cached;
 
-            // Try to get the message from Discord
+            // Try to get the channel from Discord
             if (_client.GetChannel(message.ChannelID) is not ISocketMessageChannel channel)
             {
                 Console.WriteLine($"No such channel: {message.ChannelID}");
                 await RemoveMessage(message);
                 return null;
+            }
+
+            // Check if bot has permission to read channel
+            var gc = channel as IGuildChannel;
+            if (gc != null)
+            {
+                var u = await gc.Guild.GetCurrentUserAsync();
+                var p = u.GetPermissions(gc);
+                if (!p.ReadMessageHistory)
+                    return null;
             }
 
             IUserMessage? msg;
@@ -109,7 +119,7 @@ namespace YololCompetition.Services.Messages
             }
             catch (Discord.Net.HttpException ex)
             {
-                Console.WriteLine($"Failed to get message {message.MessageID} in channel {message.ChannelID}: {ex.Message}");
+                Console.WriteLine($"Failed to get message {message.MessageID} in channel {message.ChannelID}({channel.Name}/{gc?.Guild.Name}): {ex.Message}");
                 return null;
             }
 

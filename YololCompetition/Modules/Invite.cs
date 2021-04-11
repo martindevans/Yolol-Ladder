@@ -45,55 +45,5 @@ namespace YololCompetition.Modules
             await _subscriptions.Unsubscribe(Context.Channel.Id, Context.Guild.Id);
             await ReplyAsync("Subscribed this channel to Yolol-Ladder. Notifications about competitions will be posted here");
         }
-
-        [Command("dump-subscriptions"), RequireOwner, Summary("Print out all subscriptions")]
-        public async Task DumpSubs()
-        {
-            var subs = _subscriptions.GetSubscriptions();
-
-            var output = new StringBuilder();
-            output.AppendLine("Bot Subscroptions:");
-            await foreach (var sub in subs)
-            {
-                var guild = _client.GetGuild(sub.Guild);
-                var channel = guild.GetTextChannel(sub.Channel);
-
-                var next = $" - Guild:`{guild.Name ?? sub.Guild.ToString()}`, Channel:`{channel?.Name ?? sub.Channel.ToString()}`";
-
-                if (output.Length + next.Length > 1000)
-                {
-                    await ReplyAsync(output.ToString());
-                    output.Clear();
-                }
-
-                output.AppendLine(next);
-            }
-
-            if (output.Length > 0)
-                await ReplyAsync(output.ToString());
-        }
-
-        [Command("dump-guilds"), RequireOwner, Summary("Print out all guilds this bot is in")]
-        public async Task DumpGuilds()
-        {
-            var output = new StringBuilder();
-            output.AppendLine("Bot Guilds:");
-            foreach (var guild in _client.Guilds)
-            {
-                await guild.DownloadUsersAsync();
-                var next = $" - Guild:`{guild.Name}`, Owner:`{guild.Owner.Username}#{guild.Owner.Discriminator}`";
-
-                if (output.Length + next.Length > 1000)
-                {
-                    await ReplyAsync(output.ToString());
-                    output.Clear();
-                }
-
-                output.AppendLine(next);
-            }
-
-            if (output.Length > 0)
-                await ReplyAsync(output.ToString());
-        }
     }
 }
