@@ -12,7 +12,7 @@ namespace YololCompetition.Services.Subscription
         public IAsyncEnumerable<Subscription> GetSubscriptions();
     }
 
-    public struct Subscription
+    public readonly struct Subscription
     {
         public ulong Channel { get; }
         public ulong Guild { get; }

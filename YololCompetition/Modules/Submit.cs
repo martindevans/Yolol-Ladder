@@ -6,6 +6,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
+using JetBrains.Annotations;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Broadcast;
@@ -15,6 +16,7 @@ using YololCompetition.Services.Verification;
 
 namespace YololCompetition.Modules
 {
+    [UsedImplicitly]
     public class Submit
         : ModuleBase
     {

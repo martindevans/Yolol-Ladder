@@ -112,6 +112,9 @@ namespace YololCompetition.Services.Schedule
                 State = SchedulerState.WaitingCooldown;
                 await Task.WhenAny(_poker.WaitAsync(), Task.Delay(TimeSpan.FromHours(24)));
             }
+
+            // ReSharper disable once FunctionNeverReturns
+            // Justification: We never want the scheduler to stop!
         }
 
         private async Task UpdateLeaderboard(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)

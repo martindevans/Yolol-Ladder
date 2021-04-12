@@ -4,11 +4,13 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
+using JetBrains.Annotations;
 using YololCompetition.Services.Schedule;
 
 namespace YololCompetition.Modules
 {
     [Hidden]
+    [UsedImplicitly]
     public class Status
         : ModuleBase
     {

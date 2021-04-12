@@ -14,8 +14,8 @@ namespace YololCompetition
         private readonly Configuration _config;
         private readonly IServiceProvider _services;
 
-        private const int MaxWaitTimeMs = 2500;
-        private readonly SemaphoreSlim _commandConcurrencyLimit = new SemaphoreSlim(100);
+        private const int MaxWaitTimeMs = 3500;
+        private readonly SemaphoreSlim _commandConcurrencyLimit = new SemaphoreSlim(50);
 
         public DiscordBot(DiscordSocketClient client, CommandService commands, Configuration config, IServiceProvider services)
         {
@@ -48,9 +48,22 @@ namespace YololCompetition
 
             // Wait until client is `Ready`
             await ready.Task;
+
+            // Set nickname in all guilds
+            _client.JoinedGuild += async sg => {
+                await sg.CurrentUser.ModifyAsync(gup => {
+                    gup.Nickname = "Referee";
+                });
+            };
+            foreach (var clientGuild in _client.Guilds)
+            {
+                await clientGuild.CurrentUser.ModifyAsync(async gup => {
+                    gup.Nickname = "Referee";
+                });
+            }
         }
 
-        private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
+        private static async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
         {
             if (result.IsSuccess)
                 return;
@@ -61,19 +74,27 @@ namespace YololCompetition
                 return;
             }
 
-            if (result.Error == CommandError.UnmetPrecondition)
+            switch (result.Error)
             {
-                await context.Channel.SendMessageAsync(result.ErrorReason);
-                return;
-            }
+                case CommandError.UnmetPrecondition:
+                    await context.Channel.SendMessageAsync(result.ErrorReason);
+                    break;
 
-            if (result.Error == CommandError.Exception)
-            {
-                if (result is ExecuteResult exr)
-                    Console.WriteLine(exr.Exception);
+                case CommandError.Exception:
+                    if (result is ExecuteResult exr)
+                        Console.WriteLine(exr.Exception);
+                    await context.Channel.SendMessageAsync($"Command Failed! {result.ErrorReason}");
+                    break;
 
-                await context.Channel.SendMessageAsync($"Command Failed! {result.ErrorReason}");
-                return;
+                case CommandError.UnknownCommand:
+                case CommandError.ParseFailed:
+                case CommandError.BadArgCount:
+                case CommandError.ObjectNotFound:
+                case CommandError.MultipleMatches:
+                case CommandError.Unsuccessful:
+                case null:
+                default:
+                    break;
             }
         }
 
@@ -86,10 +107,13 @@ namespace YololCompetition
 
                 // Wait until this command is allowed to be serviced (limit total command concurrency)
                 if (!await _commandConcurrencyLimit.WaitAsync(MaxWaitTimeMs))
+                {
                     await msg.Channel.SendMessageAsync("Bot is too busy. Please try again later.");
+                    return;
+                }
 
                 // Don't process the command if it was a System Message
-                if (!(msg is SocketUserMessage message))
+                if (msg is not SocketUserMessage message)
                     return;
 
                 // Ignore messages from self

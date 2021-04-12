@@ -25,9 +25,6 @@ namespace YololCompetition.Extensions
             else if (b == null)
                 return (uint)a!.Length;
 
-            if (a == null || b == null)
-                return 0;
-
             var aLength = (uint)a.Length;
             var bLength = (uint)b.Length;
             var matrix = new int[aLength + 1, bLength + 1];

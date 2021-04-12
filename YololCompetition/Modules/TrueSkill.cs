@@ -5,27 +5,25 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using JetBrains.Annotations;
 using Moserware.Skills;
-using YololCompetition.Extensions;
 using YololCompetition.Services.Challenge;
-using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Trueskill;
 
 namespace YololCompetition.Modules
 {
     [RequireOwner]
+    [UsedImplicitly]
     public class TrueSkill
         : ModuleBase
     {
-        private readonly ISolutions _solutions;
         private readonly IChallenges _challenges;
         private readonly DiscordSocketClient _client;
         private readonly ITrueskill _skill;
         private readonly ITrueskillUpdater _updater;
 
-        public TrueSkill(ISolutions solutions, IChallenges challenges, DiscordSocketClient client, ITrueskill skill, ITrueskillUpdater updater)
+        public TrueSkill(IChallenges challenges, DiscordSocketClient client, ITrueskill skill, ITrueskillUpdater updater)
         {
-            _solutions = solutions;
             _challenges = challenges;
             _client = client;
             _skill = skill;
@@ -59,7 +57,7 @@ namespace YololCompetition.Modules
             await ReplyAsync("Done.");
         }
 
-        async ValueTask<string> FormatRankInfo(TrueskillRating rating)
+        private async ValueTask<string> FormatRankInfo(TrueskillRating rating)
         {
             return await FormatRankInfo(new KeyValuePair<ulong, Rating>(rating.UserId, new Rating(rating.Mean, rating.StdDev)));
         }

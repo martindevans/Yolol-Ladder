@@ -98,7 +98,7 @@ namespace YololCompetition.Services.Verification
 
                 // Check if the challenge code has forced a failure
                 var forceFail = stateChallenge.TryGet(":fail");
-                if (forceFail.HasValue && forceFail.Value.Type == Yolol.Execution.Type.String && forceFail.Value.String.Length != 0)
+                if (forceFail?.Type == Yolol.Execution.Type.String && forceFail.Value.String.Length != 0)
                     return (null, new Failure(FailureType.ChallengeForceFail, forceFail.Value.String.ToString()));
 
                 // Check this test case with the current scoring mode

@@ -18,7 +18,7 @@ namespace YololCompetition.Services.Messages
         public ulong MessageID { get; }
         public MessageType MessageType { get; }
 
-        public Message(ulong channel,ulong message, ulong challenge, MessageType type)
+        public Message(ulong channel, ulong message, ulong challenge, MessageType type)
         {
             ChannelID = channel;
             MessageID = message;

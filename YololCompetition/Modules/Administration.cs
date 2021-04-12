@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using JetBrains.Annotations;
 using YololCompetition.Services.Subscription;
 
 namespace YololCompetition.Modules
 {
     [RequireOwner]
+    [UsedImplicitly]
     public class Administration
         : ModuleBase
     {

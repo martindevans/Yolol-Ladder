@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord.Commands;
+using JetBrains.Annotations;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Execute;
@@ -9,6 +10,7 @@ using YololCompetition.Services.Parsing;
 
 namespace YololCompetition.Modules
 {
+    [UsedImplicitly]
     public class Utility
         : ModuleBase
     {

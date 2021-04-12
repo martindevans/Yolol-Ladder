@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Discord.Commands;
-using Microsoft.Extensions.DependencyInjection;
 using YololCompetition.Services.Rates;
 
 namespace YololCompetition.Attributes

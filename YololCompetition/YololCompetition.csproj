@@ -16,6 +16,7 @@
     <PackageReference Include="Discord.Addons.Interactive" Version="2.0.0" />
     <PackageReference Include="Discord.Net" Version="2.3.1" />
     <PackageReference Include="Humanizer.Core" Version="2.8.26" />
+    <PackageReference Include="JetBrains.Annotations" Version="2021.1.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.5" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
@@ -26,7 +27,7 @@
     <PackageReference Include="System.Linq.Async" Version="5.0.0" />
     <PackageReference Include="Yolol" Version="11.5.0" />
     <PackageReference Include="Yolol.Analysis" Version="6.2.4" />
-    <PackageReference Include="Yolol.IL" Version="4.2.1" />
+    <PackageReference Include="Yolol.IL" Version="4.2.2" />
   </ItemGroup>
 
   <!--<Target Name="ChangeAliasesOfReactiveExtensions" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">

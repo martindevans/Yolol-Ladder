@@ -45,8 +45,8 @@ namespace YololCompetition.Services.Leaderboard
             await using var cmd = _database.CreateCommand();
 
             cmd.CommandText = "INSERT INTO Leaderboard(UserId, Score) values(@UserId, @Score) ON CONFLICT(UserId) DO UPDATE SET Score = Score + @Score";
-            cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@UserId", System.Data.DbType.String) { Value = userId.ToString() });
-            cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@Score", System.Data.DbType.Int64) { Value = (long)score });
+            cmd.Parameters.Add(new SqliteParameter("@UserId", System.Data.DbType.String) { Value = userId.ToString() });
+            cmd.Parameters.Add(new SqliteParameter("@Score", System.Data.DbType.Int64) { Value = (long)score });
             await cmd.ExecuteNonQueryAsync();
         }
 
@@ -55,8 +55,8 @@ namespace YololCompetition.Services.Leaderboard
             await using var cmd = _database.CreateCommand();
 
             cmd.CommandText = "INSERT INTO Leaderboard(UserId, Score) values(@UserId, 0) ON CONFLICT(UserId) DO UPDATE SET Score = Max(0, Score - @Score)";
-            cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@UserId", System.Data.DbType.String) { Value = userId.ToString() });
-            cmd.Parameters.Add(new Microsoft.Data.Sqlite.SqliteParameter("@Score", System.Data.DbType.Int64) { Value = (long)score });
+            cmd.Parameters.Add(new SqliteParameter("@UserId", System.Data.DbType.String) { Value = userId.ToString() });
+            cmd.Parameters.Add(new SqliteParameter("@Score", System.Data.DbType.Int64) { Value = (long)score });
             await cmd.ExecuteNonQueryAsync();
         }
 

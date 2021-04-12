@@ -102,7 +102,7 @@ namespace YololCompetition.Services.Execute
 
             public Value? TryGet(string name)
             {
-                return _state.GetVariable(name)?.Value;
+                return _state.GetVariable(name).Value;
             }
 
             public void Set(string name, Value value)

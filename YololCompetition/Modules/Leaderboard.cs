@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using JetBrains.Annotations;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Solutions;
@@ -13,6 +14,7 @@ using YololCompetition.Services.Trueskill;
 
 namespace YololCompetition.Modules
 {
+    [UsedImplicitly]
     public class Leaderboard
         : ModuleBase
     {

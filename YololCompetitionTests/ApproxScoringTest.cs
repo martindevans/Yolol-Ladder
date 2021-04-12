@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Yolol.Execution;
-using Yolol.Grammar;
-using YololCompetition.Services.Execute;
-using YololCompetition.Services.Scoring;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace YololCompetitionTests
 {

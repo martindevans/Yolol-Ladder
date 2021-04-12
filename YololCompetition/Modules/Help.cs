@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using JetBrains.Annotations;
 using YololCompetition.Extensions;
 
 namespace YololCompetition.Modules
 {
+    [UsedImplicitly]
     public class Help
         : ModuleBase
     {

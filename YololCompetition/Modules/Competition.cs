@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BalderHash.Extensions;
 using Discord;
 using Discord.Commands;
+using JetBrains.Annotations;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Messages;
@@ -13,6 +14,7 @@ using MessageType = YololCompetition.Services.Messages.MessageType;
 
 namespace YololCompetition.Modules
 {
+    [UsedImplicitly]
     public class Competition
         : ModuleBase
     {
