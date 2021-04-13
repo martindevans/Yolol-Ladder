@@ -51,15 +51,21 @@ namespace YololCompetition
 
             // Set nickname in all guilds
             _client.JoinedGuild += async sg => {
-                await sg.CurrentUser.ModifyAsync(gup => {
-                    gup.Nickname = "Referee";
-                });
+                await TrySetNickname(sg.CurrentUser);
             };
             foreach (var clientGuild in _client.Guilds)
+                await TrySetNickname(clientGuild.CurrentUser);
+        }
+
+        private async Task TrySetNickname(SocketGuildUser sgu)
+        {
+            try
             {
-                await clientGuild.CurrentUser.ModifyAsync(async gup => {
-                    gup.Nickname = "Referee";
-                });
+                await sgu.ModifyAsync(async gup => { gup.Nickname = "Referee"; });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to set nickname in `{sgu.Guild.Name}`: {e}");
             }
         }
 
