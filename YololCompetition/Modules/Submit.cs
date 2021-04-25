@@ -73,10 +73,13 @@ namespace YololCompetition.Modules
         {
             var previous = await _solutions.GetSolution(Context.User.Id, submission.ChallengeId);
 
+            var avgIters = verification.Iterations / (float)verification.TotalTests;
+            var reply = $"You score {verification.Score} points using {verification.Length} chars and {avgIters:0.###} ticks per test case ({verification.Iterations} total ticks).";
+
             // Handle submitting something that scores worse than your existing solution
             if (previous.HasValue && previous.Value.Score > submission.Score)
             {
-                await ReplyAsync($"Verification complete! You score {verification.Score} points using {verification.Length} chars and {verification.Iterations} ticks. Less than your current best of {previous.Value.Score}");
+                await ReplyAsync($"{reply} Less than your current best of {previous.Value.Score}");
                 if (verification.Hint != null)
                     await ReplyAsync(verification.Hint);
                 return;
@@ -85,7 +88,7 @@ namespace YololCompetition.Modules
             // This submission was better than previous, but saving is not enabled (i.e. submitting to an old competition). Reply with score and early out.
             if (!save)
             {
-                await ReplyAsync($"Verification complete! You scored {verification.Score} points using {verification.Length} chars and {verification.Iterations} ticks.");
+                await ReplyAsync(reply);
                 if (verification.Hint != null)
                     await ReplyAsync(verification.Hint);
                 return;
@@ -101,7 +104,7 @@ namespace YololCompetition.Modules
             // Save this solution and reply to user with result
             await _solutions.SetSolution(submission);
             var rank = await _solutions.GetRank(submission.ChallengeId, Context.User.Id);
-            await ReplyAsync($"Verification complete! You scored {verification.Score} points using {verification.Length} chars and {verification.Iterations} ticks. You are currently rank {rank?.Rank} for this challenge.");
+            await ReplyAsync($"{reply} You are currently rank {rank?.Rank} for this challenge.");
             if (verification.Hint != null)
                 await ReplyAsync(verification.Hint);
 

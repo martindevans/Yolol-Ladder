@@ -158,7 +158,8 @@ namespace YololCompetition.Services.Messages
                 {
                     try
                     {
-                        switch (entry.MessageType) {
+                        switch (entry.MessageType)
+                        {
                             case MessageType.Current:
                                 await UpdateCurrentMessage(current, entry);
                                 break;

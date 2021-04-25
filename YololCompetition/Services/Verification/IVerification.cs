@@ -17,12 +17,15 @@ namespace YololCompetition.Services.Verification
 
         public string? Hint { get; }
 
-        public Success(uint score, uint iterations, uint length, string? hint)
+        public uint TotalTests { get; }
+
+        public Success(uint score, uint iterations, uint length, string? hint, uint totalTests)
         {
             Score = score;
             Iterations = iterations;
             Length = length;
             Hint = hint;
+            TotalTests = totalTests;
         }
     }
 

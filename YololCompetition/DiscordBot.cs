@@ -61,6 +61,9 @@ namespace YololCompetition
         {
             try
             {
+                // Check if the bot has nickname permission before trying to set nickname
+                if (!sgu.GuildPermissions.Has(GuildPermission.ChangeNickname))
+                    return;
                 await sgu.ModifyAsync(async gup => { gup.Nickname = "Referee"; });
             }
             catch (Exception e)

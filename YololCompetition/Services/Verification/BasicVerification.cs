@@ -117,7 +117,7 @@ namespace YololCompetition.Services.Verification
                 codeLength
             );
 
-            return (new Success(score, (uint)stateUser.TotalLinesExecuted, (uint)codeLength, scoreMode.Hint), null);
+            return (new Success(score, (uint)stateUser.TotalLinesExecuted, (uint)codeLength, scoreMode.Hint, (uint)challenge.Inputs.Count), null);
         }
 
         private static IReadOnlyDictionary<string, Value> SetInputs(IReadOnlyDictionary<string, Value> values, IExecutionState state, string prefix = ":")
