@@ -37,7 +37,7 @@ namespace YololCompetition.Extensions
             var examples = (from item in challenge.Inputs.Zip(challenge.Outputs)
                             let i = string.Join(" ", item.First.Select(a => $":{a.Key}={a.Value.ToHumanString()}"))
                             let o = string.Join(" ", item.Second.Select(a => $":{a.Key}={a.Value.ToHumanString()}"))
-                            select $"Inputs: `{i}`, Outputs:`{o}`\n").Take(5);
+                            select $"Inputs: `{i}`, Outputs: `{o}`\n").Take(5);
 
             var exampleBuilder = new StringBuilder("There are hundreds of test cases which your program must produce. Here are some examples:\n");
             foreach (var example in examples)
