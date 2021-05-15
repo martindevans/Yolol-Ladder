@@ -141,7 +141,8 @@ namespace YololCompetition
                 var context = new SocketCommandContext(_client, message);
                 try
                 {
-                    await _commands.ExecuteAsync(context, prefixPos, _services);
+                    var result = await _commands.ExecuteAsync(context, prefixPos, _services);
+                    PostCommandResult(result);
                 }
                 catch (Exception e)
                 {
@@ -152,6 +153,16 @@ namespace YololCompetition
             {
                 _commandConcurrencyLimit.Release();
             }
+        }
+
+        private void PostCommandResult(IResult result)
+        {
+            //var s = result.IsSuccess;
+            //var e = result.Error;
+            //var r = result.ErrorReason;
+            //Console.WriteLine(s);
+            //Console.WriteLine(e);
+            //Console.WriteLine(r);
         }
     }
 }

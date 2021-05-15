@@ -27,17 +27,19 @@ namespace YololCompetition.Services.Trueskill
             }
         }
 
-        private static TrueskillRating ParseRating(DbDataReader reader)
+        private static UserTrueskillRating ParseRating(DbDataReader reader)
         {
-            return new TrueskillRating(
+            return new UserTrueskillRating(
                 ulong.Parse(reader["UserId"].ToString()!),
                 uint.Parse(reader["Rank"].ToString()!),
-                double.Parse(reader["Mean"].ToString()!),
-                double.Parse(reader["StdDev"].ToString()!)
+                new TrueskillRating(
+                    double.Parse(reader["Mean"].ToString()!),
+                    double.Parse(reader["StdDev"].ToString()!)
+                )
             );
         }
 
-        public async Task<TrueskillRating?> GetRating(ulong userId)
+        public async Task<UserTrueskillRating?> GetRating(ulong userId)
         {
             DbCommand PrepareQuery(IDatabase db)
             {
@@ -47,10 +49,10 @@ namespace YololCompetition.Services.Trueskill
                 return cmd;
             }
 
-            return await new SqlAsyncResult<TrueskillRating>(_database, PrepareQuery, ParseRating).AsAsyncEnumerable().Select(a => (TrueskillRating?)a).SingleOrDefaultAsync();
+            return await new SqlAsyncResult<UserTrueskillRating>(_database, PrepareQuery, ParseRating).AsAsyncEnumerable().Select(a => (UserTrueskillRating?)a).SingleOrDefaultAsync();
         }
 
-        public IAsyncEnumerable<TrueskillRating> GetTopRanks(int count)
+        public IAsyncEnumerable<UserTrueskillRating> GetTopRanks(int count)
         {
             DbCommand PrepareQuery(IDatabase db)
             {
@@ -60,7 +62,7 @@ namespace YololCompetition.Services.Trueskill
                 return cmd;
             }
 
-            return new SqlAsyncResult<TrueskillRating>(_database, PrepareQuery, ParseRating);
+            return new SqlAsyncResult<UserTrueskillRating>(_database, PrepareQuery, ParseRating);
         }
 
         public async Task SetRating(ulong userId, double mean, double stdDev)

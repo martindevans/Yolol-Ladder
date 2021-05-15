@@ -43,7 +43,7 @@ namespace YololCompetition.Modules
                 StringBuilder s = new StringBuilder($"{challenge.Name}\n");
                 s.Append(string.Join("\n",
                     await _skill.GetTopRanks(int.MaxValue)
-                          .OrderByDescending(a => a.ConservativeEstimate)
+                          .OrderByDescending(a => a.Rating.ConservativeEstimate)
                           .SelectAwait(FormatRankInfo)
                           .ToArrayAsync()
                 ));
@@ -57,9 +57,9 @@ namespace YololCompetition.Modules
             await ReplyAsync("Done.");
         }
 
-        private async ValueTask<string> FormatRankInfo(TrueskillRating rating)
+        private async ValueTask<string> FormatRankInfo(UserTrueskillRating rating)
         {
-            return await FormatRankInfo(new KeyValuePair<ulong, Rating>(rating.UserId, new Rating(rating.Mean, rating.StdDev)));
+            return await FormatRankInfo(new KeyValuePair<ulong, Rating>(rating.UserId, new Rating(rating.Rating.Mean, rating.Rating.StdDev)));
         }
 
         private async ValueTask<string> FormatRankInfo(KeyValuePair<ulong, Rating> item)

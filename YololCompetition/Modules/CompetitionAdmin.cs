@@ -168,19 +168,6 @@ namespace YololCompetition.Modules
             await ReplyAsync("Done.");
         }
 
-        private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
-        {
-            // Try to parse code as Yolol
-            var result = Yolol.Grammar.Parser.ParseProgram(input);
-            if (!result.IsOk)
-            {
-                await ReplyAsync($"```{result.Err}```");
-                return null;
-            }
-
-            return result.Ok;
-        }
-
         private class Data
         {
             [JsonProperty("in")]

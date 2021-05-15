@@ -15,6 +15,12 @@ namespace YololCompetition.Services.Verification
     public class BasicVerification
         : IVerification
     {
+        // How many extra iters (across all tests) may be used
+        public const int MaxItersOverflow = 10000;
+
+        // Max lines executed per test case
+        public const uint MaxTestIters = 1000;
+
         private readonly Configuration _config;
         private readonly IYololExecutor _executor;
 
@@ -69,14 +75,14 @@ namespace YololCompetition.Services.Verification
             timer.Start();
 
             // Run through test cases one by one
-            var overflowIters = (long)_config.MaxItersOverflow;
+            var overflowIters = (long)MaxItersOverflow;
             for (var i = 0; i < Math.Max(inputs.Count, outputs.Count); i++)
             {
                 // Set inputs in user execution state
                 var input = SetInputs(i < inputs.Count ? inputs[i] : new Dictionary<string, Value>(), stateUser);
 
                 // Run the user code until completion
-                var failure = RunToDone(stateUser, _config.MaxTestIters, i, inputs.Count, ref overflowIters);
+                var failure = RunToDone(stateUser, MaxTestIters, i, inputs.Count, ref overflowIters);
                 if (failure != null)
                     return (null, failure);
 
@@ -88,8 +94,8 @@ namespace YololCompetition.Services.Verification
                 SetInputs(outputs[i], stateChallenge, "output_");
 
                 // Run the challenge code
-                var overflow = (long)_config.MaxItersOverflow;
-                failure = RunToDone(stateChallenge, _config.MaxTestIters, 0, 0, ref overflow);
+                var overflow = (long)MaxItersOverflow;
+                failure = RunToDone(stateChallenge, MaxTestIters, 0, 0, ref overflow);
                 if (failure != null)
                     return (null, new Failure(FailureType.ChallengeCodeFailed, failure.Hint));
 

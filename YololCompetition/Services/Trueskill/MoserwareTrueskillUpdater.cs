@@ -20,20 +20,20 @@ namespace YololCompetition.Services.Trueskill
             _gameInfo = gameInfo;
         }
 
-        private async Task<TrueskillRating> GetOrAddRating(ulong userId)
+        private async Task<UserTrueskillRating> GetOrAddRating(ulong userId)
         {
             var rating = await _ratings.GetRating(userId);
             if (rating.HasValue)
                 return rating.Value;
 
-            rating = new TrueskillRating(userId, uint.MaxValue, _gameInfo.DefaultRating.Mean, _gameInfo.DefaultRating.StandardDeviation);
-            await _ratings.SetRating(userId, rating.Value.Mean, rating.Value.StdDev);
+            rating = new UserTrueskillRating(userId, uint.MaxValue, new TrueskillRating(_gameInfo.DefaultRating.Mean, _gameInfo.DefaultRating.StandardDeviation));
+            await _ratings.SetRating(userId, rating.Value.Rating.Mean, rating.Value.Rating.StdDev);
             return rating.Value;
         }
 
-        private static Rating Convert(TrueskillRating rating)
+        private static Rating Convert(UserTrueskillRating rating)
         {
-            return new Rating(rating.Mean, rating.StdDev);
+            return new Rating(rating.Rating.Mean, rating.Rating.StdDev);
         }
 
         public async Task ApplyChallengeResults(ulong challengeId)

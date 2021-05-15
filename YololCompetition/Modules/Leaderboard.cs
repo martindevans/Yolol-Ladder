@@ -45,7 +45,7 @@ namespace YololCompetition.Modules
         {
             if (type == LeaderboardType.Global)
             {
-                var top = _leaderboard.GetTopRank(15);
+                var top = await _leaderboard.GetTopRank(15).ToListAsync();
                 await ReplyAsync(embed: await FormatLeaderboard(top));
             }
             else if (type == LeaderboardType.Current)
@@ -61,7 +61,7 @@ namespace YololCompetition.Modules
             }
             else if (type == LeaderboardType.Trueskill)
             {
-                var top = _skills.GetTopRanks(15);
+                var top = await _skills.GetTopRanks(15).ToListAsync();
                 await ReplyAsync(embed: await FormatLeaderboard(top));
             }
             else
@@ -91,7 +91,7 @@ namespace YololCompetition.Modules
         private async Task DisplayChallengeLeaderboard(Challenge challenge)
         {
             // Get the top N solutions
-            var top5 = _solutions.GetSolutions(challenge.Id, 20).Select(a => new RankInfo(a.Solution.UserId, a.Rank, a.Solution.Score));
+            var top5 = await _solutions.GetSolutions(challenge.Id, 20).Select(a => new RankInfo(a.Solution.UserId, a.Rank, a.Solution.Score)).ToListAsync();
 
             // Get your own rank
             var self = await _solutions.GetRank(challenge.Id, Context.User.Id);
@@ -117,7 +117,7 @@ namespace YololCompetition.Modules
             await _leaderboard.SubtractScore(user.Id, score);
         }
 
-        private async Task<Embed> FormatLeaderboard(IAsyncEnumerable<RankInfo> ranks, RankInfo? extra = null, Challenge? challenge = null)
+        private async Task<Embed> FormatLeaderboard(IEnumerable<RankInfo> ranks, RankInfo? extra = null, Challenge? challenge = null)
         {
             async Task<string> FormatRankInfo(RankInfo info)
             {
@@ -135,7 +135,7 @@ namespace YololCompetition.Modules
             var count = 0;
             var seenExtra = false;
             var builder = new StringBuilder();
-            await foreach (var rank in ranks)
+            foreach (var rank in ranks)
             {
                 builder.AppendLine(await FormatRankInfo(rank));
                 seenExtra |= extra.HasValue && rank.Id == extra.Value.Id;
@@ -157,11 +157,11 @@ namespace YololCompetition.Modules
             return embed.Build();
         }
 
-        private async Task<Embed> FormatLeaderboard(IAsyncEnumerable<TrueskillRating> ranks)
+        private async Task<Embed> FormatLeaderboard(IEnumerable<UserTrueskillRating> ranks)
         {
-            async Task<string> FormatRankInfo(TrueskillRating info)
+            async Task<string> FormatRankInfo(UserTrueskillRating info)
             {
-                var skill = 100 * Math.Max(0, info.ConservativeEstimate);
+                var skill = 100 * Math.Max(0, info.Rating.ConservativeEstimate);
                 var user = (IUser)_client.GetUser(info.UserId) ?? await _client.Rest.GetUserAsync(info.UserId);
                 var name = user?.Username ?? info.UserId.ToString();
                 return $"{info.Rank}. ({skill:0000}) **{name}**";
@@ -175,7 +175,7 @@ namespace YololCompetition.Modules
 
             var count = 0;
             var builder = new StringBuilder();
-            await foreach (var rank in ranks)
+            foreach (var rank in ranks)
             {
                 builder.AppendLine(await FormatRankInfo(rank));
                 count++;

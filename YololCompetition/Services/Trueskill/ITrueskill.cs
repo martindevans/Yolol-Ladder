@@ -10,14 +10,14 @@ namespace YololCompetition.Services.Trueskill
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public Task<TrueskillRating?> GetRating(ulong userId);
+        public Task<UserTrueskillRating?> GetRating(ulong userId);
 
         /// <summary>
         /// Get the top ranked users
         /// </summary>
         /// <param name="count"></param>
         /// <returns></returns>
-        IAsyncEnumerable<TrueskillRating> GetTopRanks(int count);
+        IAsyncEnumerable<UserTrueskillRating> GetTopRanks(int count);
 
         /// <summary>
         /// Set the trueskill rating for a specific user. Reset their grace to zero
@@ -43,21 +43,18 @@ namespace YololCompetition.Services.Trueskill
         public Task Clear();
     }
 
-    public readonly struct TrueskillRating
+    public readonly struct UserTrueskillRating
     {
         public ulong UserId { get; }
         public uint Rank { get; }
 
-        public double Mean { get; }
-        public double StdDev { get; }
-        public double ConservativeEstimate => Mean - 3 * StdDev;
+        public TrueskillRating Rating { get; }
 
-        public TrueskillRating(ulong userId, uint rank, double mean, double stdDev)
+        public UserTrueskillRating(ulong userId, uint rank, TrueskillRating rating)
         {
             UserId = userId;
-            Mean = mean;
-            StdDev = stdDev;
             Rank = rank;
+            Rating = rating;
         }
     }
 }
