@@ -102,9 +102,10 @@ namespace YololCompetition.Services.Fleet
             if (bytes == null)
                 return null;
 
-            await using (var stream = new MemoryStream(bytes))
-            using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
-                return ShipCombatCore.Model.Fleet.TryLoadZip(zip);
+            await using var stream = new MemoryStream(bytes);
+            using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+
+            return ShipCombatCore.Model.Fleet.TryLoadZip(zip);
         }
     }
 }

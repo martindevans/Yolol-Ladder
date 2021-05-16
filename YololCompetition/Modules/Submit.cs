@@ -157,15 +157,15 @@ namespace YololCompetition.Modules
             if (hint != null && prefix.Length + hint.Length > 1000)
             {
                 await ReplyAsync(prefix);
-                await using (var stream = new MemoryStream(hint.Length))
-                await using (var writer = new StreamWriter(stream))
-                {
-                    await writer.WriteAsync(hint);
-                    await writer.FlushAsync();
-                    stream.Position = 0;
 
-                    await Context.Channel.SendFileAsync(stream, "hint.txt", "Message is too long!");
-                }
+                await using var stream = new MemoryStream(hint.Length);
+                await using var writer = new StreamWriter(stream);
+
+                await writer.WriteAsync(hint);
+                await writer.FlushAsync();
+                stream.Position = 0;
+
+                await Context.Channel.SendFileAsync(stream, "hint.txt", "Message is too long!");
             }
             else
             {

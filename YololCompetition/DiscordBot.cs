@@ -15,7 +15,7 @@ namespace YololCompetition
         private readonly IServiceProvider _services;
 
         private const int MaxWaitTimeMs = 3500;
-        private readonly SemaphoreSlim _commandConcurrencyLimit = new SemaphoreSlim(50);
+        private readonly SemaphoreSlim _commandConcurrencyLimit = new(50);
 
         public DiscordBot(DiscordSocketClient client, CommandService commands, Configuration config, IServiceProvider services)
         {
@@ -57,7 +57,7 @@ namespace YololCompetition
                 await TrySetNickname(clientGuild.CurrentUser);
         }
 
-        private async Task TrySetNickname(SocketGuildUser sgu)
+        private static async Task TrySetNickname(SocketGuildUser sgu)
         {
             try
             {
@@ -155,7 +155,7 @@ namespace YololCompetition
             }
         }
 
-        private void PostCommandResult(IResult result)
+        private static void PostCommandResult(IResult result)
         {
             //var s = result.IsSuccess;
             //var e = result.Error;
