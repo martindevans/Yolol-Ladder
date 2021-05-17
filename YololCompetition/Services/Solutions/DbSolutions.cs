@@ -33,8 +33,7 @@ namespace YololCompetition.Services.Solutions
         {
             await using var cmd = _database.CreateCommand();
 
-            cmd.CommandText = "INSERT OR IGNORE INTO Fleets Values(@FleetId, @UserId, @FleetName, @BlobData);\n"
-                            + "UPDATE Fleets Set BLOB=@BlobData WHERE FleetId=@FleetId AND UserId=@UserId AND Name=@FleetName";
+            cmd.CommandText = "INSERT INTO Solutions Values(@ChallengeId, @UserId, @Score, @Yolol) ON CONFLICT(UserId, ChallengeId) DO UPDATE SET Score = @Score, Yolol = @Yolol WHERE ChallengeId = @ChallengeId AND UserId = @UserId AND Score <= @Score";
 
             cmd.Parameters.Add(new SqliteParameter("@UserId", DbType.UInt64) { Value = solution.UserId });
             cmd.Parameters.Add(new SqliteParameter("@ChallengeId", DbType.UInt64) { Value = solution.ChallengeId });
