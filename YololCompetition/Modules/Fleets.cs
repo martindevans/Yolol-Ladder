@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -59,6 +60,23 @@ namespace YololCompetition.Modules
 
             using var client = new WebClient();
             var bytes = await client.DownloadDataTaskAsync(file.Url);
+
+            // Sanity check that this is a valid fleet
+            using (var archive = new System.IO.Compression.ZipArchive(new MemoryStream(bytes), System.IO.Compression.ZipArchiveMode.Read))
+            {
+                var loaded = ShipCombatCore.Model.Fleet.TryLoadZip(archive);
+                if (loaded == null)
+                {
+                    await ReplyAsync("Failed to load fleet from zip!");
+                    return;
+                }
+
+                if (loaded.Ships.Count > 1)
+                {
+                    await ReplyAsync($"Fleet has {loaded.Ships.Count} ships, please only submit fleets with one ship.");
+                    return;
+                }
+            }
 
             // Store this new fleet in the DB
             var fleet = await _fleets.Store(Context.User.Id, name, bytes);

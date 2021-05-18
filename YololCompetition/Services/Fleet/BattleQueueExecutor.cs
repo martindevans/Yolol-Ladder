@@ -68,8 +68,7 @@ namespace YololCompetition.Services.Fleet
             if (b == null)
                 return;
 
-            var sim = new Simulation(a, b);
-            var report = sim.Run();
+            using var report = new Simulation(a, b).Run();
 
             var filename = $"{await fa.Value.FormattedName(_client)} vs {await fb.Value.FormattedName(_client)} ({DateTime.UtcNow:u})";
             await using (var file = File.Create(Path.Combine(_config.ReplayOutputDirectory, filename)))
@@ -78,7 +77,6 @@ namespace YololCompetition.Services.Fleet
             using (var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented })
             {
                 report.Serialize(writer);
-                await writer.FlushAsync();
             }
 
             // Update ranking
@@ -94,6 +92,9 @@ namespace YololCompetition.Services.Fleet
                     await _ranks.Update(battle.A, battle.B, true);
                     break;
             }
+
+            // Sims take a load of space, clean it up now
+            GC.Collect();
         }
 
         private async Task<ShipCombatCore.Model.Fleet?> LoadFleet(ulong id)
