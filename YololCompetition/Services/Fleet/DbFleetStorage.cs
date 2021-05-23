@@ -52,13 +52,12 @@ namespace YololCompetition.Services.Fleet
                 cmd.Parameters.Add(new SqliteParameter("@DataBlob", DbType.Binary) {Value = bytes});
 
                 // If the any rows were returned then we just updated an already existing fleet
-                await using (var updated = await cmd.ExecuteReaderAsync())
+                await using var updated = await cmd.ExecuteReaderAsync();
+
+                if (updated.HasRows)
                 {
-                    if (updated.HasRows)
-                    {
-                        await updated.ReadAsync();
-                        return Fleet.Read(updated);
-                    }
+                    await updated.ReadAsync();
+                    return Fleet.Read(updated);
                 }
             }
 
@@ -71,14 +70,12 @@ namespace YololCompetition.Services.Fleet
                 cmd.Parameters.Add(new SqliteParameter("@FleetName", DbType.String) {Value = name});
                 cmd.Parameters.Add(new SqliteParameter("@DataBlob", DbType.Binary) {Value = bytes});
 
-                await using (var inserted = await cmd.ExecuteReaderAsync())
-                {
-                    if (!inserted.HasRows)
-                        throw new InvalidOperationException("Failed to insert fleet into database");
+                await using var inserted = await cmd.ExecuteReaderAsync();
+                if (!inserted.HasRows)
+                    throw new InvalidOperationException("Failed to insert fleet into database");
 
-                    await inserted.ReadAsync();
-                    return Fleet.Read(inserted);
-                }
+                await inserted.ReadAsync();
+                return Fleet.Read(inserted);
             }
         }
 

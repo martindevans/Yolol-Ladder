@@ -50,15 +50,14 @@ namespace YololCompetition.Services.Fleet
             if (a.Id == b.Id)
                 return;
 
-            await using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = "REPLACE INTO FleetsBattleQueue(FleetId1, FleetId2) Values(@A, @B);";
+            await using var cmd = _db.CreateCommand();
 
-                cmd.Parameters.Add(new SqliteParameter("@A", DbType.UInt64) { Value = a.Id });
-                cmd.Parameters.Add(new SqliteParameter("@B", DbType.UInt64) { Value = b.Id });
+            cmd.CommandText = "REPLACE INTO FleetsBattleQueue(FleetId1, FleetId2) Values(@A, @B);";
 
-                await cmd.ExecuteNonQueryAsync();
-            }
+            cmd.Parameters.Add(new SqliteParameter("@A", DbType.UInt64) { Value = a.Id });
+            cmd.Parameters.Add(new SqliteParameter("@B", DbType.UInt64) { Value = b.Id });
+
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task<IReadOnlyList<Battle>> Queue(uint limit = uint.MaxValue)
@@ -80,15 +79,14 @@ namespace YololCompetition.Services.Fleet
 
         public async Task Remove(Battle battle)
         {
-            await using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = "DELETE FROM FleetsBattleQueue WHERE FleetId1 = @FleetId1 AND FleetId2 = @FleetId2";
+            await using var cmd = _db.CreateCommand();
 
-                cmd.Parameters.Add(new SqliteParameter("@FleetId1", DbType.UInt64) {Value = battle.A });
-                cmd.Parameters.Add(new SqliteParameter("@FleetId2", DbType.UInt64) {Value = battle.B });
+            cmd.CommandText = "DELETE FROM FleetsBattleQueue WHERE FleetId1 = @FleetId1 AND FleetId2 = @FleetId2";
 
-                await cmd.ExecuteNonQueryAsync();
-            }
+            cmd.Parameters.Add(new SqliteParameter("@FleetId1", DbType.UInt64) {Value = battle.A });
+            cmd.Parameters.Add(new SqliteParameter("@FleetId2", DbType.UInt64) {Value = battle.B });
+
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task<Battle?> GetNextBattle()

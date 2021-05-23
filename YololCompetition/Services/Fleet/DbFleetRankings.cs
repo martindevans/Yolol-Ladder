@@ -72,16 +72,15 @@ namespace YololCompetition.Services.Fleet
 
         public async Task SetRank(ulong id, double mean, double stddev)
         {
-            await using (var cmd = _db.CreateCommand())
-            {
-                cmd.CommandText = "DELETE FROM FleetsRanks WHERE FleetId=@FleetId; INSERT INTO FleetsRanks Values(@FleetId, @Mean, @StdDev);";
+            await using var cmd = _db.CreateCommand();
 
-                cmd.Parameters.Add(new SqliteParameter("@FleetId", DbType.UInt64) { Value = id });
-                cmd.Parameters.Add(new SqliteParameter("@Mean", DbType.String) { Value = mean });
-                cmd.Parameters.Add(new SqliteParameter("@StdDev", DbType.Binary) { Value = stddev });
+            cmd.CommandText = "DELETE FROM FleetsRanks WHERE FleetId=@FleetId; INSERT INTO FleetsRanks Values(@FleetId, @Mean, @StdDev);";
 
-                await cmd.ExecuteNonQueryAsync();
-            }
+            cmd.Parameters.Add(new SqliteParameter("@FleetId", DbType.UInt64) { Value = id });
+            cmd.Parameters.Add(new SqliteParameter("@Mean", DbType.String) { Value = mean });
+            cmd.Parameters.Add(new SqliteParameter("@StdDev", DbType.Binary) { Value = stddev });
+
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task Update(ulong winner, ulong loser, bool draw)

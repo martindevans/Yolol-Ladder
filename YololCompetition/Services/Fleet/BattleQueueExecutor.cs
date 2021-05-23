@@ -68,7 +68,7 @@ namespace YololCompetition.Services.Fleet
             if (b == null)
                 return;
 
-            using var report = new Simulation(a, b).Run();
+            using var report = new Simulation(a, fa.Value.Name, b, fb.Value.Name).Run();
 
             var filename = $"{await fa.Value.FormattedName(_client)} vs {await fb.Value.FormattedName(_client)} ({DateTime.UtcNow:u})";
             await using (var file = File.Create(Path.Combine(_config.ReplayOutputDirectory, filename)))

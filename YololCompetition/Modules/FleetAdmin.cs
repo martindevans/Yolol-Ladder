@@ -1,4 +1,6 @@
-﻿using Discord.Commands;
+﻿using System;
+using System.Threading.Tasks;
+using Discord.Commands;
 using JetBrains.Annotations;
 using YololCompetition.Services.Fleet;
 
@@ -14,6 +16,12 @@ namespace YololCompetition.Modules
         public FleetAdmin(IFleetBattleQueue queue)
         {
             _queue = queue;
+        }
+
+        [Command("trim"), Summary("Trim replays older than N days.")]
+        public async Task Trim(int days)
+        {
+            throw new NotImplementedException();
         }
     }
 }
