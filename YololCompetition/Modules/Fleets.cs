@@ -54,7 +54,7 @@ namespace YololCompetition.Modules
             var file = Context.Message.Attachments.Single();
             if (file.Size > 10000)
             {
-                await ReplyAsync("Fleet file is too large (> 10KB)! Contact Martin#2468 to request a larger limit.");
+                await ReplyAsync("Fleet file is too large (> 50KB)! Contact Martin#2468 to request a larger limit.");
                 return;
             }
 
