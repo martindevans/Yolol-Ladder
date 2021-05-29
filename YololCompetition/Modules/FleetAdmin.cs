@@ -22,6 +22,12 @@ namespace YololCompetition.Modules
             _queue = queue;
         }
 
+        [Command("sim_all"), Summary("Fight every fleet against every other fleet")]
+        public async Task SimAll()
+        {
+            throw new NotImplementedException();
+        }
+
         [Command("trim"), Summary("Delete replays older than N days.")]
         public async Task Trim(int days)
         {
