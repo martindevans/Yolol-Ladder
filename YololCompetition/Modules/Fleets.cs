@@ -115,20 +115,20 @@ namespace YololCompetition.Modules
         }
 
         [Command("leaderboard"), Summary("Check the leaderboard of fleets.")]
-        public async Task Leaderboard()
+        public async Task Leaderboard(bool id = false)
         {
             var rankings = await _rankings.GetTopTanks(25);
-            await ReplyAsync(embed: await FormatLeaderboard(_client, rankings));
+            await ReplyAsync(embed: await FormatLeaderboard(_client, rankings, id));
         }
 
-        private static async Task<Embed> FormatLeaderboard(BaseSocketClient client, IEnumerable<FleetTrueskillRating> ranks)
+        private static async Task<Embed> FormatLeaderboard(BaseSocketClient client, IEnumerable<FleetTrueskillRating> ranks, bool id)
         {
             async Task<string> FormatRankInfo(int count, FleetTrueskillRating info)
             {
                 var skill = 100 * Math.Max(0, info.Rating.ConservativeEstimate);
                 var user = (IUser)client.GetUser(info.Fleet.OwnerId) ?? await client.Rest.GetUserAsync(info.Fleet.OwnerId);
                 var name = user?.Username ?? info.Fleet.OwnerId.ToString();
-                return $"{count}. **{info.Fleet.Name}** ({name}) - {skill:0000}";
+                return $"{count}. **{info.Fleet.Name}** ({name}) - {skill:0000}" + (id ? $" (id:{info.Fleet.Id})" : "");
             }
 
             var embed = new EmbedBuilder {

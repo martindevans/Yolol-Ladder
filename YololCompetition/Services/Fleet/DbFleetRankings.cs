@@ -83,6 +83,17 @@ namespace YololCompetition.Services.Fleet
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task<int> DeleteRank(ulong id)
+        {
+            await using var cmd = _db.CreateCommand();
+
+            cmd.CommandText = "DELETE FROM FleetsRanks WHERE FleetId=@FleetId;";
+
+            cmd.Parameters.Add(new SqliteParameter("@FleetId", DbType.UInt64) { Value = id });
+
+            return await cmd.ExecuteNonQueryAsync();
+        }
+
         public async Task Update(ulong winner, ulong loser, bool draw)
         {
             var winnerRank = (await GetRank(winner))?.Rating ?? new Trueskill.TrueskillRating(_gameinfo.DefaultRating.Mean, _gameinfo.DefaultRating.StandardDeviation);

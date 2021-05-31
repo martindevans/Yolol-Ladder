@@ -10,5 +10,7 @@ namespace YololCompetition.Services.Fleet
         Task<IReadOnlyList<FleetTrueskillRating>> GetTopTanks(uint limit);
 
         Task Update(ulong winner, ulong loser, bool draw);
+
+        Task<int> DeleteRank(ulong id);
     }
 }

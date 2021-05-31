@@ -9,5 +9,7 @@ namespace YololCompetition.Services.Fleet
         Task<Fleet?> Load(ulong fleedId);
 
         Task<byte[]?> LoadBlob(ulong userId);
+
+        Task<int> Delete(ulong id);
     }
 }

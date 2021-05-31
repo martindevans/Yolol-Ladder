@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
@@ -105,6 +106,15 @@ namespace YololCompetition.Services.Fleet
 
             var enumerable = new SqlAsyncResult<byte[]?>(_db, PrepareQuery, a => (byte[])a["Blob"]);
             return await enumerable.SingleOrDefaultAsync();
+        }
+
+        public async Task<int> Delete(ulong id)
+        {
+            var cmd = _db.CreateCommand();
+            cmd.CommandText = "DELETE FROM Fleets WHERE FleetId = @FleetId";
+            cmd.Parameters.Add(new SqliteParameter("@FleetId", DbType.UInt64) {Value = id});
+
+            return await cmd.ExecuteNonQueryAsync();
         }
     }
 }

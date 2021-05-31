@@ -15,17 +15,22 @@ namespace YololCompetition.Modules
     {
         private readonly Configuration _config;
         private readonly IFleetBattleQueue _queue;
+        private readonly IFleetStorage _fleets;
+        private readonly IFleetRankings _rankings;
 
-        public FleetAdmin(Configuration config, IFleetBattleQueue queue)
+        public FleetAdmin(Configuration config, IFleetBattleQueue queue, IFleetStorage fleets, IFleetRankings rankings)
         {
             _config = config;
             _queue = queue;
+            _fleets = fleets;
+            _rankings = rankings;
         }
 
-        [Command("sim_all"), Summary("Fight every fleet against every other fleet")]
-        public async Task SimAll()
+        [Command("delete"), Summary("Delete a fleet (by DB id)")]
+        public async Task Delete(ulong id)
         {
-            throw new NotImplementedException();
+            await ReplyAsync($"Deleted {await _fleets.Delete(id)} fleets");
+            await ReplyAsync($"Deleted {await _rankings.DeleteRank(id)} ranks");
         }
 
         [Command("trim"), Summary("Delete replays older than N days.")]
