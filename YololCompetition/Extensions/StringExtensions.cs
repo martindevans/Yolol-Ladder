@@ -15,6 +15,14 @@ namespace YololCompetition.Extensions
             return match.Groups["code"].Value;
         }
 
+        public static string LimitLength(this string str, int max)
+        {
+            if (str.Length < max)
+                return str;
+
+            return str[..max];
+        }
+
         public static uint Levenshtein(this string? a, string? b)
         {
             if (a == null && b == null)

@@ -14,6 +14,7 @@ using BalderHash.Extensions;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.WebSocket;
+using YololCompetition.Extensions;
 using YololCompetition.Services.Parsing;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Verification;
@@ -294,6 +295,58 @@ namespace YololCompetition.Modules
 
             var rows = await _solutions.DeleteSolution(current.Id, user.Id);
             await ReplyAsync($"Deleted {rows} rows.");
+        }
+
+        [Command("crater")]
+        public async Task Crater(bool fast = false)
+        {
+            var challenges = await _challenges.GetChallenges().ToListAsync();
+            await ReplyAsync($"Running crater for {challenges.Count} challenges");
+
+            var totalCount = 0;
+            var totalFail = 0;
+
+            foreach (var challenge in challenges)
+            {
+                await using (var progress = new DiscordProgressBar($" ## Crater: {challenge.Name}", await ReplyAsync("Crater")))
+                {
+                    await progress.SetProgress(0);
+
+                    var fail = 0;
+                    var count = 0;
+                    var solutions = await _solutions.GetSolutions(challenge.Id, uint.MaxValue).ToListAsync();
+                    foreach (var solution in solutions)
+                    {
+                        var (vs, vf) = await _verification.Verify(challenge, solution.Solution.Yolol);
+                        if (vs == null)
+                        {
+                            fail++;
+                            totalFail++;
+                        }
+
+                        count++;
+                        totalCount++;
+
+                        if (!fast)
+                        {
+                            if (vf != null)
+                                await ReplyAsync($" - Failed ({await UserName(solution.Solution.UserId)}): {vf.Hint}".LimitLength(1000));
+
+                            await progress.SetProgress((float)count / solutions.Count);
+                            await Task.Delay(250);
+                        }
+                    }
+
+                    if (!fast)
+                    {
+                        if (fail > 0)
+                            await ReplyAsync($"Failed {fail}/{count} programs\n");
+                        await Task.Delay(250);
+                    }
+                }
+            }
+
+            await ReplyAsync($"Crater test complete. Failed {totalFail}/{totalCount} programs");
         }
 
         [Command("rescore"), Summary("Recalculate all scores for a previous competition")]

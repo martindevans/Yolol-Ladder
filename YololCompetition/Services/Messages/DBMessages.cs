@@ -12,6 +12,7 @@ using YololCompetition.Services.Challenge;
 using YololCompetition.Extensions;
 using Discord.WebSocket;
 using Discord;
+using Discord.Net;
 
 namespace YololCompetition.Services.Messages
 {
@@ -117,7 +118,7 @@ namespace YololCompetition.Services.Messages
                     return null;
                 }
             }
-            catch (Discord.Net.HttpException ex)
+            catch (HttpException ex)
             {
                 Console.WriteLine($"Failed to get message {message.MessageID} in channel {message.ChannelID}({channel.Name}/{gc?.Guild.Name}): {ex.Message}");
                 return null;
