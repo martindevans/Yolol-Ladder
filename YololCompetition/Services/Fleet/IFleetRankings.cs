@@ -5,7 +5,7 @@ namespace YololCompetition.Services.Fleet
 {
     public interface IFleetRankings
     {
-        Task ResetRank(Fleet fleet);
+        Task ResetRankDeviation(Fleet fleet);
 
         Task<IReadOnlyList<FleetTrueskillRating>> GetTopTanks(uint limit);
 

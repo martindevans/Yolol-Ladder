@@ -37,9 +37,13 @@ namespace YololCompetition.Services.Fleet
             }
         }
 
-        public async Task ResetRank(Fleet fleet)
+        public async Task ResetRankDeviation(Fleet fleet)
         {
-            await SetRank(fleet.Id, _gameinfo.DefaultRating.Mean, _gameinfo.DefaultRating.StandardDeviation);
+            var rank = await GetRank(fleet.Id);
+            if (!rank.HasValue)
+                return;
+
+            await SetRank(fleet.Id, rank.Value.Rating.Mean, _gameinfo.DefaultRating.StandardDeviation);
         }
 
         public async Task<IReadOnlyList<FleetTrueskillRating>> GetTopTanks(uint limit)

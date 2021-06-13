@@ -82,7 +82,7 @@ namespace YololCompetition.Modules
             var fleet = await _fleets.Store(Context.User.Id, name, bytes);
 
             // Clear rankings for this fleet (if they exist)
-            await _rankings.ResetRank(fleet);
+            await _rankings.ResetRankDeviation(fleet);
 
             // Enqueue battles for this fleet against all other fleets
             await _battles.Enqueue(fleet);
