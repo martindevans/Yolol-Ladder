@@ -13,7 +13,7 @@ using YololCompetition.Services.Fleet;
 
 namespace YololCompetition.Modules
 {
-    [Hidden, UsedImplicitly]
+    [UsedImplicitly]
     [Group("fleet")]
     public class Fleets
         : BaseModule

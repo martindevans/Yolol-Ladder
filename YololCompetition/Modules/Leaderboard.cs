@@ -70,7 +70,7 @@ namespace YololCompetition.Modules
             
         }
 
-        [Command("leaderboard"), Summary("Display the top Yolol programmers")]
+        [Command("leaderboard"), Summary("Display the top Yolol programmers for a specific challenge")]
         public async Task ShowLeaderboard(string id)
         {
             var c = await _challenges.FuzzyFindChallenge(id).Take(2).ToArrayAsync();
