@@ -40,8 +40,12 @@ namespace YololCompetition.Services.Fleet
         public async Task Enqueue(Fleet fleet)
         {
             // Schedule a fight against all of the top fleets
-            var fleets = await _ranks.GetTopTanks(64);
-            foreach (var item in fleets)
+            foreach (var item in await _ranks.GetTopTanks(64))
+                await Enqueue(item.Fleet, fleet);
+
+            // Schedule another fight against the very best fleets, this will
+            // solidify the ranking of this new fleet if it's a contender for a top spot
+            foreach (var item in await _ranks.GetTopTanks(4))
                 await Enqueue(item.Fleet, fleet);
         }
 

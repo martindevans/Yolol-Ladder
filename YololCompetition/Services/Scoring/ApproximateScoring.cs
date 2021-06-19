@@ -23,7 +23,7 @@ namespace YololCompetition.Services.Scoring
             // Check that the machine state is exactly correct for every expected output
             foreach (var (key, expected) in expectedOutputs)
             {
-                var actual = state.TryGet($":{key}") ?? 0;
+                var actual = state.TryGet($":{key}") ?? (Value)0;
 
                 // Add bonus points averaged across all cases
                 switch (expected.Type, actual.Type)

@@ -54,7 +54,7 @@ namespace YololCompetition.Services.Scoring
             // Check that the machine state is exactly correct for every expected output
             foreach (var (key, value) in expectedOutputs)
             {
-                var v = state.TryGet($":{key}") ?? 0;
+                var v = state.TryGet($":{key}") ?? (Value)0;
                 if (v != value)
                 {
                     var ii = string.Join(",", inputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
