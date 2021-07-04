@@ -17,13 +17,15 @@ namespace YololCompetition.Modules
         private readonly IFleetBattleQueue _queue;
         private readonly IFleetStorage _fleets;
         private readonly IFleetRankings _rankings;
+        private readonly IFleetBattleQueue _battles;
 
-        public FleetAdmin(Configuration config, IFleetBattleQueue queue, IFleetStorage fleets, IFleetRankings rankings)
+        public FleetAdmin(Configuration config, IFleetBattleQueue queue, IFleetStorage fleets, IFleetRankings rankings, IFleetBattleQueue battles)
         {
             _config = config;
             _queue = queue;
             _fleets = fleets;
             _rankings = rankings;
+            _battles = battles;
         }
 
         [Command("delete"), Summary("Delete a fleet (by DB id)")]
@@ -58,6 +60,17 @@ namespace YololCompetition.Modules
             }
 
             await ReplyAsync($"Found {found} replays, failed to delete {failed}");
+        }
+
+        [Command("fight-all"), Summary("Queue a fight for every fleet against every other fleet")]
+        public async Task FightAll()
+        {
+            var fleets = await _rankings.GetTopTanks(128);
+
+            foreach (var fleet in fleets)
+                await _battles.Enqueue(fleet.Fleet);
+
+            await ReplyAsync("Enqueued battles");
         }
     }
 }
