@@ -22,6 +22,7 @@ using YololCompetition.Services.Verification;
 using YololCompetition.Services.Messages;
 using YololCompetition.Services.Parsing;
 using YololCompetition.Services.Rates;
+using YololCompetition.Services.Status;
 using YololCompetition.Services.Trueskill;
 
 namespace YololCompetition
@@ -53,6 +54,9 @@ namespace YololCompetition
 
             var battles = provider.GetRequiredService<BattleQueueExecutor>();
             battles.Start();
+
+            var status = provider.GetRequiredService<IStatusUpdater>();
+            status.Start();
 
             Console.WriteLine("Bot Started");
             await provider.GetRequiredService<IScheduler>().Start();
@@ -98,6 +102,7 @@ namespace YololCompetition
             di.AddTransient<IMessages, DbMessages>();
             di.AddTransient<ITrueskill, DbTrueskill>();
             di.AddTransient<IYololParser, YololEmulatorParser>();
+            di.AddTransient<IStatusUpdater, SchedulerStatus>();
 
             di.AddTransient<IFleetStorage, DbFleetStorage>();
             di.AddTransient<IFleetRankings, DbFleetRankings>();

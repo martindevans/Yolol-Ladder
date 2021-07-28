@@ -30,7 +30,9 @@ namespace YololCompetition.Services.Schedule
         private readonly AsyncAutoResetEvent _poker = new AsyncAutoResetEvent();
 
         public SchedulerState State { get; private set; }
-        
+
+        public TimeSpan? TimeRemaining { get; private set; }
+
         public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client, IMessages messages, ITrueskillUpdater skillUpdate)
         {
             _challenges = challenges;

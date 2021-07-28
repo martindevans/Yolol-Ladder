@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace YololCompetition.Services.Schedule
 {
@@ -18,5 +19,7 @@ namespace YololCompetition.Services.Schedule
         public Task Poke();
 
         SchedulerState State { get; }
+
+        public TimeSpan? TimeRemaining { get; }
     }
 }
