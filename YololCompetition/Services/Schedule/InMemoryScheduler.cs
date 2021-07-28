@@ -85,6 +85,7 @@ namespace YololCompetition.Services.Schedule
                     if (delay > TimeSpan.Zero)
                     {
                         State = SchedulerState.WaitingChallengeEnd;
+                        TimeRemaining = delay;
                         await Task.WhenAny(_poker.WaitAsync(), Task.Delay(delay));
                     }
                 }
@@ -100,6 +101,7 @@ namespace YololCompetition.Services.Schedule
                     continue;
 
                 State = SchedulerState.EndingChallenge;
+                TimeRemaining = TimeSpan.Zero;
 
                 // Finish the current challenge
                 await _challenges.EndCurrentChallenge();
