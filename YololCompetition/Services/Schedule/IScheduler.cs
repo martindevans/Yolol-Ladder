@@ -20,6 +20,6 @@ namespace YololCompetition.Services.Schedule
 
         SchedulerState State { get; }
 
-        public TimeSpan? TimeRemaining { get; }
+        public DateTime? EndTime { get; }
     }
 }

@@ -31,7 +31,7 @@ namespace YololCompetition.Services.Schedule
 
         public SchedulerState State { get; private set; }
 
-        public TimeSpan? TimeRemaining { get; private set; }
+        public DateTime? EndTime { get; private set; }
 
         public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client, IMessages messages, ITrueskillUpdater skillUpdate)
         {
@@ -64,6 +64,7 @@ namespace YololCompetition.Services.Schedule
                     {
                         Console.WriteLine("No challenges available, waiting for a while...");
                         State = SchedulerState.WaitingNoChallengesInPool;
+                        EndTime = null;
                         await Task.Delay(TimeSpan.FromMinutes(1));
                         continue;
                     }
@@ -79,13 +80,13 @@ namespace YololCompetition.Services.Schedule
 
                 //There is a challenge running, wait until the end time or until someone externally pokes us awake
                 var endTime = current.EndTime;
+                EndTime = endTime;
                 while (endTime != null && endTime > DateTime.UtcNow)
                 {
                     var delay = endTime.Value - DateTime.UtcNow;
                     if (delay > TimeSpan.Zero)
                     {
                         State = SchedulerState.WaitingChallengeEnd;
-                        TimeRemaining = delay;
                         await Task.WhenAny(_poker.WaitAsync(), Task.Delay(delay));
                     }
                 }
@@ -101,7 +102,7 @@ namespace YololCompetition.Services.Schedule
                     continue;
 
                 State = SchedulerState.EndingChallenge;
-                TimeRemaining = TimeSpan.Zero;
+                EndTime = null;
 
                 // Finish the current challenge
                 await _challenges.EndCurrentChallenge();

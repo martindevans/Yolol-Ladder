@@ -28,14 +28,15 @@ namespace YololCompetition.Services.Status
             var period = TimeSpan.FromMinutes(2);
             _cron.Schedule(TimeSpan.Zero, default, async ct => {
 
-                var time = _scheduler.TimeRemaining;
+                var time = _scheduler.EndTime;
                 if (time.HasValue)
                 {
-                    var text = $"{time.Value.Humanize()} left on challenge";
+                    var duration = time.Value - DateTime.UtcNow;
+                    var text = $"{duration.Humanize()} left on challenge";
                     await _client.SetActivityAsync(new Game(text, ActivityType.Playing, ActivityProperties.None, null));
 
                     // Wait 2 mins or until the current challenge ends, whichever is first
-                    return TimeSpan.FromTicks(Math.Min(time.Value.Ticks, period.Ticks));
+                    return TimeSpan.FromTicks(Math.Min(duration.Ticks, period.Ticks));
                 }
                 else
                 {
