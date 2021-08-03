@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
+using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Cron;
 using YololCompetition.Services.Schedule;
 
@@ -11,15 +12,15 @@ namespace YololCompetition.Services.Status
         : IStatusUpdater
     {
         private readonly ICron _cron;
-        private readonly IScheduler _scheduler;
+        private readonly IChallenges _challenges;
         private readonly DiscordSocketClient _client;
 
         private string _idleActivity = ">help";
 
-            public SchedulerStatus(ICron cron, IScheduler scheduler, DiscordSocketClient client)
+            public SchedulerStatus(ICron cron, IChallenges challenges, DiscordSocketClient client)
         {
             _cron = cron;
-            _scheduler = scheduler;
+            _challenges = challenges;
             _client = client;
         }
 
@@ -28,7 +29,9 @@ namespace YololCompetition.Services.Status
             var period = TimeSpan.FromMinutes(2);
             _cron.Schedule(TimeSpan.Zero, default, async ct => {
 
-                var time = _scheduler.EndTime;
+                var c = await _challenges.GetCurrentChallenge();
+                var time = c?.EndTime;
+
                 if (time.HasValue)
                 {
                     var duration = time.Value - DateTime.UtcNow;
