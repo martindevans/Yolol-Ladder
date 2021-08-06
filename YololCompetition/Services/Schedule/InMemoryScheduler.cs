@@ -122,8 +122,12 @@ namespace YololCompetition.Services.Schedule
             // Justification: We never want the scheduler to stop!
         }
 
-        private async Task UpdateLeaderboard(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
+        private async Task UpdateLeaderboard(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutionsAsync)
         {
+            var solutions = await solutionsAsync.ToListAsync();
+            if (solutions.Count == 0)
+                return;
+
             // Update trueskill
             await _skillUpdate.ApplyChallengeResults(challenge.Id);
 
@@ -132,11 +136,11 @@ namespace YololCompetition.Services.Schedule
 
             // Enumerate through each group of equally ranked users
             var ranks = solutions.GroupBy(a => a.Rank).OrderBy(a => a.Key);
-            await foreach (var rank in ranks)
+            foreach (var rank in ranks)
             {
                 // Award all users at the same rank some points
                 var count = 0;
-                await foreach (var solution in rank)
+                foreach (var solution in rank)
                 {
                     count++;
                     await _leaderboard.AddScore(solution.Solution.UserId, score * (uint)challenge.Difficulty);
@@ -144,7 +148,7 @@ namespace YololCompetition.Services.Schedule
 
                 // If there was only one user in the top rank, award them a bonus
                 if (count == 1 && score == maxScore)
-                    await _leaderboard.AddScore((await rank.SingleAsync()).Solution.UserId, (uint)challenge.Difficulty);
+                    await _leaderboard.AddScore((rank.Single()).Solution.UserId, (uint)challenge.Difficulty);
 
                 // Award at least one point to every entrant
                 if (score > 1)
@@ -152,9 +156,9 @@ namespace YololCompetition.Services.Schedule
             }
 
             // Find the smallest solution, if there's only one of them (i.e. no tie for smallest) award a bonus point
-            var smallestGroup = await solutions.GroupBy(a => a.Solution.Yolol.Length).AggregateAsync((a, b) => a.Key < b.Key ? a : b);
-            if (await smallestGroup.CountAsync() == 1)
-                await _leaderboard.AddScore((await smallestGroup.FirstAsync()).Solution.UserId, (uint)challenge.Difficulty);
+            var smallestGroup = solutions.GroupBy(a => a.Solution.Yolol.Length).Aggregate((a, b) => a.Key < b.Key ? a : b);
+            if (smallestGroup.Count() == 1)
+                await _leaderboard.AddScore((smallestGroup.First()).Solution.UserId, (uint)challenge.Difficulty);
         }
 
         private async Task NotifyEnd(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)

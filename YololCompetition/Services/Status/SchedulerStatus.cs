@@ -4,7 +4,6 @@ using Discord.WebSocket;
 using Humanizer;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Cron;
-using YololCompetition.Services.Schedule;
 
 namespace YololCompetition.Services.Status
 {
@@ -15,9 +14,9 @@ namespace YololCompetition.Services.Status
         private readonly IChallenges _challenges;
         private readonly DiscordSocketClient _client;
 
-        private string _idleActivity = ">help";
+        private const string IdleActivity = ">help";
 
-            public SchedulerStatus(ICron cron, IChallenges challenges, DiscordSocketClient client)
+        public SchedulerStatus(ICron cron, IChallenges challenges, DiscordSocketClient client)
         {
             _cron = cron;
             _challenges = challenges;
@@ -27,25 +26,27 @@ namespace YololCompetition.Services.Status
         public void Start()
         {
             var period = TimeSpan.FromMinutes(2);
-            _cron.Schedule(TimeSpan.Zero, default, async ct => {
-
+            _cron.Schedule(TimeSpan.Zero, default, async ct =>
+            {
                 var c = await _challenges.GetCurrentChallenge();
                 var time = c?.EndTime;
 
                 if (time.HasValue)
                 {
                     var duration = time.Value - DateTime.UtcNow;
-                    var text = $"{duration.Humanize()} left on challenge";
-                    await _client.SetActivityAsync(new Game(text, ActivityType.Playing, ActivityProperties.None, null));
+                    if (duration > TimeSpan.Zero)
+                    {
+                        var text = $"{duration.Humanize()} left on challenge";
+                        await _client.SetActivityAsync(new Game(text, ActivityType.Playing, ActivityProperties.None, null));
 
-                    // Wait 2 mins or until the current challenge ends, whichever is first
-                    return TimeSpan.FromTicks(Math.Min(duration.Ticks, period.Ticks));
+                        // Wait 2 mins or until the current challenge ends, whichever is first
+                        return TimeSpan.FromTicks(Math.Min(duration.Ticks, period.Ticks));
+                    }
                 }
-                else
-                {
-                    await _client.SetActivityAsync(new Game(_idleActivity, ActivityType.Playing, ActivityProperties.None, null));
-                    return period;
-                }
+                
+                await _client.SetActivityAsync(new Game(IdleActivity, ActivityType.Playing, ActivityProperties.None, null));
+                return period;
+                
             });
         }
     }
