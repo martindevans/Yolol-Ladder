@@ -25,6 +25,7 @@ namespace YololCompetition.Services.Execute
                 lines.Add(program.Lines[i].Compile(
                     i + 1,
                     Math.Max(20, program.Lines.Count),
+                    MaxStringLength,
                     internalsMap,
                     externalsMap
                 ));
@@ -105,22 +106,6 @@ namespace YololCompetition.Services.Execute
                     // Execution timeout
                     if (timer.Elapsed > timeout)
                         return $"Execution Timed Out (executed {executed} ticks in {timer.Elapsed.TotalMilliseconds}ms)";
-
-                    // Sanity check strings are not getting too long
-                    for (var i = 0; i < _internals.Length; i++)
-                    {
-                        if (_internals[i].Type != Yolol.Execution.Type.String)
-                            continue;
-                        if (_internals[i].String.Length > MaxStringLength)
-                            return "Max String Length Exceeded";
-                    }
-                    for (var i = 0; i < _externals.Length; i++)
-                    {
-                        if (_externals[i].Type != Yolol.Execution.Type.String)
-                            continue;
-                        if (_externals[i].String.Length > MaxStringLength)
-                            return "Max String Length Exceeded";
-                    }
                 }
 
                 return null;
