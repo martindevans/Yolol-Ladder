@@ -12,7 +12,7 @@ namespace YololCompetition.Services.Execute
     public class YololCompileExecutor
         : IYololExecutor
     {
-        private const int MaxStringLength = 25000;
+        private const int MaxStringLength = 1024;
 
         public IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done)
         {
