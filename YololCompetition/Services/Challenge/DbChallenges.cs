@@ -114,7 +114,7 @@ namespace YololCompetition.Services.Challenge
 
         public async Task EndCurrentChallenge()
         {
-            await _database.ExecAsync("UPDATE Challenges SET Status = 3 WHERE Status = 2");
+            _database.Exec("UPDATE Challenges SET Status = 3 WHERE Status = 2");
         }
 
         public async Task ChangeChallengeDifficulty(Challenge challenge, ChallengeDifficulty difficulty)

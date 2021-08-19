@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 
@@ -13,6 +14,17 @@ namespace YololCompetition.Services.Database
         {
             _dbConnection = new SqliteConnection(config.DatabaseConnectionString);
             _dbConnection.Open();
+
+            try
+            {
+                using var cmd = _dbConnection.CreateCommand();
+                cmd.CommandText = "PRAGMA journal_mode=WAL;";
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         public DbCommand CreateCommand()
@@ -29,13 +41,6 @@ namespace YololCompetition.Services.Database
             using var cmd = db.CreateCommand();
             cmd.CommandText = sql;
             return cmd.ExecuteNonQuery();
-        }
-
-        public static async Task<int> ExecAsync(this IDatabase db, string sql)
-        {
-            await using var cmd = db.CreateCommand();
-            cmd.CommandText = sql;
-            return await cmd.ExecuteNonQueryAsync();
         }
     }
 }
