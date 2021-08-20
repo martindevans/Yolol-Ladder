@@ -111,6 +111,14 @@ namespace YololCompetition
         {
             try
             {
+                // Don't process the command if it was a System Message
+                if (msg is not SocketUserMessage message)
+                    return;
+
+                // Check if the message starts with the command prefix character
+                var prefixPos = 0;
+                var hasPrefix = message.HasCharPrefix(_config.Prefix, ref prefixPos);
+
                 if (_commandConcurrencyLimit.CurrentCount == 0)
                     await msg.Channel.SendMessageAsync("Bot is busy - waiting in queue.");
 
@@ -121,21 +129,16 @@ namespace YololCompetition
                     return;
                 }
 
-                // Don't process the command if it was a System Message
-                if (msg is not SocketUserMessage message)
-                    return;
-
                 // Ignore messages from self
                 if (message.Author.Id == _client.CurrentUser.Id)
                     return;
 
-                // Check if the message starts with the command prefix character
-                var prefixPos = 0;
-                var hasPrefix = message.HasCharPrefix(_config.Prefix, ref prefixPos);
-
                 // Skip non-prefixed messages
                 if (!hasPrefix)
+                {
+                    HandleNonCommand(msg);
                     return;
+                }
 
                 // Execute the command
                 var context = new SocketCommandContext(_client, message);
@@ -153,6 +156,13 @@ namespace YololCompetition
             {
                 _commandConcurrencyLimit.Release();
             }
+        }
+
+        private void HandleNonCommand(SocketMessage msg)
+        {
+            var rng = new Random(unchecked((int)msg.Id));
+            if (msg.Author.Id == 601092364181962762ul && msg.Content == "I'm back online!" && rng.NextDouble() < 0.25f)
+                msg.AddReactionAsync(new Emoji("👋"));
         }
 
         private static void PostCommandResult(IResult result)

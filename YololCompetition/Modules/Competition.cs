@@ -31,8 +31,18 @@ namespace YololCompetition.Modules
             var count = await _challenges.GetPendingCount();
             var msg = await ReplyAsync($"There are {count} challenges pending");
 
-            if (count == 0)
-                await msg.AddReactionAsync(new Emoji("😰"));
+            var emoji = count switch {
+                0 => "😰", // cold sweat
+                //1 => "😟", // worried
+                //2 => "🙂", // smile
+                //3 => "😁", // grin
+                > 4 => "😲", // astonished
+                _ => null,
+            };
+
+            if (emoji != null)
+                await msg.AddReactionAsync(new Emoji(emoji));
+
         }
 
         [Command("current"), Summary("Show the current competition details")]

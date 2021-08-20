@@ -21,12 +21,10 @@ namespace YololCompetition.Services.Verification
         // Max lines executed per test case
         public const uint MaxTestIters = 1000;
 
-        private readonly Configuration _config;
         private readonly IYololExecutor _executor;
 
-        public BasicVerification(Configuration config, IYololExecutor executor)
+        public BasicVerification(IYololExecutor executor)
         {
-            _config = config;
             _executor = executor;
         }
 

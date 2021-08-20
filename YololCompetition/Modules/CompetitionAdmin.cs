@@ -308,41 +308,39 @@ namespace YololCompetition.Modules
 
             foreach (var challenge in challenges)
             {
-                await using (var progress = new DiscordProgressBar($" ## Crater: {challenge.Name}", await ReplyAsync("Crater")))
+                await using var progress = new DiscordProgressBar($" ## Crater: {challenge.Name}", await ReplyAsync("Crater"));
+                await progress.SetProgress(0);
+
+                var fail = 0;
+                var count = 0;
+                var solutions = await _solutions.GetSolutions(challenge.Id, uint.MaxValue).ToListAsync();
+                foreach (var solution in solutions)
                 {
-                    await progress.SetProgress(0);
-
-                    var fail = 0;
-                    var count = 0;
-                    var solutions = await _solutions.GetSolutions(challenge.Id, uint.MaxValue).ToListAsync();
-                    foreach (var solution in solutions)
+                    var (vs, vf) = await _verification.Verify(challenge, solution.Solution.Yolol);
+                    if (vs == null)
                     {
-                        var (vs, vf) = await _verification.Verify(challenge, solution.Solution.Yolol);
-                        if (vs == null)
-                        {
-                            fail++;
-                            totalFail++;
-                        }
-
-                        count++;
-                        totalCount++;
-
-                        if (!fast)
-                        {
-                            if (vf != null)
-                                await ReplyAsync($" - Failed ({await UserName(solution.Solution.UserId)}): {vf.Hint}".LimitLength(1000));
-
-                            await progress.SetProgress((float)count / solutions.Count);
-                            await Task.Delay(250);
-                        }
+                        fail++;
+                        totalFail++;
                     }
+
+                    count++;
+                    totalCount++;
 
                     if (!fast)
                     {
-                        if (fail > 0)
-                            await ReplyAsync($"Failed {fail}/{count} programs\n");
+                        if (vf != null)
+                            await ReplyAsync($" - Failed ({await UserName(solution.Solution.UserId)}): {vf.Hint}".LimitLength(1000));
+
+                        await progress.SetProgress((float)count / solutions.Count);
                         await Task.Delay(250);
                     }
+                }
+
+                if (!fast)
+                {
+                    if (fail > 0)
+                        await ReplyAsync($"Failed {fail}/{count} programs\n");
+                    await Task.Delay(250);
                 }
             }
 

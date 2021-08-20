@@ -47,14 +47,13 @@ namespace YololCompetition.Services.Challenge
 
         public async Task Create(Challenge challenge)
         {
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = "INSERT into Challenges" +
-                                  "(Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode, Chip, IntermediateCode)" +
-                                  "values(@Status, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode, @Chip, @IntermediateCode)";
-                challenge.Write(cmd.Parameters);
-                await cmd.ExecuteNonQueryAsync();
-            }
+            await using var cmd = _database.CreateCommand();
+
+            cmd.CommandText = "INSERT into Challenges" +
+                              "(Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode, Chip, IntermediateCode)" +
+                              "values(@Status, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode, @Chip, @IntermediateCode)";
+            challenge.Write(cmd.Parameters);
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task Update(Challenge challenge)

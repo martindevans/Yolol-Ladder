@@ -15,7 +15,7 @@ namespace YololCompetition.Services.Solutions
     {
         private readonly IDatabase _database;
 
-        public DbSolutions(IDatabase database, IBroadcast broadcast)
+        public DbSolutions(IDatabase database)
         {
             _database = database;
 
