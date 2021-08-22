@@ -49,14 +49,14 @@ namespace YololCompetition.Services.Execute
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        Value? TryGet(string name);
+        Value? TryGet(VariableName name);
 
         /// <summary>
         /// Set a specific variable to a given value
         /// </summary>
         /// <param name="name"></param>
         /// <param name="value"></param>
-        void Set(string name, Value value);
+        void Set(VariableName name, Value value);
 
         /// <summary>
         /// Copy all the variable values from this state to another state

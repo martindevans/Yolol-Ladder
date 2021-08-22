@@ -100,14 +100,14 @@ namespace YololCompetition.Services.Execute
                 return null;
             }
 
-            public Value? TryGet(string name)
+            public Value? TryGet(VariableName name)
             {
-                return _state.GetVariable(name).Value;
+                return _state.GetVariable(name.Name).Value;
             }
 
-            public void Set(string name, Value value)
+            public void Set(VariableName name, Value value)
             {
-                var v = _state.GetVariable(name);
+                var v = _state.GetVariable(name.Name);
                 v.Value = value;
             }
 
@@ -118,7 +118,7 @@ namespace YololCompetition.Services.Execute
                     if (!name.IsExternal && externalsOnly)
                         continue;
 
-                    other.Set(name.Name, value);
+                    other.Set(name, value);
                 }
             }
 

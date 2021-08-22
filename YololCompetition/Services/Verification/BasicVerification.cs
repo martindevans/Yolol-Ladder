@@ -101,7 +101,7 @@ namespace YololCompetition.Services.Verification
                 stateChallenge.CopyTo(stateUser, true);
 
                 // Check if the challenge code has forced a failure
-                var forceFail = stateChallenge.TryGet(":fail");
+                var forceFail = stateChallenge.TryGet(new VariableName(":fail"));
                 if (forceFail?.Type == Yolol.Execution.Type.String && forceFail.Value.String.Length != 0)
                     return (null, new Failure(FailureType.ChallengeForceFail, forceFail.Value.String.ToString()));
 
@@ -127,7 +127,7 @@ namespace YololCompetition.Services.Verification
         private static IReadOnlyDictionary<string, Value> SetInputs(IReadOnlyDictionary<string, Value> values, IExecutionState state, string prefix = ":")
         {
             foreach (var (k, v) in values)
-                state.Set(prefix + k, v);
+                state.Set(new VariableName(prefix + k), v);
 
             return values;
         }

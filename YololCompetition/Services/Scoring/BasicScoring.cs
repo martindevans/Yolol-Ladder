@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Yolol.Execution;
+using Yolol.Grammar;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Execute;
 using YololCompetition.Services.Verification;
@@ -54,7 +55,7 @@ namespace YololCompetition.Services.Scoring
             // Check that the machine state is exactly correct for every expected output
             foreach (var (key, value) in expectedOutputs)
             {
-                var v = state.TryGet($":{key}") ?? (Value)0;
+                var v = state.TryGet(new VariableName($":{key}")) ?? (Value)0;
                 if (v != value)
                 {
                     var ii = string.Join(",", inputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));

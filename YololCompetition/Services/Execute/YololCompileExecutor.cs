@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Yolol.Execution;
 using Yolol.Grammar;
+using Yolol.IL;
 using Yolol.IL.Compiler;
 using Yolol.IL.Extensions;
 
@@ -16,34 +17,21 @@ namespace YololCompetition.Services.Execute
 
         public IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done)
         {
-            var internalsMap = new InternalsMap();
             var externalsMap = new ExternalsMap();
-            var lines = new List<Func<ArraySegment<Value>, ArraySegment<Value>, int>>();
+            var compiled = program.Compile(externalsMap, Math.Max(20, program.Lines.Count), MaxStringLength, null, true);
 
-            for (var i = 0; i < program.Lines.Count; i++)
-            {
-                lines.Add(program.Lines[i].Compile(
-                    i + 1,
-                    Math.Max(20, program.Lines.Count),
-                    MaxStringLength,
-                    internalsMap,
-                    externalsMap
-                ));
-            }
-
-            return new ExecutionState(lines, internalsMap, externalsMap, done);
+            return new ExecutionState(compiled, externalsMap, done);
         }
 
         private class ExecutionState
             : IExecutionState
         {
-            private readonly List<Func<ArraySegment<Value>, ArraySegment<Value>, int>> _lines;
-            private readonly Dictionary<string, int> _internalsMap;
-            private readonly Dictionary<string, int> _externalsMap;
-            private readonly string _done;
+            private readonly CompiledProgram _program;
+            private readonly ExternalsMap _externalsMap;
+            private readonly VariableName _done;
 
-            private Value[] _externals;
-            private Value[] _internals;
+            private readonly Value[] _externals;
+            private readonly Value[] _internals;
 
             public bool Done
             {
@@ -51,21 +39,19 @@ namespace YololCompetition.Services.Execute
                 set => Set(_done, (Number)value);
             }
 
-            private int _programCounter;
-            public int ProgramCounter => _programCounter + 1;
+            public int ProgramCounter => _program.ProgramCounter;
 
             public ulong TotalLinesExecuted { get; private set; }
 
             public bool TerminateOnPcOverflow { get; set; }
 
-            public ExecutionState(List<Func<ArraySegment<Value>, ArraySegment<Value>, int>> funcs, Dictionary<string, int> internalsMap, Dictionary<string, int> externalsMap, string done)
+            public ExecutionState(CompiledProgram program, ExternalsMap externalsMap, string done)
             {
-                _lines = funcs;
-                _internalsMap = internalsMap;
+                _program = program;
                 _externalsMap = externalsMap;
-                _done = done;
+                _done = new VariableName(done);
 
-                _internals = new Value[internalsMap.Count];
+                _internals = new Value[_program.InternalsMap.Count];
                 Array.Fill(_internals, new Value((Number)0));
                 _externals = new Value[externalsMap.Count];
                 Array.Fill(_externals, new Value((Number)0));
@@ -76,89 +62,68 @@ namespace YololCompetition.Services.Execute
                 var timer = new Stopwatch();
                 timer.Start();
 
+                var limit = Math.Min(10000, (int)lineExecutionLimit);
+                var doneKey = _externalsMap.ChangeSetKey(new VariableName(":done"));
+
                 // Run lines until completion indicator is set or execution time limit is exceeded
                 var executed = 0;
-                while (!Done && executed++ < lineExecutionLimit)
+                try
                 {
-                    try
+                    while (!Done && executed < lineExecutionLimit)
                     {
-                        TotalLinesExecuted++;
+                        executed += _program.Run(_internals, _externals, Math.Min(limit, (int)(lineExecutionLimit - executed)), doneKey);
 
-                        // If line if blank, just move to the next line
-                        if (_programCounter >= _lines.Count)
-                            _programCounter++;
-                        else
-                            _programCounter = _lines[_programCounter](_internals, _externals) - 1;
+                        // Execution timeout
+                        if (timer.Elapsed > timeout)
+                            return $"Execution Timed Out (executed {executed} ticks in {timer.Elapsed.TotalMilliseconds}ms)";
                     }
-                    catch (ExecutionException)
-                    {
-                        _programCounter++;
-                    }
-
-                    // loop around if program counter goes over max
-                    if (_programCounter >= 20)
-                    {
-                        _programCounter = 0;
-                        if (TerminateOnPcOverflow)
-                            return null;
-                    }
-
-                    // Execution timeout
-                    if (timer.Elapsed > timeout)
-                        return $"Execution Timed Out (executed {executed} ticks in {timer.Elapsed.TotalMilliseconds}ms)";
+                }
+                finally
+                {
+                    TotalLinesExecuted = (ulong)executed;
                 }
 
                 return null;
             }
 
-            public Value? TryGet(string name)
+            public Value? TryGet(VariableName vName)
             {
-                var vName = new VariableName(name);
                 if (vName.IsExternal)
                 {
-                    if (!_externalsMap.TryGetValue(vName.Name, out var v))
+                    if (!_externalsMap.TryGetValue(vName, out var v))
                         return null;
                     return _externals[v];
                 }
                 else
                 {
-                    if (!_internalsMap.TryGetValue(vName.Name, out var v))
+                    if (!_program.InternalsMap.TryGetValue(vName, out var v))
                         return null;
                     return _internals[v];
                 }
             }
 
-            public void Set(string name, Value value)
+            public void Set(VariableName vName, Value value)
             {
-                var vName = new VariableName(name);
                 if (vName.IsExternal)
                 {
-                    if (!_externalsMap.TryGetValue(vName.Name, out var v))
-                    {
-                        v = _externals.Length;
-                        _externalsMap.Add(vName.Name, v);
-                        Array.Resize(ref _externals, _externals.Length + 1);
-                    }
+                    if (!_externalsMap.TryGetValue(vName, out var v))
+                        return;
                     _externals[v] = value;
                 }
                 else
                 {
-                    if (!_internalsMap.TryGetValue(vName.Name, out var v))
-                    {
-                        v = _internals.Length;
-                        _internalsMap.Add(vName.Name, v);
-                        Array.Resize(ref _internals, _internals.Length + 1);
-                    }
+                    if (!_program.InternalsMap.TryGetValue(vName, out var v))
+                        return;
                     _internals[v] = value;
                 }
             }
 
             public IEnumerator<KeyValuePair<VariableName, Value>> GetEnumerator()
             {
-                foreach (var (key, value) in _internalsMap)
-                    yield return new KeyValuePair<VariableName, Value>(new VariableName(key), _internals[value]);
+                foreach (var (key, value) in _program.InternalsMap)
+                    yield return new KeyValuePair<VariableName, Value>(key, _internals[value]);
                 foreach (var (key, value) in _externalsMap)
-                    yield return new KeyValuePair<VariableName, Value>(new VariableName(key), _externals[value]);
+                    yield return new KeyValuePair<VariableName, Value>(key, _externals[value]);
             }
 
             IEnumerator IEnumerable.GetEnumerator()
@@ -169,7 +134,7 @@ namespace YololCompetition.Services.Execute
             public void CopyTo(IExecutionState other, bool externalsOnly = false)
             {
                 if (!externalsOnly)
-                    foreach (var (name, index) in _internalsMap)
+                    foreach (var (name, index) in _program.InternalsMap)
                         other.Set(name, _internals[index]);
 
                 foreach (var (name, index) in _externalsMap)

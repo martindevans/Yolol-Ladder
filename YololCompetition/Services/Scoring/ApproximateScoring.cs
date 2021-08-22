@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Yolol.Execution;
+using Yolol.Grammar;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Execute;
 using YololCompetition.Services.Verification;
@@ -23,7 +24,7 @@ namespace YololCompetition.Services.Scoring
             // Check that the machine state is exactly correct for every expected output
             foreach (var (key, expected) in expectedOutputs)
             {
-                var actual = state.TryGet($":{key}") ?? (Value)0;
+                var actual = state.TryGet(new VariableName($":{key}")) ?? (Value)0;
 
                 // Add bonus points averaged across all cases
                 switch (expected.Type, actual.Type)

@@ -23,7 +23,7 @@ namespace YololCompetition
             var filler = string.Join("", Enumerable.Repeat('#', fillCount));
             var spaces = string.Join("", Enumerable.Repeat('-', 50 - fillCount));
 
-            await _message.ModifyAsync(a => a.Content = $"{_prefix} |{filler}{spaces}| ({progress * 100:F1}%)");
+            await _message.ModifyAsync(a => a.Content = $"{_prefix} `|{filler}{spaces}|` ({progress * 100:F1}%)");
         }
 
         public async ValueTask DisposeAsync()
