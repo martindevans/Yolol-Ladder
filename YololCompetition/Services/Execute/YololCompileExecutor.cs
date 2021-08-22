@@ -80,7 +80,7 @@ namespace YololCompetition.Services.Execute
                 }
                 finally
                 {
-                    TotalLinesExecuted = (ulong)executed;
+                    TotalLinesExecuted += (ulong)executed;
                 }
 
                 return null;

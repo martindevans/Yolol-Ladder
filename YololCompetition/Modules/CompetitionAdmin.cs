@@ -431,7 +431,13 @@ namespace YololCompetition.Modules
             var report = new StringBuilder();
             report.AppendLine($"Rescoring `{c.Name}`");
             foreach (var rescore in results)
-                report.AppendLine($"{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.After.Score}");
+            {
+                if (rescore.Failure != null)
+                    report.AppendLine("{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.Failure}");
+                else
+                    report.AppendLine($"{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.After!.Value.Score}");
+            }
+
             await ReplyAsync(report.ToString());
 
             await ReplyAsync("Apply rescoring to this challenge (yes/no)?");
@@ -443,7 +449,12 @@ namespace YololCompetition.Modules
             }
 
             foreach (var rescore in results)
-                await _solutions.SetSolution(rescore.After);
+            {
+                await _solutions.DeleteSolution(rescore.Before.ChallengeId, rescore.Before.UserId);
+
+                if (rescore.After.HasValue)
+                    await _solutions.SetSolution(rescore.After.Value);
+            }
 
             await ReplyAsync("Done.");
         }
@@ -451,7 +462,7 @@ namespace YololCompetition.Modules
         private readonly struct RescoreItem
         {
             public readonly Solution Before;
-            public readonly Solution After;
+            public readonly Solution? After;
             public readonly string? Failure;
 
             public RescoreItem(Solution before, Solution after, string? failure = null)
