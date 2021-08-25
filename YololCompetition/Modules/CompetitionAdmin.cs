@@ -433,7 +433,7 @@ namespace YololCompetition.Modules
             foreach (var rescore in results)
             {
                 if (rescore.Failure != null)
-                    report.AppendLine("{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.Failure}");
+                    report.AppendLine($"{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.Failure}");
                 else
                     report.AppendLine($"{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.After!.Value.Score}");
             }
