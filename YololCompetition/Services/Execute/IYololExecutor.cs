@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Discord;
 using Yolol.Execution;
 using Yolol.Grammar;
@@ -80,15 +81,31 @@ namespace YololCompetition.Services.Execute
 
             pre?.Invoke(embed);
 
-            var locals = state.Where(a => !a.Key.IsExternal).ToArray();
-            if (locals.Length > 0)
-                embed.AddField("Locals", string.Join("\n", locals.OrderBy(a => a.Key.Name).Select(a => $"`{a.Key}={a.Value.ToHumanString()}`")));
-
-            var globals = state.Where(a => a.Key.IsExternal).ToArray();
-            if (globals.Length > 0)
-                embed.AddField("Globals", string.Join("\n", globals.OrderBy(a => a.Key.Name).Select(a => $"`{a.Key}={a.Value.ToHumanString()}`")));
+            BuildFieldsList(embed, "Locals", state.Where(a => !a.Key.IsExternal).ToArray());
+            BuildFieldsList(embed, "Globals", state.Where(a => a.Key.IsExternal).ToArray());
 
             return embed;
+        }
+
+        private static void BuildFieldsList(EmbedBuilder embed, string title, IReadOnlyList<KeyValuePair<VariableName, Value>> values)
+        {
+            var counter = 0;
+            var builder = new StringBuilder();
+            foreach (var (name, value) in values)
+            {
+                var str = $"`{name}={value.ToHumanString()}`";
+                if (builder.Length + str.Length > 1000)
+                {
+                    var c = counter++;
+                    embed.AddField($"{title} {(c == 0 ? "" : c.ToString())}", builder.ToString(), false);
+                    builder.Clear();
+                }
+
+                builder.AppendLine(str);
+            }
+
+            if (builder.Length > 0)
+                embed.AddField($"{title} {(counter == 0 ? "" : counter.ToString())}", builder.ToString(), false);
         }
     }
 }
