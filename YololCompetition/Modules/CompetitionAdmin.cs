@@ -398,27 +398,35 @@ namespace YololCompetition.Modules
                 await progress.ModifyAsync(a => a.Content = $"{pbarHeader} {i}/{solutions.Length}");
 
                 var s = solutions[i];
-                var (success, failure) = await _verification.Verify(c, s.Solution.Yolol);
-
-                if (success != null)
+                try
                 {
-                    totalTicks += success.Iterations;
-                    results.Add(new RescoreItem(
-                        s.Solution,
-                        new Solution(s.Solution.ChallengeId, s.Solution.UserId, success.Score, s.Solution.Yolol)
-                    ));
+                    var (success, failure) = await _verification.Verify(c, s.Solution.Yolol);
+                    
+                    if (success != null)
+                    {
+                        totalTicks += success.Iterations;
+                        results.Add(new RescoreItem(
+                            s.Solution,
+                            new Solution(s.Solution.ChallengeId, s.Solution.UserId, success.Score, s.Solution.Yolol)
+                        ));
+                    }
+                    else if (failure != null)
+                    {
+                        failures++;
+                        results.Add(new RescoreItem(
+                            s.Solution,
+                            new Solution(s.Solution.ChallengeId, s.Solution.UserId, s.Solution.Score, s.Solution.Yolol),
+                            failure.Hint
+                        ));
+                    }
+                    else
+                        throw new InvalidOperationException("Verification did not return success or failure");
                 }
-                else if (failure != null)
+                catch (InvalidProgramException)
                 {
-                    failures++;
-                    results.Add(new RescoreItem(
-                        s.Solution,
-                        new Solution(s.Solution.ChallengeId, s.Solution.UserId, s.Solution.Score, s.Solution.Yolol),
-                        failure.Hint
-                    ));
+                    await ReplyAsync($"## Invalid Program Exception!\n```{s.Solution.Yolol}```");
+                    throw;
                 }
-                else
-                    throw new InvalidOperationException("Verification did not return success or failure");
 
                 await Task.Delay(100);
             }
