@@ -34,7 +34,7 @@
     <PackageReference Include="System.Linq.Async" Version="5.0.0" />
     <PackageReference Include="Yolol" Version="14.6.2" />
     <PackageReference Include="Yolol.Analysis" Version="7.0.0" />
-    <PackageReference Include="Yolol.IL" Version="17.0.0" />
+    <PackageReference Include="Yolol.IL" Version="17.0.1" />
   </ItemGroup>
 
   <!--<Target Name="ChangeAliasesOfReactiveExtensions" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
