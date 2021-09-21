@@ -70,30 +70,7 @@ namespace YololCompetition.Services.Scoring
 
             double AccuracyScoreStrings(string key, string expected, string actual)
             {
-                if (expected == actual)
-                    return expected.Length;
-
-                var score = 0.0;
-                var index = 0;
-                foreach (var e in expected)
-                {
-                    // Small penalty for missing characters in answer
-                    if (index >= actual.Length)
-                        score -= 0.1;
-
-                    // One point for correct character, minus 1 for incorrect character
-                    var a = actual[index++];
-                    if (a == e)
-                        score++;
-                    else
-                        score--;
-                }
-
-                // If the answer is longer than it should be give a penalty for every extra character
-                if (actual.Length > expected.Length)
-                    score -= actual.Length - expected.Length;
-                
-                return score;
+                return Math.Max(0, expected.Length - expected.Levenshtein(actual));
             }
         }
 

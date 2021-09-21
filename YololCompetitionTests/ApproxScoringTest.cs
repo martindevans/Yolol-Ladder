@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using YololCompetition.Extensions;
 
 namespace YololCompetitionTests
 {
@@ -34,5 +35,13 @@ namespace YololCompetitionTests
 
         //    Console.WriteLine($"{a} {b} {c} {d} {e} {f}");
         //}
+
+        [TestMethod]
+        public void Levenshtein()
+        {
+            Assert.AreEqual(3, (int)"abc".Levenshtein("123"));
+            Assert.AreEqual(2, (int)"abc".Levenshtein("12c"));
+            Assert.AreEqual(3, (int)"abc".Levenshtein("123abc"));
+        }
     }
 }
