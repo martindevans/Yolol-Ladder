@@ -70,7 +70,22 @@ namespace YololCompetition.Services.Scoring
 
             double AccuracyScoreStrings(string key, string expected, string actual)
             {
-                return Math.Max(0, expected.Length - expected.Levenshtein(actual));
+                var error = expected.Levenshtein(actual);
+                if (error < 1)
+                    return AccuracyPoints * ExactMultiplier;
+
+                _totalError += error;
+                if (error > _hintError && error > 0)
+                {
+                    var ii = InputString();
+                    var oo = OutputString();
+                    _hint = $"For inputs {ii} expected outputs {oo}, produced `:{key}={new Value(actual).ToHumanString()}` (error of `{error}`).";
+                    _hintError = error;
+                }
+
+                return error >= expected.Length
+                     ? 0
+                     : AccuracyPoints / (error + 1);
             }
         }
 
