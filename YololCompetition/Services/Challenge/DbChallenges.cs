@@ -90,7 +90,8 @@ namespace YololCompetition.Services.Challenge
             if (pending == null)
                 return null;
 
-            var endTime = (DateTime.UtcNow + TimeSpan.FromHours(_config.ChallengeDurationHours)).UnixTimestamp();
+            // End time of the challenge should be 3 days after the start time of today to account for if Referee was down on the day it was supposed to start the challenge.
+            var endTime = (DateTime.UtcNow.Date.AddMinutes(_config.ChallengeStartTime) + TimeSpan.FromHours(_config.ChallengeDurationHours)).UnixTimestamp();
 
             // Set status to "Running" and end time to an appropriate offset from now
             await using var cmd = _database.CreateCommand();
@@ -166,6 +167,14 @@ namespace YololCompetition.Services.Challenge
             if (!await reader.ReadAsync())
                 return null;
             return Challenge.Read(reader);
+        }
+
+        public async Task<Challenge?> GetChallengesByEndTime(ulong EndUnixTime)
+        {
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "SELECT * FROM Challenges WHERE EndUnixTime >= @EndTime";
+            cmd.parameters.Add(new SqliteParameter("@EndTime", DbType.UInt64) { Value = EndUnixTime });
+            return await cmd.ExecuteNonQueryAsync();
         }
     }
 }
