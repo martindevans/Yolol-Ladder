@@ -11,6 +11,8 @@ using Nito.AsyncEx;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Leaderboard;
+using YololCompetition.Services.Messages;
+using YololCompetition.Services.Trueskill;
 
 namespace YololCompetition.Services.Schedule
 {
@@ -22,17 +24,23 @@ namespace YololCompetition.Services.Schedule
         private readonly IBroadcast _broadcaster;
         private readonly ILeaderboard _leaderboard;
         private readonly DiscordSocketClient _client;
+        private readonly IMessages _messages;
+        private readonly ITrueskillUpdater _skillUpdate;
 
         private readonly AsyncAutoResetEvent _poker = new AsyncAutoResetEvent();
 
         public SchedulerState State { get; private set; }
-        
-        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client)
+
+        public DateTime? EndTime { get; private set; }
+
+        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client, IMessages messages, ITrueskillUpdater skillUpdate)
         {
             _challenges = challenges;
             _solutions = solutions;
             _broadcaster = broadcaster;
             _client = client;
+            _messages = messages;
+            _skillUpdate = skillUpdate;
             _leaderboard = leaderboard;
         }
 
@@ -56,6 +64,7 @@ namespace YololCompetition.Services.Schedule
                     {
                         Console.WriteLine("No challenges available, waiting for a while...");
                         State = SchedulerState.WaitingNoChallengesInPool;
+                        EndTime = null;
                         await Task.Delay(TimeSpan.FromMinutes(1));
                         continue;
                     }
@@ -71,6 +80,7 @@ namespace YololCompetition.Services.Schedule
 
                 //There is a challenge running, wait until the end time or until someone externally pokes us awake
                 var endTime = current.EndTime;
+                EndTime = endTime;
                 while (endTime != null && endTime > DateTime.UtcNow)
                 {
                     var delay = endTime.Value - DateTime.UtcNow;
@@ -81,11 +91,18 @@ namespace YololCompetition.Services.Schedule
                     }
                 }
 
+                // Refetch current challenge in case it has been updated
+                current = await _challenges.GetCurrentChallenge();
+                if (current == null)
+                    continue;
+                endTime = current.EndTime;
+
                 // If endtime is after now then something else poked the scheduler awake, reset scheduler logic
                 if (endTime != null && endTime > DateTime.UtcNow)
                     continue;
 
                 State = SchedulerState.EndingChallenge;
+                EndTime = null;
 
                 // Finish the current challenge
                 await _challenges.EndCurrentChallenge();
@@ -98,22 +115,32 @@ namespace YololCompetition.Services.Schedule
 
                 // Wait for a cooldown period
                 State = SchedulerState.WaitingCooldown;
-                await Task.WhenAny(_poker.WaitAsync(), Task.Delay(TimeSpan.FromHours(23)));
+                await Task.WhenAny(_poker.WaitAsync(), Task.Delay(TimeSpan.FromHours(24)));
             }
+
+            // ReSharper disable once FunctionNeverReturns
+            // Justification: We never want the scheduler to stop!
         }
 
-        private async Task UpdateLeaderboard(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
+        private async Task UpdateLeaderboard(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutionsAsync)
         {
+            var solutions = await solutionsAsync.ToListAsync();
+            if (solutions.Count == 0)
+                return;
+
+            // Update trueskill
+            await _skillUpdate.ApplyChallengeResults(challenge.Id);
+
             const uint maxScore = 10;
             var score = maxScore;
 
             // Enumerate through each group of equally ranked users
             var ranks = solutions.GroupBy(a => a.Rank).OrderBy(a => a.Key);
-            await foreach (var rank in ranks)
+            foreach (var rank in ranks)
             {
                 // Award all users at the same rank some points
                 var count = 0;
-                await foreach (var solution in rank)
+                foreach (var solution in rank)
                 {
                     count++;
                     await _leaderboard.AddScore(solution.Solution.UserId, score * (uint)challenge.Difficulty);
@@ -121,7 +148,7 @@ namespace YololCompetition.Services.Schedule
 
                 // If there was only one user in the top rank, award them a bonus
                 if (count == 1 && score == maxScore)
-                    await _leaderboard.AddScore((await rank.SingleAsync()).Solution.UserId, (uint)challenge.Difficulty);
+                    await _leaderboard.AddScore((rank.Single()).Solution.UserId, (uint)challenge.Difficulty);
 
                 // Award at least one point to every entrant
                 if (score > 1)
@@ -129,14 +156,17 @@ namespace YololCompetition.Services.Schedule
             }
 
             // Find the smallest solution, if there's only one of them (i.e. no tie for smallest) award a bonus point
-            var smallestGroup = await solutions.GroupBy(a => a.Solution.Yolol.Length).AggregateAsync((a, b) => a.Key < b.Key ? a : b);
-            if (await smallestGroup.CountAsync() == 1)
-                await _leaderboard.AddScore((await smallestGroup.FirstAsync()).Solution.UserId, (uint)challenge.Difficulty);
+            var smallestGroup = solutions.GroupBy(a => a.Solution.Yolol.Length).Aggregate((a, b) => a.Key < b.Key ? a : b);
+            if (smallestGroup.Count() == 1)
+                await _leaderboard.AddScore((smallestGroup.First()).Solution.UserId, (uint)challenge.Difficulty);
         }
 
         private async Task NotifyEnd(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
         {
             var top = await solutions.Take(10).ToArrayAsync();
+            if (top.Length == 0)
+                return;
+
             var (othersCount, othersScore) = await solutions.Skip(10).Select(a => (1, a.Solution.Score)).AggregateAsync((0u, 0L), (a, b) => ((uint)(a.Item1 + b.Item1), a.Item1 + b.Score));
 
             EmbedBuilder embed = new EmbedBuilder {
@@ -161,17 +191,28 @@ namespace YololCompetition.Services.Schedule
                 embed.AddField("Leaderboard", leaderboardStr.ToString());
             }
 
-            await SendEmbedToSubs(embed.Build());
+            await SendEmbedToSubs(embed.Build(), null);
         }
 
         private async Task NotifyStart(Challenge.Challenge challenge)
         {
-            await SendEmbedToSubs(challenge.ToEmbed().Build());
+            await SendEmbedToSubs(challenge.ToEmbed().Build(), challenge.Id);
         }
 
-        private async Task SendEmbedToSubs(Embed embed)
+        private async Task SendEmbedToSubs(Embed embed, ulong? challengeId)
         {
-            await _broadcaster.Broadcast(embed);
+            var messages = new List<IUserMessage>();
+
+            await foreach (var message in _broadcaster.Broadcast(embed))
+            {
+                await Task.Delay(100);
+                if (challengeId != null)
+                    messages.Add(message);
+            }
+
+            if (challengeId != null)
+                foreach (var message in messages)
+                    await _messages.TrackMessage(message, challengeId.Value, Messages.MessageType.Current);
         }
 
         public Task Poke()

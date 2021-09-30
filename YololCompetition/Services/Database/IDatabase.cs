@@ -57,6 +57,9 @@ namespace YololCompetition.Services.Database
                 if (_reader == null)
                     _reader = await _query.ExecuteReaderAsync();
 
+                if (!_reader.HasRows)
+                    return false;
+
                 return await _reader.ReadAsync();
             }
 

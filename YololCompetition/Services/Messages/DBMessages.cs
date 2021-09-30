@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -11,6 +12,7 @@ using YololCompetition.Services.Challenge;
 using YololCompetition.Extensions;
 using Discord.WebSocket;
 using Discord;
+using Discord.Net;
 
 namespace YololCompetition.Services.Messages
 {
@@ -21,6 +23,8 @@ namespace YololCompetition.Services.Messages
         private readonly ICron _cron;
         private readonly IChallenges _challenges;
         private readonly DiscordSocketClient _client;
+
+        private readonly ConcurrentDictionary<(ulong, ulong), IUserMessage> _messageCache = new ConcurrentDictionary<(ulong, ulong), IUserMessage>();
         
         public DbMessages(IDatabase database, ICron cron, IChallenges challenges, DiscordSocketClient client)
         {
@@ -39,15 +43,19 @@ namespace YololCompetition.Services.Messages
             }
         }
 
-        public async Task TrackMessage(ulong channelID, ulong messageID, ulong challengeID, MessageType messageType)
+        public async Task TrackMessage(IUserMessage message, ulong challengeID, MessageType messageType)
         {
             await using var cmd = _database.CreateCommand();
             cmd.CommandText = "INSERT into Messages (ChannelID, MessageID, ChallengeID, MessageType) values(@ChannelID, @MessageID, @ChallengeID, @MessageType)";
-            cmd.Parameters.Add(new SqliteParameter("@ChannelID", DbType.UInt64) { Value = channelID });
-            cmd.Parameters.Add(new SqliteParameter("@MessageID", DbType.UInt64) { Value = messageID });
+            cmd.Parameters.Add(new SqliteParameter("@ChannelID", DbType.UInt64) { Value = message.Channel.Id });
+            cmd.Parameters.Add(new SqliteParameter("@MessageID", DbType.UInt64) { Value = message.Id });
             cmd.Parameters.Add(new SqliteParameter("@ChallengeID", DbType.UInt64) { Value = challengeID });
             cmd.Parameters.Add(new SqliteParameter("@MessageType", DbType.UInt64) { Value = messageType });
             await cmd.ExecuteNonQueryAsync();
+
+            // Add message to cache
+            var key = (message.Channel.Id, message.Id);
+            _messageCache[key] = message;
         }
 
         private async Task RemoveMessage(Message message)
@@ -59,7 +67,7 @@ namespace YololCompetition.Services.Messages
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public IAsyncEnumerable<Message> GetMessages()
+        private IAsyncEnumerable<Message> GetMessages()
         {
             DbCommand PrepareQuery(IDatabase database)
             {                
@@ -67,62 +75,94 @@ namespace YololCompetition.Services.Messages
                 cmd.CommandText = "SELECT * from Messages";
                 return cmd;
             }
-            return new SqlAsyncResult<Message>(_database, PrepareQuery, ParseMessage);            
+            return new SqlAsyncResult<Message>(_database, PrepareQuery, Message.Parse);            
         }
 
-        public async Task UpdateCurrentMessage(Message message)
+        private async Task<IUserMessage?> GetMessage(Challenge.Challenge? currentChallenge, Message message)
         {
-            var currentChallenge = await _challenges.GetCurrentChallenge();        
-            var challenge = await _challenges.GetChallenges(id: message.ChallengeID).FirstAsync();
-
-            if (challenge == null)
-            {
-                Console.WriteLine("Message exists for inexistant challenge " + message.ChallengeID);
+            // If the message is no longer relevant, remove it from the DB
+            if (currentChallenge == null || message.ChallengeID != currentChallenge.Id)
                 await RemoveMessage(message);
-            }
-            else
-            {
-                if (!(_client.GetChannel(message.ChannelID) is ISocketMessageChannel channel))
-                {
-                    Console.WriteLine($"No such channel: {message.ChannelID}");
-                    await RemoveMessage(message);
-                    return;
-                }
 
-                if (!((await channel.GetMessageAsync(message.MessageID)) is IUserMessage msg))
+            // Try to get message from cache
+            var key = (message.ChannelID, message.MessageID);
+            if (_messageCache.TryGetValue(key, out var cached))
+                return cached;
+
+            // Try to get the channel from Discord
+            if (_client.GetChannel(message.ChannelID) is not ISocketMessageChannel channel)
+            {
+                Console.WriteLine($"No such channel: {message.ChannelID}");
+                await RemoveMessage(message);
+                return null;
+            }
+
+            // Check if bot has permission to read channel
+            var gc = channel as IGuildChannel;
+            if (gc != null)
+            {
+                var u = await gc.Guild.GetCurrentUserAsync();
+                var p = u.GetPermissions(gc);
+                if (!p.ReadMessageHistory)
+                    return null;
+            }
+
+            IUserMessage? msg;
+            try
+            {
+                msg = await channel.GetMessageAsync(message.MessageID) as IUserMessage;
+                if (msg == null)
                 {
                     Console.WriteLine($"No such message: {message.MessageID}");
                     await RemoveMessage(message);
-                    return;
+                    return null;
                 }
+            }
+            catch (HttpException ex)
+            {
+                Console.WriteLine($"Failed to get message {message.MessageID} in channel {message.ChannelID}({channel.Name}/{gc?.Guild.Name}): {ex.Message}");
+                return null;
+            }
 
-                await msg.ModifyAsync(a => a.Embed = challenge.ToEmbed().Build());
-                if (currentChallenge == null || challenge.Id != currentChallenge.Id)
-                    await RemoveMessage(message);
-            }            
+            // Add it to the cache
+            _messageCache[key] = msg;
+            return msg;
         }
 
-        private static Message ParseMessage(DbDataReader reader)
+        private async Task UpdateCurrentMessage(Challenge.Challenge? currentChallenge, Message message)
         {
-            return new Message(
-                ulong.Parse(reader["ChannelID"].ToString()!),
-                ulong.Parse(reader["MessageID"].ToString()!),
-                ulong.Parse(reader["ChallengeID"].ToString()!),
-                (MessageType)uint.Parse(reader["MessageType"].ToString()!)
-            );
+            var msg = await GetMessage(currentChallenge, message);
+            if (msg != null)
+            {
+                var challenge = await _challenges.GetChallenges(id: message.ChallengeID).FirstOrDefaultAsync();
+                if (challenge == null)
+                {
+                    Console.WriteLine("Message exists for nonexistant challenge " + message.ChallengeID);
+                    await RemoveMessage(message);
+                }
+                else
+                {
+                    await msg.ModifyAsync(a => a.Embed = challenge.ToEmbed().Build());
+                }
+            }
         }
 
         public void StartMessageWatch()
         {
-            _cron.Schedule(TimeSpan.FromSeconds(30), default, async ct => {
+            _cron.Schedule(TimeSpan.FromSeconds(120), default, async ct => {
 
+                // Get the current challenge
+                var current = await _challenges.GetCurrentChallenge();
+
+                // Loop through all messages, attempting to update them
                 await foreach (var entry in GetMessages().WithCancellation(ct))
                 {
                     try
                     {
-                        switch (entry.MessageType) {
+                        switch (entry.MessageType)
+                        {
                             case MessageType.Current:
-                                await UpdateCurrentMessage(entry);
+                                await UpdateCurrentMessage(current, entry);
                                 break;
 
                             case MessageType.Leaderboard:
@@ -137,20 +177,25 @@ namespace YololCompetition.Services.Messages
                     {
                         Console.WriteLine(e);
                     }
+
+                    // Add in some delay between each event to make sure we don't get near the discord rate limit (2 events per second)
+                    await Task.Delay(1000, ct);
                 }
 
-                var current = await _challenges.GetCurrentChallenge();
+                // When there is no challenge, keep checking every minute
                 if (current == null)
-                    return TimeSpan.FromMinutes(5);
+                    return TimeSpan.FromMinutes(1);
 
                 // This shouldn't ever happen - the current challenge should always have an end time!
                 if (current.EndTime == null)
                     return TimeSpan.FromMinutes(1);
 
+                // Wait until the challenge ends or 5 minutes, whichever is shorest. Never wait less than 30 seconds.
                 var duration = current.EndTime.Value - DateTime.UtcNow;
                 if (duration > TimeSpan.FromMinutes(5))
                     return TimeSpan.FromMinutes(5);
-
+                if (duration < TimeSpan.FromSeconds(30))
+                    return TimeSpan.FromSeconds(30);
                 return duration;
 
             });

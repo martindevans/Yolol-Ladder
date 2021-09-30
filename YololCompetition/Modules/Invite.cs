@@ -1,12 +1,13 @@
-﻿using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using JetBrains.Annotations;
 using YololCompetition.Services.Subscription;
 
 namespace YololCompetition.Modules
 {
+    [UsedImplicitly]
     public class Invite
         : ModuleBase
     {
@@ -21,7 +22,7 @@ namespace YololCompetition.Modules
             _client = client;
         }
 
-        [Command("invite"), RequireOwner, Summary("Invite this bot to another server")]
+        [Command("invite"), Summary("Invite this bot to another server")]
         public async Task GetInvite()
         {
             await ReplyAsync(embed: new EmbedBuilder()
@@ -44,32 +45,6 @@ namespace YololCompetition.Modules
         {
             await _subscriptions.Unsubscribe(Context.Channel.Id, Context.Guild.Id);
             await ReplyAsync("Subscribed this channel to Yolol-Ladder. Notifications about competitions will be posted here");
-        }
-
-        [Command("dump-subscriptions"), RequireOwner, Summary("Print out all subscriptions")]
-        public async Task DumpSubs()
-        {
-            var subs = _subscriptions.GetSubscriptions();
-
-            var output = new StringBuilder();
-            await foreach (var sub in subs)
-            {
-                var guild = _client.GetGuild(sub.Guild);
-                var channel = guild.GetTextChannel(sub.Channel);
-
-                var next = $" - {guild?.Name ?? sub.Guild.ToString()} @ {channel?.Name ?? sub.Channel.ToString()}";
-
-                if (output.Length + next.Length > 1000)
-                {
-                    await ReplyAsync(output.ToString());
-                    output.Clear();
-                }
-
-                output.AppendLine(next);
-            }
-
-            if (output.Length > 0)
-                await ReplyAsync(output.ToString());
         }
     }
 }

@@ -15,7 +15,7 @@ namespace YololCompetition.Services.Solutions
     {
         private readonly IDatabase _database;
 
-        public DbSolutions(IDatabase database, IBroadcast broadcast)
+        public DbSolutions(IDatabase database)
         {
             _database = database;
 
@@ -33,7 +33,9 @@ namespace YololCompetition.Services.Solutions
         {
             await using var cmd = _database.CreateCommand();
 
-            cmd.CommandText = "INSERT INTO Solutions Values(@ChallengeId, @UserId, @Score, @Yolol) ON CONFLICT(UserId, ChallengeId) DO UPDATE SET Score = @Score, Yolol = @Yolol WHERE ChallengeId = @ChallengeId AND UserId = @UserId AND Score <= @Score";
+            cmd.CommandText = "INSERT INTO Solutions Values(@ChallengeId, @UserId, @Score, @Yolol) " +
+                              "ON CONFLICT(UserId, ChallengeId) DO UPDATE SET Score = @Score, Yolol = @Yolol " +
+                              "WHERE ChallengeId = @ChallengeId AND UserId = @UserId AND Score <= @Score";
 
             cmd.Parameters.Add(new SqliteParameter("@UserId", DbType.UInt64) { Value = solution.UserId });
             cmd.Parameters.Add(new SqliteParameter("@ChallengeId", DbType.UInt64) { Value = solution.ChallengeId });
@@ -89,6 +91,17 @@ namespace YololCompetition.Services.Solutions
 
             await results.ReadAsync();
             return ParseRanked(results);
+        }
+
+        public async Task<int> DeleteSolution(ulong challengeId, ulong userId)
+        {
+            await using var cmd = _database.CreateCommand();
+
+            cmd.CommandText = "DELETE FROM Solutions WHERE ChallengeId = @ChallengeId AND UserId = @UserId";
+            cmd.Parameters.Add(new SqliteParameter("@UserId", DbType.UInt64) { Value = userId });
+            cmd.Parameters.Add(new SqliteParameter("@ChallengeId", DbType.UInt64) { Value = challengeId });
+
+            return await cmd.ExecuteNonQueryAsync();
         }
 
         private static RankedSolution ParseRanked(DbDataReader reader)

@@ -13,15 +13,6 @@ namespace YololCompetition.Services.Challenge
     public class DbChallenges
         : IChallenges
     {
-        private enum Status
-        {
-            None = 0,
-
-            Pending = 1,
-            Running = 2,
-            Complete = 3,
-        }
-
         private readonly IDatabase _database;
         private readonly Configuration _config;
 
@@ -43,7 +34,9 @@ namespace YololCompetition.Services.Challenge
                                "`Shuffle` INTEGER NOT NULL, " +
                                "`ScoreMode` INTEGER NOT NULL, " +
                                "`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, " +
-                               "`EndUnixTime` INTEGER);");
+                               "`EndUnixTime` INTEGER, " +
+                               "`IntermediateCode` TEXT NOT NULL, " +
+                               "`Chip` INTEGER NOT NULL);");
 
             }
             catch (Exception e)
@@ -55,7 +48,18 @@ namespace YololCompetition.Services.Challenge
         public async Task Create(Challenge challenge)
         {
             await using var cmd = _database.CreateCommand();
-            cmd.CommandText = "INSERT into Challenges (Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode) values(1, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode)";
+
+            cmd.CommandText = "INSERT into Challenges" +
+                              "(Status, Name, Inputs, Outputs, CheckIndicator, Difficulty, Description, Shuffle, ScoreMode, Chip, IntermediateCode)" +
+                              "values(@Status, @Name, @Inputs, @Outputs, @CheckIndicator, @Difficulty, @Description, @Shuffle, @ScoreMode, @Chip, @IntermediateCode)";
+            challenge.Write(cmd.Parameters);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task Update(Challenge challenge)
+        {
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "UPDATE Challenges SET Difficulty = @Difficulty, EndUnixTime = @EndUnixTime WHERE ID = @ID";
             challenge.Write(cmd.Parameters);
             await cmd.ExecuteNonQueryAsync();
         }
@@ -64,7 +68,7 @@ namespace YololCompetition.Services.Challenge
         {
             await using var cmd = _database.CreateCommand();
             cmd.CommandText = "SELECT Count(*) FROM Challenges WHERE Status = 1";
-            return (long)await cmd.ExecuteScalarAsync();
+            return (long)(await cmd.ExecuteScalarAsync() ?? 0L);
         }
 
         private IAsyncEnumerable<Challenge> GetPending(int limit)
@@ -82,7 +86,7 @@ namespace YololCompetition.Services.Challenge
 
         public async Task<Challenge?> StartNext()
         {
-            var pending = await GetPending(1).FirstOrDefaultAsync();
+            var pending = (Challenge?)await GetPending(1).FirstOrDefaultAsync();
             if (pending == null)
                 return null;
 
@@ -98,9 +102,18 @@ namespace YololCompetition.Services.Challenge
             return await GetCurrentChallenge();
         }
 
+        public async Task<int> SetToPending(ulong challengeId)
+        {
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "UPDATE Challenges SET Status = 1 WHERE ID = @ID";
+            cmd.Parameters.Add(new SqliteParameter("@ID", DbType.UInt64) { Value = challengeId }); 
+
+            return await cmd.ExecuteNonQueryAsync();
+        }
+
         public async Task EndCurrentChallenge()
         {
-            await _database.ExecAsync("UPDATE Challenges SET Status = 3 WHERE Status = 2");
+            _database.Exec("UPDATE Challenges SET Status = 3 WHERE Status = 2");
         }
 
         public async Task ChangeChallengeDifficulty(Challenge challenge, ChallengeDifficulty difficulty)
@@ -134,6 +147,14 @@ namespace YololCompetition.Services.Challenge
             }
 
             return new SqlAsyncResult<Challenge>(_database, PrepareQuery, Challenge.Read);
+        }
+
+        public async Task<int> Delete(ulong challengeId)
+        {
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "DELETE FROM Challenges WHERE ID = @ID";
+            cmd.Parameters.Add(new SqliteParameter("@ID", DbType.UInt64) { Value = challengeId });
+            return await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task<Challenge?> GetCurrentChallenge()

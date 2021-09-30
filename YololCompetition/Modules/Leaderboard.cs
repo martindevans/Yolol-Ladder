@@ -6,12 +6,15 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using JetBrains.Annotations;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Solutions;
+using YololCompetition.Services.Trueskill;
 
 namespace YololCompetition.Modules
 {
+    [UsedImplicitly]
     public class Leaderboard
         : ModuleBase
     {
@@ -19,19 +22,22 @@ namespace YololCompetition.Modules
         private readonly DiscordSocketClient _client;
         private readonly IChallenges _challenges;
         private readonly ISolutions _solutions;
+        private readonly ITrueskill _skills;
 
-        public Leaderboard(ILeaderboard leaderboard, DiscordSocketClient client, IChallenges challenges, ISolutions solutions)
+        public Leaderboard(ILeaderboard leaderboard, DiscordSocketClient client, IChallenges challenges, ISolutions solutions, ITrueskill skills)
         {
             _leaderboard = leaderboard;
             _client = client;
             _challenges = challenges;
             _solutions = solutions;
+            _skills = skills;
         }
 
         public enum LeaderboardType
         {
             Global,
-            Current
+            Current,
+            Trueskill,
         }
 
         [Command("leaderboard"), Summary("Display the top Yolol programmers")]
@@ -39,7 +45,7 @@ namespace YololCompetition.Modules
         {
             if (type == LeaderboardType.Global)
             {
-                var top = _leaderboard.GetTopRank(15);
+                var top = await _leaderboard.GetTopRank(15).ToListAsync();
                 await ReplyAsync(embed: await FormatLeaderboard(top));
             }
             else if (type == LeaderboardType.Current)
@@ -53,36 +59,39 @@ namespace YololCompetition.Modules
 
                 await DisplayChallengeLeaderboard(challenge);
             }
+            else if (type == LeaderboardType.Trueskill)
+            {
+                var top = await _skills.GetTopRanks(15).ToListAsync();
+                await ReplyAsync(embed: await FormatLeaderboard(top));
+            }
             else
                 throw new InvalidOperationException("Unknown leaderboard type");
 
             
         }
 
-        [Command("leaderboard"), Summary("Display the top Yolol programmers")]
+        [Command("leaderboard"), Summary("Display the top Yolol programmers for a specific challenge")]
         public async Task ShowLeaderboard(string id)
         {
-            var uid = BalderHash.BalderHash32.Parse(id);
-            if (!uid.HasValue)
+            var c = await _challenges.FuzzyFindChallenge(id).Take(2).ToArrayAsync();
+            if (c.Length > 1)
             {
-                await ReplyAsync("That is not a valid challenge ID.");
-                return;
+                await ReplyAsync("Found more than one challenge matching that search string, please be more specific");
             }
-
-            var c = await _challenges.GetChallenges(id: uid.Value.Value).SingleOrDefaultAsync();
-            if (c == null)
+            else if (c.Length == 0)
             {
-                await ReplyAsync("Cannot find a challenge with that ID.");
-                return;
+                await ReplyAsync("Could not find a challenge matching that searching string");
             }
-
-            await DisplayChallengeLeaderboard(c);
+            else
+            {
+                await DisplayChallengeLeaderboard(c[0]);
+            }
         }
 
         private async Task DisplayChallengeLeaderboard(Challenge challenge)
         {
             // Get the top N solutions
-            var top5 = _solutions.GetSolutions(challenge.Id, 20).Select(a => new RankInfo(a.Solution.UserId, a.Rank, a.Solution.Score));
+            var top5 = await _solutions.GetSolutions(challenge.Id, 20).Select(a => new RankInfo(a.Solution.UserId, a.Rank, a.Solution.Score)).ToListAsync();
 
             // Get your own rank
             var self = await _solutions.GetRank(challenge.Id, Context.User.Id);
@@ -92,39 +101,6 @@ namespace YololCompetition.Modules
 
             await ReplyAsync(embed: await FormatLeaderboard(top5, selfRank, challenge));
 
-        }
-
-        [Command("rank"), Summary("Display your own rank among Yolol programmers")]
-        public async Task Rank(LeaderboardType type = LeaderboardType.Global)
-        {
-            if (type == LeaderboardType.Global)
-            {
-                var rank = await _leaderboard.GetRank(Context.User.Id);
-                if (rank.HasValue)
-                    await ReplyAsync($"You are rank {rank.Value.Rank} with a score of {rank.Value.Score}");
-                else
-                    await ReplyAsync($"You do not have a rank yet!");
-            }
-            else if (type == LeaderboardType.Current)
-            {
-                var challenge = await _challenges.GetCurrentChallenge();
-                if (challenge == null)
-                {
-                    await ReplyAsync("There is no currently running challenge");
-                    return;
-                }
-
-                var self = await _solutions.GetRank(challenge.Id, Context.User.Id);
-                if (!self.HasValue)
-                {
-                    await ReplyAsync("You do not have a rank for this challenge yet");
-                    return;
-                }
-
-                await ReplyAsync($"You are rank {self.Value.Rank} for the current challenge with a score of {self.Value.Solution.Score}");
-            }
-            else
-                throw new InvalidOperationException("Unknown leaderboard type");
         }
 
         [RequireOwner]
@@ -141,7 +117,7 @@ namespace YololCompetition.Modules
             await _leaderboard.SubtractScore(user.Id, score);
         }
 
-        private async Task<Embed> FormatLeaderboard(IAsyncEnumerable<RankInfo> ranks, RankInfo? extra = null, Challenge? challenge = null)
+        private async Task<Embed> FormatLeaderboard(IEnumerable<RankInfo> ranks, RankInfo? extra = null, Challenge? challenge = null)
         {
             async Task<string> FormatRankInfo(RankInfo info)
             {
@@ -159,7 +135,7 @@ namespace YololCompetition.Modules
             var count = 0;
             var seenExtra = false;
             var builder = new StringBuilder();
-            await foreach (var rank in ranks)
+            foreach (var rank in ranks)
             {
                 builder.AppendLine(await FormatRankInfo(rank));
                 seenExtra |= extra.HasValue && rank.Id == extra.Value.Id;
@@ -174,7 +150,39 @@ namespace YololCompetition.Modules
             }
 
             if (!seenExtra && count == 0)
-                builder.AppendLine("You do not have a rank yet!");
+                builder.AppendLine("Leaderboard is empty!");
+
+            embed.WithDescription(builder.ToString());
+
+            return embed.Build();
+        }
+
+        private async Task<Embed> FormatLeaderboard(IEnumerable<UserTrueskillRating> ranks)
+        {
+            async Task<string> FormatRankInfo(UserTrueskillRating info)
+            {
+                var skill = 100 * Math.Max(0, info.Rating.ConservativeEstimate);
+                var user = (IUser)_client.GetUser(info.UserId) ?? await _client.Rest.GetUserAsync(info.UserId);
+                var name = user?.Username ?? info.UserId.ToString();
+                return $"{info.Rank}. ({skill:0000}) **{name}**";
+            }
+
+            var embed = new EmbedBuilder {
+                Title = "Yolol Leaderboard",
+                Color = Color.Green,
+                Footer = new EmbedFooterBuilder().WithText("A Cylon Project")
+            };
+
+            var count = 0;
+            var builder = new StringBuilder();
+            foreach (var rank in ranks)
+            {
+                builder.AppendLine(await FormatRankInfo(rank));
+                count++;
+            }
+
+            if (count == 0)
+                builder.AppendLine("Leaderboard is empty!");
 
             embed.WithDescription(builder.ToString());
 

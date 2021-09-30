@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Yolol.Execution;
 
-namespace YololCompetition.Services.Verification
+namespace YololCompetition.Services.Execute
 {
     public class DefaultValueDeviceNetwork
         : IDeviceNetwork, IEnumerable<(string, Value)>
@@ -13,7 +13,7 @@ namespace YololCompetition.Services.Verification
         {
             if (!_saved.TryGetValue(name, out var v))
             {
-                v = new Variable { Value = 0 };
+                v = new Variable { Value = (Value)0 };
                 _saved.Add(name, v);
             }
 

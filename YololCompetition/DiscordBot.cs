@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -14,6 +14,9 @@ namespace YololCompetition
         private readonly Configuration _config;
         private readonly IServiceProvider _services;
 
+        private const int MaxWaitTimeMs = 3500;
+        private readonly SemaphoreSlim _commandConcurrencyLimit = new(50);
+
         public DiscordBot(DiscordSocketClient client, CommandService commands, Configuration config, IServiceProvider services)
         {
             _client = client;
@@ -24,9 +27,9 @@ namespace YololCompetition
 
         public async Task Start()
         {
-            var tcs = new TaskCompletionSource<bool>();
+            var ready = new TaskCompletionSource<bool>();
             _client.Ready += () => {
-                tcs.SetResult(true);
+                ready.SetResult(true);
                 return Task.CompletedTask;
             };
 
@@ -39,46 +42,137 @@ namespace YololCompetition
             await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable(_config.TokenEnvVar));
             await _client.StartAsync();
 
+            // Wait until connected
+            while (_client.ConnectionState == ConnectionState.Connecting)
+                await Task.Delay(1);
+
             // Wait until client is `Ready`
-            await tcs.Task;
+            await ready.Task;
+
+            // Set nickname in all guilds
+            _client.JoinedGuild += async sg => {
+                await TrySetNickname(sg.CurrentUser);
+            };
+            foreach (var clientGuild in _client.Guilds)
+                await TrySetNickname(clientGuild.CurrentUser);
         }
 
-        private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
+        private static async Task TrySetNickname(SocketGuildUser sgu)
         {
-            if (result.IsSuccess || !result.Error.HasValue || result.Error != CommandError.Exception)
+            try
+            {
+                // Check if the bot has nickname permission before trying to set nickname
+                if (!sgu.GuildPermissions.Has(GuildPermission.ChangeNickname))
+                    return;
+                await sgu.ModifyAsync(async gup => { gup.Nickname = "Referee"; });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to set nickname in `{sgu.Guild.Name}`: {e}");
+            }
+        }
+
+        private static async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
+        {
+            if (result.IsSuccess)
                 return;
 
-            await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
+            if (!result.Error.HasValue)
+            {
+                await context.Channel.SendMessageAsync("Command failed (no error)");
+                return;
+            }
+
+            switch (result.Error)
+            {
+                case CommandError.UnmetPrecondition:
+                    await context.Channel.SendMessageAsync(result.ErrorReason);
+                    break;
+
+                case CommandError.Exception:
+                    if (result is ExecuteResult exr)
+                        Console.WriteLine(exr.Exception);
+                    await context.Channel.SendMessageAsync($"Command Failed! {result.ErrorReason}");
+                    break;
+
+                case CommandError.UnknownCommand:
+                case CommandError.ParseFailed:
+                case CommandError.BadArgCount:
+                case CommandError.ObjectNotFound:
+                case CommandError.MultipleMatches:
+                case CommandError.Unsuccessful:
+                case null:
+                default:
+                    break;
+            }
         }
 
         private async Task HandleMessage(SocketMessage msg)
         {
-            // Don't process the command if it was a System Message
-            if (!(msg is SocketUserMessage message))
-                return;
-
-            // Ignore messages from self
-            if (message.Author.Id == _client.CurrentUser.Id)
-                return;
-
-            // Check if the message starts with the command prefix character
-            var prefixPos = 0;
-            var hasPrefix = message.HasCharPrefix(_config.Prefix, ref prefixPos);
-
-            // Skip non-prefixed messages
-            if (!hasPrefix)
-                return;
-
-            // Execute the command
-            var context = new SocketCommandContext(_client, message);
             try
             {
-                await _commands.ExecuteAsync(context, prefixPos, _services);
+                // Don't process the command if it was a System Message
+                if (msg is not SocketUserMessage message)
+                    return;
+
+                // Check if the message starts with the command prefix character
+                var prefixPos = 0;
+                var hasPrefix = message.HasCharPrefix(_config.Prefix, ref prefixPos);
+
+                if (_commandConcurrencyLimit.CurrentCount == 0)
+                    await msg.Channel.SendMessageAsync("Bot is busy - waiting in queue.");
+
+                // Wait until this command is allowed to be serviced (limit total command concurrency)
+                if (!await _commandConcurrencyLimit.WaitAsync(MaxWaitTimeMs))
+                {
+                    await msg.Channel.SendMessageAsync("Bot is too busy. Please try again later.");
+                    return;
+                }
+
+                // Ignore messages from self
+                if (message.Author.Id == _client.CurrentUser.Id)
+                    return;
+
+                // Skip non-prefixed messages
+                if (!hasPrefix)
+                {
+                    HandleNonCommand(msg);
+                    return;
+                }
+
+                // Execute the command
+                var context = new SocketCommandContext(_client, message);
+                try
+                {
+                    var result = await _commands.ExecuteAsync(context, prefixPos, _services);
+                    PostCommandResult(result);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
-            catch (Exception e)
+            finally
             {
-                Console.WriteLine(e);
+                _commandConcurrencyLimit.Release();
             }
+        }
+
+        private void HandleNonCommand(SocketMessage msg)
+        {
+            var rng = new Random(unchecked((int)msg.Id));
+            if (msg.Author.Id == 601092364181962762ul && msg.Content == "I'm back online!" && rng.NextDouble() < 0.25f)
+                msg.AddReactionAsync(new Emoji("👋"));
+        }
+
+        private static void PostCommandResult(IResult result)
+        {
+            //var s = result.IsSuccess;
+            //var e = result.Error;
+            //var r = result.ErrorReason;
+            //Console.WriteLine(s);
+            //Console.WriteLine(e);
+            //Console.WriteLine(r);
         }
     }
 }

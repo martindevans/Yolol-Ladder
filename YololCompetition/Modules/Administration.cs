@@ -1,118 +1,122 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
+using System.Runtime.Intrinsics.X86;
+using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Gif;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.Primitives;
-using SixLabors.Fonts;
+using Discord.WebSocket;
+using JetBrains.Annotations;
+using YololCompetition.Services.Subscription;
 
 namespace YololCompetition.Modules
 {
     [RequireOwner]
+    [UsedImplicitly]
     public class Administration
         : ModuleBase
     {
+        private readonly ISubscription _subscriptions;
+        private readonly DiscordSocketClient _client;
+
+        public Administration(ISubscription subscriptions, DiscordSocketClient client)
+        {
+            _subscriptions = subscriptions;
+            _client = client;
+        }
+
         [Command("kill"), RequireOwner, Summary("Immediately kill the bot")]
         public async Task Kill(int exitCode = 1)
         {
-            await Task.CompletedTask;
-            Environment.Exit(exitCode);
-        }
-
-        [Command("test-png"), RequireOwner, Summary("Render a PNG image")]
-        public async Task PngTest()
-        {
-            using var image = new Image<Rgba32>(128, 128);
-            var pen = new Pen(Color.RebeccaPurple, 3);
-            image.Mutate(x => x.DrawLines(pen, new PointF(0, 0), new PointF(128, 128)));
-
-            await using var memory = new MemoryStream(image.PixelType.BitsPerPixel / 8 * image.Width * image.Height);
-            image.SaveAsPng(memory);
-            memory.Seek(0, SeekOrigin.Begin);
-
-            await Context.Channel.SendFileAsync(memory, "TestImage.png");
-        }
-
-        [Command("test-gif"), RequireOwner, Summary("Render a GIF image")]
-        public async Task GifTest()
-        {
-            var pen = new Pen(Color.RebeccaPurple, 3);
-
-            using var f1 = new Image<Rgba32>(128, 128);
-            f1.Mutate(x => x.DrawLines(pen, new PointF(0, 0), new PointF(128, 128)));
-
-            using var f2 = new Image<Rgba32>(128, 128);
-            f2.Mutate(x => x.DrawLines(pen, new PointF(128, 0), new PointF(0, 128)));
-
-            using var final = new Image<Rgba32>(128, 128);
-            var ff1 = final.Frames.AddFrame(f1.Frames[0]);
-            var md1 = ff1.Metadata.GetFormatMetadata(GifFormat.Instance);
-            md1.FrameDelay = 50;
-            var ff2 = final.Frames.AddFrame(f2.Frames[0]);
-            var md2 = ff2.Metadata.GetFormatMetadata(GifFormat.Instance);
-            md2.FrameDelay = 0;
-            final.Frames.RemoveFrame(0);
-
-            await using var memory = new MemoryStream(final.PixelType.BitsPerPixel / 8 * final.Width * final.Height);
-            final.SaveAsGif(memory);
-            memory.Seek(0, SeekOrigin.Begin);
-
-            await Context.Channel.SendFileAsync(memory, "TestImage.gif");
-        }
-
-        [Command("test-graph"), RequireOwner, Summary("Render a graph")]
-        public async Task GifTest2()
-        {
-            var font = GetFont("sans-serif", "monospace", "Arial");
-
-            const int axisSize = 24;
-            const int axisFontDifference = 2;
-            const int axisFontSize = axisSize - axisFontDifference;
-            const int width = 512;
-            const int height = 512;
-
-            var axisPen = new Pen(Color.Black, 3);
-            var axisFont = new Font(font, axisFontSize);
-
-            using var final = new Image<Rgba32>(width, height);
-            final.Mutate(a => a.Fill(Color.AntiqueWhite));
-            final.Mutate(a => a.DrawLines(axisPen, new PointF(axisSize, 0), new PointF(axisSize, height)));
-            final.Mutate(a => a.DrawLines(axisPen, new PointF(0, height - axisSize), new PointF(width, height - axisSize)));
-            final.Mutate(a => a.DrawText("Chars -->", axisFont, Color.Black, new PointF(axisSize + axisFontSize, height - axisFontSize + axisFontDifference / 2f)));
-            final.Mutate(a => a.Rotate(90));
-            final.Mutate(a => a.DrawText("Ticks -->", axisFont, Color.Black, new PointF(axisSize + axisFontSize, axisFontDifference)));
-            final.Mutate(a => a.Rotate(-90));
-
-            var outputFont = new Font(font, 13);
-            var r = new Random();
-            for (var i = 0; i < 30; i++)
+            try
             {
-                var x = (float)r.NextDouble() * (width - axisSize);
-                var y = (float)r.NextDouble() * (height - axisSize);
+                switch (DateTime.UtcNow.Millisecond % 10)
+                {
+                    case 0:
+                        await ReplyAsync($"Et tu, {Context.User.Username}?");
+                        return;
+                    default:
+                        await ReplyAsync("x_x");
+                        break;
+                }
+            }
+            finally
+            {
+                Environment.Exit(exitCode);
+            }
+        }
 
-                var i1 = i;
-                final.Mutate(a => a.DrawText(i1.ToString(), outputFont, Color.Red, new PointF(x + axisSize, height - y - axisSize)));
+        [Command("simd"), RequireOwner]
+        public async Task Simd()
+        {
+            var embed = new EmbedBuilder().WithTitle("SIMD Support").WithDescription(
+                $" - AVX:  {Avx.IsSupported}\n" +
+                $" - AVX2: {Avx2.IsSupported}\n" + 
+                $" - BMI1: {Bmi1.IsSupported}\n" + 
+                $" - BMI2: {Bmi2.IsSupported}\n" + 
+                $" - FMA:  {Fma.IsSupported}\n" + 
+                $" - LZCNT:{Lzcnt.IsSupported}\n" + 
+                $" - PCLMULQDQ:{Pclmulqdq.IsSupported}\n" + 
+                $" - POPCNT:{Popcnt.IsSupported}\n" + 
+                $" - POPCNT:{Popcnt.IsSupported}\n" + 
+                $" - SSE:{Sse.IsSupported}\n" + 
+                $" - SSE2:{Sse2.IsSupported}\n" + 
+                $" - SSE3:{Sse3.IsSupported}\n" + 
+                $" - SSSE3:{Ssse3.IsSupported}\n" + 
+                $" - SSE41:{Sse41.IsSupported}\n" + 
+                $" - SSE42:{Sse42.IsSupported}\n"
+            ).Build();
+
+            await ReplyAsync(embed: embed);
+        }
+
+        [Command("dump-subscriptions"), RequireOwner, Summary("Print out all subscriptions")]
+        public async Task DumpSubs()
+        {
+            var subs = _subscriptions.GetSubscriptions();
+
+            var output = new StringBuilder();
+            output.AppendLine("Bot Subscriptions:");
+            await foreach (var sub in subs)
+            {
+                var guild = _client.GetGuild(sub.Guild);
+                var channel = guild.GetTextChannel(sub.Channel);
+
+                var next = $" - Guild:`{guild.Name ?? sub.Guild.ToString()}`, Channel:`{channel?.Name ?? sub.Channel.ToString()}`";
+
+                if (output.Length + next.Length > 1000)
+                {
+                    await ReplyAsync(output.ToString());
+                    output.Clear();
+                }
+
+                output.AppendLine(next);
             }
 
-            await using var memory = new MemoryStream(final.PixelType.BitsPerPixel / 8 * final.Width * final.Height);
-            final.SaveAsPng(memory);
-            memory.Seek(0, SeekOrigin.Begin);
-
-
-            await Context.Channel.SendFileAsync(memory, "TestImage.png");
+            if (output.Length > 0)
+                await ReplyAsync(output.ToString());
         }
 
-        private static FontFamily GetFont(params string[] names)
+        [Command("dump-guilds"), RequireOwner, Summary("Print out all guilds this bot is in")]
+        public async Task DumpGuilds()
         {
-            foreach (var name in names)
-                if (SystemFonts.TryFind(name, out var font))
-                     return font;
+            var output = new StringBuilder();
+            output.AppendLine("Bot Guilds:");
+            foreach (var guild in _client.Guilds)
+            {
+                await guild.DownloadUsersAsync();
+                var next = $" - Guild:`{guild.Name}`, Owner:`{guild.Owner.Username}#{guild.Owner.Discriminator}`";
 
-            return SystemFonts.Families.First();
+                if (output.Length + next.Length > 1000)
+                {
+                    await ReplyAsync(output.ToString());
+                    output.Clear();
+                }
+
+                output.AppendLine(next);
+            }
+
+            if (output.Length > 0)
+                await ReplyAsync(output.ToString());
         }
     }
 }

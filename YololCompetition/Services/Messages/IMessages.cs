@@ -1,15 +1,14 @@
-using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading.Tasks;
-
+using Discord;
 
 namespace YololCompetition.Services.Messages
 {
     public interface IMessages
     {
-        Task TrackMessage(ulong ChannelID, ulong MessageID, ulong ChallengeID, MessageType MessageType);
-        IAsyncEnumerable<Message> GetMessages();
+        Task TrackMessage(IUserMessage message, ulong challengeID, MessageType messageType);
+
         void StartMessageWatch();
-        Task UpdateCurrentMessage(Message message);
     }
 
     public readonly struct Message
@@ -19,12 +18,22 @@ namespace YololCompetition.Services.Messages
         public ulong MessageID { get; }
         public MessageType MessageType { get; }
 
-        public Message(ulong channel,ulong message, ulong challenge, MessageType type)
+        public Message(ulong channel, ulong message, ulong challenge, MessageType type)
         {
             ChannelID = channel;
             MessageID = message;
             ChallengeID = challenge;
             MessageType = type;
+        }
+
+        public static Message Parse(DbDataReader reader)
+        {
+            return new Message(
+                ulong.Parse(reader["ChannelID"].ToString()!),
+                ulong.Parse(reader["MessageID"].ToString()!),
+                ulong.Parse(reader["ChallengeID"].ToString()!),
+                (MessageType)uint.Parse(reader["MessageType"].ToString()!)
+            );
         }
     }
 

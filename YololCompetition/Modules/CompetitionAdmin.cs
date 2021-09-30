@@ -9,26 +9,65 @@ using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Schedule;
 using System.Linq;
+using System.Text;
 using BalderHash.Extensions;
+using Discord;
+using Discord.Addons.Interactive;
+using Discord.WebSocket;
+using YololCompetition.Extensions;
+using YololCompetition.Services.Parsing;
+using YololCompetition.Services.Solutions;
+using YololCompetition.Services.Verification;
 
 namespace YololCompetition.Modules
 {
     [RequireOwner]
     public class CompetitionAdmin
-        : ModuleBase
+        : InteractiveBase
     {
         private readonly IChallenges _challenges;
         private readonly IScheduler _scheduler;
+        private readonly IVerification _verification;
+        private readonly DiscordSocketClient _client;
+        private readonly IYololParser _parser;
+        private readonly ISolutions _solutions;
 
-        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler)
+        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ISolutions solutions, IVerification verification, DiscordSocketClient client, IYololParser parser)
         {
             _challenges = challenges;
             _scheduler = scheduler;
+            _verification = verification;
+            _client = client;
+            _parser = parser;
+            _solutions = solutions;
         }
 
         [Command("create"), Summary("Create a new challenge")]
-        public async Task Create(string title, string description, ChallengeDifficulty difficulty, string url)
+        public async Task Create()
         {
+            await ReplyAsync("What is the challenge title?");
+            var title = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+
+            await ReplyAsync("What is the challenge description?");
+            var desc = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+
+            var levels = string.Join(',', Enum.GetNames(typeof(ChallengeDifficulty)));
+            await ReplyAsync($"What is the challenge difficulty ({levels})?");
+            var difficulty = Enum.Parse<ChallengeDifficulty>((await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content);
+
+            await ReplyAsync("What's the Challenge code?");
+            var code = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var (parseOk, parseErr) = await _parser.Parse(code);
+            if (parseOk == null)
+            {
+                await ReplyAsync("Parse Error! Aborting challenge creation");
+                await ReplyAsync(parseErr ?? "Null Error");
+                return;
+            }
+
+            await ReplyAsync("What is the challenge URL (raw JSON)?");
+            var url = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+
             if (!Uri.TryCreate(url, UriKind.Absolute, out var result))
             {
                 await ReplyAsync("Invalid URL format");
@@ -77,11 +116,59 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, description, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring);
+            await ReplyAsync("Do you want to create this challenge (yes/no)?");
+            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Cancelled creating challenge!");
+                return;
+            }
+
+            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring, data.Chip ?? YololChip.Professional, parseOk, ChallengeStatus.TestMode);
             await _challenges.Create(c);
-            await ReplyAsync("Challenge added to queue");
+            await ReplyAsync("Challenge has been created in test mode. Use `>promote $challengeid` to add it to the queue");
         }
-        
+
+        [Command("promote"), Summary("Promote challenge from test mode")]
+        public async Task Promote(string id)
+        {
+            var uid = BalderHash.BalderHash32.Parse(id);
+            if (!uid.HasValue)
+            {
+                await ReplyAsync($"Cannot parse `{id}` as a challenge ID");
+                return;
+            }
+
+            var challenges = await _challenges.GetChallenges(id: uid.Value.Value, includeUnstarted: true).ToArrayAsync();
+            if (challenges.Length == 0)
+            {
+                await ReplyAsync("Cannot find challenge with given ID");
+                return;
+            }
+
+            await ReplyAsync("Found challenges:");
+            foreach (var challenge in challenges)
+            {
+                await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`)");
+                await Task.Delay(10);
+            }
+            await ReplyAsync("Promote those challenges (yes/no)?");
+            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Not promoting anything");
+                return;
+            }
+
+            foreach (var challenge in challenges)
+            {
+                await _challenges.SetToPending(challenge.Id);
+                await Task.Delay(10);
+            }
+
+            await ReplyAsync("Done.");
+        }
+
         private class Data
         {
             [JsonProperty("in")]
@@ -95,13 +182,12 @@ namespace YololCompetition.Modules
 
             [JsonProperty("mode")]
             public ScoreMode? Mode { get; set; }
-        }
 
-        [Command("check-pool"), Summary("Check state of challenge pool")]
-        public async Task CheckPool()
-        {
-            var count = await _challenges.GetPendingCount();
-            await ReplyAsync($"There are {count} challenges pending");
+            [JsonProperty("chip")]
+            public YololChip? Chip { get; set; }
+
+            [JsonProperty("code")]
+            public string? Code { get; set; }
         }
 
         [Command("show-pool"), Summary("Show state of challenge pool")]
@@ -111,12 +197,52 @@ namespace YololCompetition.Modules
             await foreach (var challenge in _challenges.GetChallenges(includeUnstarted: true).Where(a => a.EndTime == null))
             {
                 none = false;
-                await ReplyAsync($" - {challenge.Name} (`{challenge.Id.BalderHash()}`)");
+                await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`) {(challenge.Status == ChallengeStatus.TestMode ? "**TEST MODE**" : "")}");
                 await Task.Delay(10);
             }
 
             if (none)
                 await ReplyAsync("No challenges in pool :(");
+        }
+
+        [Command("delete-challenge"), Summary("Delete a pending challenge from the pool")]
+        public async Task DeleteChallenge(string id)
+        {
+            var uid = BalderHash.BalderHash32.Parse(id);
+            if (!uid.HasValue)
+            {
+                await ReplyAsync($"Cannot parse `{id}` as a challenge ID");
+                return;
+            }
+
+            var challenges = await _challenges.GetChallenges(id: uid.Value.Value, includeUnstarted: true).ToArrayAsync();
+            if (challenges.Length == 0)
+            {
+                await ReplyAsync("Cannot find challenge with given ID");
+                return;
+            }
+
+            await ReplyAsync("Found challenges:");
+            foreach (var challenge in challenges)
+            {
+                await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`)");
+                await Task.Delay(10);
+            }
+            await ReplyAsync("Delete those challenges (yes/no)?");
+            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Not deleting anything");
+                return;
+            }
+
+            foreach (var challenge in challenges)
+            {
+                await _challenges.Delete(challenge.Id);
+                await Task.Delay(10);
+            }
+
+            await ReplyAsync("Done.");
         }
 
         [Command("terminate-current-challenge"), Summary("Immediately terminate current challenge without scoring")]
@@ -139,6 +265,226 @@ namespace YololCompetition.Modules
                 await _challenges.ChangeChallengeDifficulty(current, difficulty);
                 await ReplyAsync($"Changed difficulty from `{current.Difficulty}` to `{difficulty}`");
             }
+        }
+
+        [Command("extend-current"), Summary("Extend current challenge (specify time in hours)")]
+        public async Task Extend(int hours)
+        {
+            var current = await _challenges.GetCurrentChallenge();
+            if (current == null)
+            {
+                await ReplyAsync("No current challenge running");
+                return;
+            }
+
+            current.EndTime = (current.EndTime ?? DateTime.UtcNow) + TimeSpan.FromHours(hours);
+            await _challenges.Update(current);
+
+            await ReplyAsync("Updated");
+        }
+
+        [Command("remove-entry"), Summary("Remove the entry in the current competition for a user")]
+        public async Task RemoveEntry(IUser user)
+        {
+            var current = await _challenges.GetCurrentChallenge();
+            if (current == null)
+            {
+                await ReplyAsync("No challenge is currently running");
+                return;
+            }
+
+            var rows = await _solutions.DeleteSolution(current.Id, user.Id);
+            await ReplyAsync($"Deleted {rows} rows.");
+        }
+
+        [Command("crater")]
+        public async Task Crater(bool fast = false)
+        {
+            var challenges = await _challenges.GetChallenges().ToListAsync();
+            await ReplyAsync($"Running crater for {challenges.Count} challenges");
+
+            var totalCount = 0;
+            var totalFail = 0;
+
+            foreach (var challenge in challenges)
+            {
+                await using var progress = new DiscordProgressBar($" ## Crater: {challenge.Name}", await ReplyAsync("Crater"));
+                await progress.SetProgress(0);
+
+                var fail = 0;
+                var count = 0;
+                var solutions = await _solutions.GetSolutions(challenge.Id, uint.MaxValue).ToListAsync();
+                foreach (var solution in solutions)
+                {
+                    var (vs, vf) = await _verification.Verify(challenge, solution.Solution.Yolol);
+                    if (vs == null)
+                    {
+                        fail++;
+                        totalFail++;
+                    }
+
+                    count++;
+                    totalCount++;
+
+                    if (!fast)
+                    {
+                        if (vf != null)
+                            await ReplyAsync($" - Failed ({await UserName(solution.Solution.UserId)}): {vf.Hint}".LimitLength(1000));
+
+                        await progress.SetProgress((float)count / solutions.Count);
+                        await Task.Delay(250);
+                    }
+                }
+
+                if (!fast)
+                {
+                    if (fail > 0)
+                        await ReplyAsync($"Failed {fail}/{count} programs\n");
+                    await Task.Delay(250);
+                }
+            }
+
+            await ReplyAsync($"Crater test complete. Failed {totalFail}/{totalCount} programs");
+        }
+
+        [Command("rescore"), Summary("Recalculate all scores for a previous competition")]
+        public async Task Rescore(string id)
+        {
+            var uid = BalderHash.BalderHash32.Parse(id);
+            if (!uid.HasValue)
+            {
+                await ReplyAsync($"Cannot parse `{id}` as a challenge ID");
+                return;
+            }
+
+            var challenges = await _challenges.GetChallenges(id: uid.Value.Value, includeUnstarted: true).ToArrayAsync();
+            if (challenges.Length == 0)
+            {
+                await ReplyAsync("Cannot find challenge with given ID");
+                return;
+            }
+
+            if (challenges.Length > 1)
+            {
+                await ReplyAsync("Found more than one challenge, please disambiguate:");
+                foreach (var challenge in challenges)
+                {
+                    await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`)");
+                    await Task.Delay(10);
+                }
+                return;
+            }
+
+            var c = challenges.Single();
+            await ReplyAsync($" - {c.Name} (`{((uint)c.Id).BalderHash()}`)");
+
+            await ReplyAsync("Rescore this challenge (yes/no)?");
+            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Not rescoring anything");
+                return;
+            }
+
+            var solutions = await _solutions.GetSolutions(c.Id, uint.MaxValue).ToArrayAsync();
+            const string pbarHeader = "Rescoring: ";
+            var progress = await ReplyAsync(pbarHeader);
+
+            var totalTicks = 0L;
+            var failures = 0;
+            var results = new List<RescoreItem>(solutions.Length);
+            for (var i = 0; i < solutions.Length; i++)
+            {
+                await progress.ModifyAsync(a => a.Content = $"{pbarHeader} {i}/{solutions.Length}");
+
+                var s = solutions[i];
+                try
+                {
+                    var (success, failure) = await _verification.Verify(c, s.Solution.Yolol);
+                    
+                    if (success != null)
+                    {
+                        totalTicks += success.Iterations;
+                        results.Add(new RescoreItem(
+                            s.Solution,
+                            new Solution(s.Solution.ChallengeId, s.Solution.UserId, success.Score, s.Solution.Yolol)
+                        ));
+                    }
+                    else if (failure != null)
+                    {
+                        failures++;
+                        results.Add(new RescoreItem(
+                            s.Solution,
+                            new Solution(s.Solution.ChallengeId, s.Solution.UserId, s.Solution.Score, s.Solution.Yolol),
+                            failure.Hint
+                        ));
+                    }
+                    else
+                        throw new InvalidOperationException("Verification did not return success or failure");
+                }
+                catch (InvalidProgramException)
+                {
+                    await ReplyAsync($"## Invalid Program Exception!\n```{s.Solution.Yolol}```");
+                    throw;
+                }
+
+                await Task.Delay(100);
+            }
+
+            await progress.ModifyAsync(a => a.Content = $"Completed rescoring ({totalTicks} total ticks)");
+
+            if (failures > 0)
+                await ReplyAsync($"{failures} solutions failed to verify");
+
+            var report = new StringBuilder();
+            report.AppendLine($"Rescoring `{c.Name}`");
+            foreach (var rescore in results)
+            {
+                if (rescore.Failure != null)
+                    report.AppendLine($"{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.Failure}");
+                else
+                    report.AppendLine($"{await UserName(rescore.Before.UserId)}: {rescore.Before.Score} => {rescore.After!.Value.Score}");
+            }
+
+            await ReplyAsync(report.ToString());
+
+            await ReplyAsync("Apply rescoring to this challenge (yes/no)?");
+            var confirm2 = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            if (!confirm2.Equals("yes", StringComparison.OrdinalIgnoreCase))
+            {
+                await ReplyAsync("Not applying rescoring");
+                return;
+            }
+
+            foreach (var rescore in results)
+            {
+                await _solutions.DeleteSolution(rescore.Before.ChallengeId, rescore.Before.UserId);
+
+                if (rescore.After.HasValue)
+                    await _solutions.SetSolution(rescore.After.Value);
+            }
+
+            await ReplyAsync("Done.");
+        }
+
+        private readonly struct RescoreItem
+        {
+            public readonly Solution Before;
+            public readonly Solution? After;
+            public readonly string? Failure;
+
+            public RescoreItem(Solution before, Solution after, string? failure = null)
+            {
+                Before = before;
+                After = after;
+                Failure = failure;
+            }
+        }
+
+        private async Task<string> UserName(ulong userId)
+        {
+            var user = (IUser)_client.GetUser(userId) ?? await _client.Rest.GetUserAsync(userId);
+            return user?.Username ?? userId.ToString();
         }
     }
 }

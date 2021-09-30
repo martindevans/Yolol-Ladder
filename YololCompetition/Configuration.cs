@@ -18,10 +18,7 @@ namespace YololCompetition
         [Option("duration", Required = false, HelpText = "How long each challenge should last in hours", Default = (uint)72)]
         public uint ChallengeDurationHours { get; set; }
 
-        [Option("test_iters", Required = false, HelpText = "Set max lines executed per test case", Default = (uint)1000)]
-        public uint MaxTestIters { get; set; }
-
-        [Option("test_iters_overflow", Required = false, HelpText = "How many extra iters (across all tests) may be used", Default = (uint)10000)]
-        public uint MaxItersOverflow { get; set; }
+        [Option("replays", Required = true, HelpText = "Location to save fleet replays to")]
+        public string ReplayOutputDirectory { get; set; }
     }
 }

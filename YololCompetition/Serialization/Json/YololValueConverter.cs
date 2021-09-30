@@ -11,17 +11,17 @@ namespace YololCompetition.Serialization.Json
         public override void WriteJson(JsonWriter writer, Value value, JsonSerializer serializer)
         {
             if (value.Type == Yolol.Execution.Type.String)
-                writer.WriteValue(value.String);
+                writer.WriteValue(value.String.ToString());
             else
-                writer.WriteValue(value.Number.Value);
+                writer.WriteValue((decimal)value.Number);
         }
 
         public override Value ReadJson(JsonReader reader, Type objectType, Value existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             return reader.TokenType switch {
                 JsonToken.String => new Value((string)reader.Value!),
-                JsonToken.Integer => new Value((long)reader.Value!),
-                JsonToken.Float => new Value((decimal)reader.Value!),
+                JsonToken.Integer => new Value((Number)(int)(long)reader.Value!),
+                JsonToken.Float => new Value((Number)(decimal)reader.Value!),
                 _ => throw new InvalidOperationException($"Unexpected token type `{reader.TokenType}` for Yolol value")
             };
         }

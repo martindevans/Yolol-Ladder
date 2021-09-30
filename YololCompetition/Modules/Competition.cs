@@ -1,18 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using BalderHash.Extensions;
+using Discord;
 using Discord.Commands;
+using JetBrains.Annotations;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Messages;
+using MessageType = YololCompetition.Services.Messages.MessageType;
 
 namespace YololCompetition.Modules
 {
+    [UsedImplicitly]
     public class Competition
-        : ModuleBase
+        : BaseModule
     {
         private readonly IChallenges _challenges;
         private readonly IMessages _messages;
@@ -21,6 +23,26 @@ namespace YololCompetition.Modules
         {
             _challenges = challenges;
             _messages = messages;
+        }
+
+        [Command("check-pool"), Summary("Check how may challenges there are ready to play")]
+        public async Task CheckPool()
+        {
+            var count = await _challenges.GetPendingCount();
+            var msg = await ReplyAsync($"There are {count} challenges pending");
+
+            var emoji = count switch {
+                0 => "😰", // cold sweat
+                //1 => "😟", // worried
+                //2 => "🙂", // smile
+                //3 => "😁", // grin
+                > 4 => "😲", // astonished
+                _ => null,
+            };
+
+            if (emoji != null)
+                await msg.AddReactionAsync(new Emoji(emoji));
+
         }
 
         [Command("current"), Summary("Show the current competition details")]
@@ -32,62 +54,36 @@ namespace YololCompetition.Modules
             else
             {
                 var message = await ReplyAsync(embed: current.ToEmbed().Build());
-                await _messages.TrackMessage(message.Channel.Id, message.Id, current.Id, MessageType.Current);
+                await _messages.TrackMessage(message, current.Id, MessageType.Current);
+
+                Console.WriteLine($"Tracking message cid:{message.Channel.Id} mid:{message.Id}");
             }
         }
 
-        [Command("competition"), Summary("Search previous competitions")]
+        [Command("competition"), Alias("challenge"), Summary("Search previous competitions")]
         public async Task GetCompetition(string search)
         {
-            var results = await _challenges.FuzzyFindChallenge(search).ToArrayAsync();
-            if (results.Length == 1)
+            var results = await _challenges.FuzzyFindChallenge(search).ToListAsync();
+            if (results.Count == 1)
                 await ReplyAsync(embed: results[0].ToEmbed().Build());
             else
             {
                 await DisplayItemList(
-                    results.ToAsyncEnumerable(),
+                    results,
                     () => "No challenges",
                     (c, i) => $"`[{((uint)c.Id).BalderHash()}]` {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
                 );
             }
         }
 
-        [Command("competitions"), Summary("List all previous competitions")]
+        [Command("competitions"), Alias("challenges"), Summary("List all previous competitions")]
         public async Task ListCompetitions()
         {
             await DisplayItemList(
-                _challenges.GetChallenges(),
+                await _challenges.GetChallenges().ToListAsync(),
                 () => "No challenges",
                 (c, i) => $"`[{((uint)c.Id).BalderHash()}]` {c.Name}" + (c.EndTime.HasValue && c.EndTime > DateTime.UtcNow ? " (Current)" : "")
             );
-        }
-
-        private async Task DisplayItemList<T>(IAsyncEnumerable<T> items, Func<string> nothing, Func<T, int, string> itemToString)
-        {
-            var builder = new StringBuilder();
-
-            var none = true;
-            var index = 0;
-            await foreach (var item in items)
-            {
-                none = false;    
-
-                var str = itemToString(item, index++);
-                if (builder.Length + str.Length > 1000)
-                {
-                    await ReplyAsync(builder.ToString());
-                    builder.Clear();
-                }
-
-                builder.Append(str);
-                builder.Append('\n');
-            }
-
-            if (builder.Length > 0)
-                await ReplyAsync(builder.ToString());
-
-            if (none)
-                await ReplyAsync(nothing());
         }
     }
 }

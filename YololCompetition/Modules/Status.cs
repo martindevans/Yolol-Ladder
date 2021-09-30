@@ -1,15 +1,16 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
+using JetBrains.Annotations;
 using YololCompetition.Services.Schedule;
 
 namespace YololCompetition.Modules
 {
     [Hidden]
+    [UsedImplicitly]
     public class Status
         : ModuleBase
     {
@@ -23,14 +24,21 @@ namespace YololCompetition.Modules
         }
 
         [Command("memory"), RequireOwner, Summary("Print current memory stats")]
-        public async Task MemoryUsage()
+        public async Task MemoryUsage(bool gc = false)
         {
             var embed = new EmbedBuilder()
                         .AddField("Working Set", Environment.WorkingSet.Bytes().Humanize("#.##"), true)
                         .AddField("GC Total Memory", GC.GetTotalMemory(false).Bytes().Humanize("#.##"), true)
+                        .AddField("GC Max Generation", GC.MaxGeneration, true)
                         .Build();
-
             await ReplyAsync(embed: embed);
+
+            if (gc)
+            {
+                GC.Collect();
+                await ReplyAsync("Forced GC Collection of all generations");
+                await MemoryUsage();
+            }
         }
 
         [Command("hostinfo"), RequireOwner, Summary("Print HostInfo")]
@@ -49,23 +57,23 @@ namespace YololCompetition.Modules
         [Command("ping"), Summary("Respond with `Pong`"), Alias("test")]
         public async Task Ping()
         {
-            await ReplyAsync("pong");
+            await ReplyAsync("<pong");
         }
 
-        [Command("latency"), Summary("Show current latency between Bot and Discord")]
+        [Command("latency"), Hidden, Summary("Show current latency between Bot and Discord")]
         public async Task Latency()
         {
             var latency = TimeSpan.FromMilliseconds(_client.Latency);
             await ReplyAsync($"{latency.TotalMilliseconds}ms");
         }
 
-        [Command("shard"), Summary("Print Shard ID")]
+        [Command("shard"), Hidden, Summary("Print Shard ID")]
         public async Task Shard()
         {
             await ReplyAsync($"Shard ID: {_client.ShardId}");
         }
 
-        [Command("status"), Summary("Print scheduler status")]
+        [Command("status"), Hidden, Summary("Print scheduler status")]
         public async Task SchedulerStatus()
         {
             await ReplyAsync(_scheduler.State.ToString());

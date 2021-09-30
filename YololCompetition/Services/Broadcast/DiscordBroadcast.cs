@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using YololCompetition.Services.Subscription;
@@ -17,37 +20,58 @@ namespace YololCompetition.Services.Broadcast
             _client = client;
         }
 
-        public async Task Broadcast(Embed embed)
+        public async IAsyncEnumerable<IUserMessage> Broadcast(Embed embed)
         {
-            await foreach (var subscription in _subscriptions.GetSubscriptions())
+            var subs = await _subscriptions.GetSubscriptions().ToArrayAsync();
+            foreach (var subscription in subs)
             {
-                var guild = await _client.GetGuildAsync(subscription.Guild);
-                if (guild == null)
-                    continue;
+                IUserMessage? r = null;
+                try
+                {
+                    var guild = await _client.GetGuildAsync(subscription.Guild);
+                    if (guild == null)
+                        continue;
 
-                var channel = await guild.GetTextChannelAsync(subscription.Channel);
-                if (channel == null)
-                    continue;
+                    var channel = await guild.GetTextChannelAsync(subscription.Channel);
+                    if (channel == null)
+                        continue;
 
-                await channel.SendMessageAsync(embed: embed);
+                    r = await channel.SendMessageAsync(embed: embed);
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+
+                if (r != null)
+                    yield return r;
                 await Task.Delay(100);
             }
         }
 
         public async Task Broadcast(string message)
         {
-            await foreach (var subscription in _subscriptions.GetSubscriptions())
+            var subs = await _subscriptions.GetSubscriptions().ToArrayAsync();
+            foreach (var subscription in subs)
             {
-                var guild = await _client.GetGuildAsync(subscription.Guild);
-                if (guild == null)
-                    continue;
+                try
+                {
+                    var guild = await _client.GetGuildAsync(subscription.Guild);
+                    if (guild == null)
+                        continue;
 
-                var channel = await guild.GetTextChannelAsync(subscription.Channel);
-                if (channel == null)
-                    continue;
+                    var channel = await guild.GetTextChannelAsync(subscription.Channel);
+                    if (channel == null)
+                        continue;
 
-                await channel.SendMessageAsync(message);
-                await Task.Delay(100);
+                    await channel.SendMessageAsync(message);
+                    await Task.Delay(100);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
         }
     }

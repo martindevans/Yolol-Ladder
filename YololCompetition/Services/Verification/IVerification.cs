@@ -15,11 +15,17 @@ namespace YololCompetition.Services.Verification
 
         public uint Length { get; }
 
-        public Success(uint score, uint iterations, uint length)
+        public string? Hint { get; }
+
+        public uint TotalTests { get; }
+
+        public Success(uint score, uint iterations, uint length, string? hint, uint totalTests)
         {
             Score = score;
             Iterations = iterations;
             Length = length;
+            Hint = hint;
+            TotalTests = totalTests;
         }
     }
 
@@ -27,7 +33,7 @@ namespace YololCompetition.Services.Verification
     {
         public FailureType Type { get; }
 
-        public string? Hint{ get; }
+        public string? Hint { get; }
 
         public Failure(FailureType type, string? hint)
         {
@@ -38,9 +44,14 @@ namespace YololCompetition.Services.Verification
 
     public enum FailureType
     {
+        Other,
+
         ParseFailed,
         RuntimeTooLong,
         IncorrectResult,
-        ProgramTooLarge
+        ProgramTooLarge,
+        InvalidProgramForChipType,
+        ChallengeCodeFailed,
+        ChallengeForceFail
     }
 }
