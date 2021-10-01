@@ -90,7 +90,7 @@ namespace YololCompetition.Services.Challenge
             if (pending == null)
                 return null;
 
-            // End time of the challenge should be 3 days after the start time of today to account for if Referee was down on the day it was supposed to start the challenge.
+            // End time of the challenge should be Challenge Duration + start time of today to account for if Referee was down on the day it was supposed to start the challenge.
             var endTime = (DateTime.UtcNow.Date.AddMinutes(_config.ChallengeStartTime) + TimeSpan.FromHours(_config.ChallengeDurationHours)).UnixTimestamp();
 
             // Set status to "Running" and end time to an appropriate offset from now
@@ -169,12 +169,17 @@ namespace YololCompetition.Services.Challenge
             return Challenge.Read(reader);
         }
 
-        public async Task<Challenge?> GetChallengesByEndTime(ulong EndUnixTime)
+        public async IAsyncEnumerable<Challenge> GetChallengesByEndTime(ulong endUnixTime)
         {
-            await using var cmd = _database.CreateCommand();
-            cmd.CommandText = "SELECT * FROM Challenges WHERE EndUnixTime >= @EndTime";
-            cmd.parameters.Add(new SqliteParameter("@EndTime", DbType.UInt64) { Value = EndUnixTime });
-            return await cmd.ExecuteNonQueryAsync();
+            DbCommand PrepareQuery(IDatabase db)
+            {
+                var cmd = db.CreateCommand();
+                cmd.CommandText = "SELECT * FROM Challenges WHERE EndUnixTime >= @EndTime ORDER BY EndUnixTime";
+                cmd.parameters.Add(new SqliteParameter("@EndTime", DbType.UInt64) { Value = endUnixTime });
+                return cmd;
+            }
+
+            return new SqlAsyncResult<Challenge>(_database, PrepareQuery, Challenge.Read);
         }
     }
 }

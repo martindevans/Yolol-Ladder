@@ -61,9 +61,9 @@ namespace YololCompetition.Services.Schedule
                     Console.WriteLine("There is no current challenge - checking if challenge finished within the last 24 hours");
 
                     var currentTime = DateTime.UtcNow;
-                    var startTime = (currentTime.Date).AddMinutes(_config.ChallengeStartTime);  //Gets the time today that the challenge would be starting if it were starting today
-                    var searchTime = currentTime.AddHours(-24);
-                    var recent = await _challenges.GetChallengesByEndTime(searchTime.UnixTimeStamp());
+                    var startTime = currentTime.Date + TimeSpan.FromMinutes(_config.ChallengeStartTime);  //Gets the time today that the challenge would be starting if it were starting today
+                    var searchTime = currentTime - TimeSpan.FromDays(1);
+                    var recent = await _challenges.GetChallengesByEndTime(searchTime.UnixTimeStamp()).FirstOrDefaultAsync();
 
                     if (recent == null)
                     {
