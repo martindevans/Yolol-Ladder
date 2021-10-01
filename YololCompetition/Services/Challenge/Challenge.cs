@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Threading;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using Yolol.Execution;
@@ -56,8 +57,12 @@ namespace YololCompetition.Services.Challenge
         public DateTime? EndTime { get; set; }
 
         public string CheckIndicator { get; }
-        public IReadOnlyList<IReadOnlyDictionary<string, Value>> Inputs { get; }
-        public IReadOnlyList<IReadOnlyDictionary<string, Value>> Outputs { get; }
+
+        private readonly Lazy<IReadOnlyList<IReadOnlyDictionary<string, Value>>> _inputs;
+        public IReadOnlyList<IReadOnlyDictionary<string, Value>> Inputs => _inputs.Value;
+
+        private readonly Lazy<IReadOnlyList<IReadOnlyDictionary<string, Value>>> _outputs;
+        public IReadOnlyList<IReadOnlyDictionary<string, Value>> Outputs => _outputs.Value;
 
         public bool ShuffleTests { get; }
         public ScoreMode ScoreMode { get; }
@@ -69,8 +74,8 @@ namespace YololCompetition.Services.Challenge
             ulong id,
             string name,
             string checkIndicator,
-            IReadOnlyList<IReadOnlyDictionary<string, Value>> inputs,
-            IReadOnlyList<IReadOnlyDictionary<string, Value>> outputs,
+            Lazy<IReadOnlyList<IReadOnlyDictionary<string, Value>>> inputs,
+            Lazy<IReadOnlyList<IReadOnlyDictionary<string, Value>>> outputs,
             DateTime? endTime,
             ChallengeDifficulty difficulty,
             string description,
@@ -84,8 +89,8 @@ namespace YololCompetition.Services.Challenge
             Id = id;
             Name = name;
             CheckIndicator = checkIndicator;
-            Inputs = inputs;
-            Outputs = outputs;
+            _inputs = inputs;
+            _outputs = outputs;
             EndTime = endTime;
             Difficulty = difficulty;
             Description = description;
@@ -136,12 +141,15 @@ namespace YololCompetition.Services.Challenge
             if (!parse.IsOk)
                 throw new InvalidOperationException($"Failed to parse program stored in DB:\n{parse.Err}");
 
+            var inputsStr = reader["Inputs"].ToString()!;
+            var outputsStr = reader["Outputs"].ToString()!;
+
             return new Challenge(
                 ulong.Parse(reader["ID"].ToString()!),
                 reader["Name"].ToString()!,
                 reader["CheckIndicator"].ToString()!,
-                JsonConvert.DeserializeObject<List<Dictionary<string, Value>>>(reader["Inputs"].ToString()!, JsonConfig)!,
-                JsonConvert.DeserializeObject<List<Dictionary<string, Value>>>(reader["Outputs"].ToString()!, JsonConfig)!,
+                new(() => JsonConvert.DeserializeObject<List<Dictionary<string, Value>>>(inputsStr, JsonConfig)!, LazyThreadSafetyMode.ExecutionAndPublication),
+                new(() => JsonConvert.DeserializeObject<List<Dictionary<string, Value>>>(outputsStr, JsonConfig)!, LazyThreadSafetyMode.ExecutionAndPublication),
                 end,
                 (ChallengeDifficulty)int.Parse(reader["Difficulty"].ToString()!),
                 reader["Description"].ToString()!,

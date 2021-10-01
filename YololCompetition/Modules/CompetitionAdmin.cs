@@ -124,7 +124,22 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            var c = new Challenge(0, title, "done", data.In, data.Out, null, difficulty, desc, data.Shuffle ?? true, data.Mode ?? ScoreMode.BasicScoring, data.Chip ?? YololChip.Professional, parseOk, ChallengeStatus.TestMode);
+            var c = new Challenge(
+                0,
+                title,
+                "done",
+                new(data.In),
+                new(data.Out),
+                null,
+                difficulty,
+                desc,
+                data.Shuffle ?? true,
+                data.Mode ?? ScoreMode.BasicScoring,
+                data.Chip ?? YololChip.Professional,
+                parseOk,
+                ChallengeStatus.TestMode
+            );
+
             await _challenges.Create(c);
             await ReplyAsync("Challenge has been created in test mode. Use `>promote $challengeid` to add it to the queue");
         }
@@ -279,8 +294,10 @@ namespace YololCompetition.Modules
 
             current.EndTime = (current.EndTime ?? DateTime.UtcNow) + TimeSpan.FromHours(hours);
             await _challenges.Update(current);
-
             await ReplyAsync("Updated");
+
+            if (hours < 0)
+                await ReplyAsync("Reduced challenge length requires a bot restart");
         }
 
         [Command("remove-entry"), Summary("Remove the entry in the current competition for a user")]
