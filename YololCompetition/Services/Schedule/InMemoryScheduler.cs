@@ -93,7 +93,7 @@ namespace YololCompetition.Services.Schedule
                         {
 
                             //If its after the start time today, push it til tomorrow
-                            startTime.AddHours(24); 
+                            startTime = startTime + TimeSpan.FromDays(1); 
                         }
 
                         Console.WriteLine("Challenge ended within last 24 hours, waiting for next start time");
