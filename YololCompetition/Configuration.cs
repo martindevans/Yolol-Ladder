@@ -20,5 +20,8 @@ namespace YololCompetition
 
         [Option("replays", Required = true, HelpText = "Location to save fleet replays to")]
         public string ReplayOutputDirectory { get; set; }
+
+        [Option("st", "start-time", Required = false, HelpText = "What time of the day to start a challenge in UTC (in minutes)", Default = (uint)1140)]
+        public uint ChallengeStartTime { get; set; }
     }
 }

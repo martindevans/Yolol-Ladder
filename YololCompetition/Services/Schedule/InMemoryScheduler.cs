@@ -26,6 +26,7 @@ namespace YololCompetition.Services.Schedule
         private readonly DiscordSocketClient _client;
         private readonly IMessages _messages;
         private readonly ITrueskillUpdater _skillUpdate;
+        private readonly Configuration _config;
 
         private readonly AsyncAutoResetEvent _poker = new AsyncAutoResetEvent();
 
@@ -33,7 +34,7 @@ namespace YololCompetition.Services.Schedule
 
         public DateTime? EndTime { get; private set; }
 
-        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client, IMessages messages, ITrueskillUpdater skillUpdate)
+        public InMemoryScheduler(IChallenges challenges, ISolutions solutions, IBroadcast broadcaster, ILeaderboard leaderboard, DiscordSocketClient client, IMessages messages, ITrueskillUpdater skillUpdate, Configuration config)
         {
             _challenges = challenges;
             _solutions = solutions;
@@ -42,6 +43,7 @@ namespace YololCompetition.Services.Schedule
             _messages = messages;
             _skillUpdate = skillUpdate;
             _leaderboard = leaderboard;
+            _config = config;
         }
 
         public async Task Start()
@@ -56,24 +58,50 @@ namespace YololCompetition.Services.Schedule
                 // If there is no challenge running try to start a new one
                 if (current == null)
                 {
-                    Console.WriteLine("There is no current challenge - attempting to start a new one");
+                    Console.WriteLine("There is no current challenge - checking if challenge finished within the last 24 hours");
 
-                    // Start the next challenge, if there isn't one wait a while
-                    var next = await _challenges.StartNext();
-                    if (next == null)
+                    var currentTime = DateTime.UtcNow;
+                    var startTime = currentTime.Date + TimeSpan.FromMinutes(_config.ChallengeStartTime);  //Gets the time today that the challenge would be starting if it were starting today
+                    var searchTime = currentTime - TimeSpan.FromDays(1);
+                    var recent = await _challenges.GetChallengesByEndTime(searchTime.UnixTimeStamp()).FirstOrDefaultAsync();
+
+                    if (recent == null)
                     {
-                        Console.WriteLine("No challenges available, waiting for a while...");
-                        State = SchedulerState.WaitingNoChallengesInPool;
-                        EndTime = null;
-                        await Task.Delay(TimeSpan.FromMinutes(1));
+
+                        // Start the next challenge, if there isn't one wait a while
+                        var next = await _challenges.StartNext();
+                        if (next == null)
+                        {
+                            Console.WriteLine("No challenges available, waiting for a while...");
+                            State = SchedulerState.WaitingNoChallengesInPool;
+                            EndTime = null;
+                            await Task.Delay(TimeSpan.FromMinutes(1));
+                            continue;
+                        }
+
+                        Console.WriteLine($"Starting new challenge {next.Name}");
+
+                        // Notify all subscribed channels about the new challenge
+                        await NotifyStart(next);
+                        current = next;
+                    }
+                    else 
+                    {
+
+                        // Wait for the next start time.
+                        if (currentTime > startTime)
+                        {
+
+                            //If its after the start time today, push it til tomorrow
+                            startTime = startTime + TimeSpan.FromDays(1); 
+                        }
+
+                        Console.WriteLine("Challenge ended within last 24 hours, waiting for next start time");
+                        State = SchedulerState.WaitingCooldown;
+                        var waitTime = startTime - currentTime; //wait until the proper time to start a challenge
+                        await Task.WhenAny(_poker.WaitAsync(), Task.Delay(waitTime));
                         continue;
                     }
-
-                    Console.WriteLine($"Starting new challenge {next.Name}");
-
-                    // Notify all subscribed channels about the new challenge
-                    await NotifyStart(next);
-                    current = next;
                 }
                 else
                     Console.WriteLine($"{current.Name} challenge is currently running");
@@ -117,6 +145,7 @@ namespace YololCompetition.Services.Schedule
                 State = SchedulerState.WaitingCooldown;
                 await Task.WhenAny(_poker.WaitAsync(), Task.Delay(TimeSpan.FromHours(24)));
             }
+            
 
             // ReSharper disable once FunctionNeverReturns
             // Justification: We never want the scheduler to stop!

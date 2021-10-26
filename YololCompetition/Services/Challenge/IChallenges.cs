@@ -25,6 +25,8 @@ namespace YololCompetition.Services.Challenge
         IAsyncEnumerable<Challenge> GetChallenges(ChallengeDifficulty? difficultyFilter = null, ulong? id = null, string? name = null, bool includeUnstarted = false);
 
         Task<int> Delete(ulong challengeId);
+
+        IAsyncEnumerable<Challenge> GetChallengesByEndTime(ulong EndUnixTime);
     }
 
     public enum ChallengeStatus
