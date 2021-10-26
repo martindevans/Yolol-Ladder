@@ -58,7 +58,7 @@ namespace YololCompetition.Modules
             await ReplyAsync("What's the Challenge code?");
             var code = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
             var (parseOk, parseErr) = await _parser.Parse(code);
-            if (parseOk == null)
+            if (parseOk == null || parseErr != null)
             {
                 await ReplyAsync("Parse Error! Aborting challenge creation");
                 await ReplyAsync(parseErr ?? "Null Error");
@@ -136,7 +136,7 @@ namespace YololCompetition.Modules
                 data.Shuffle ?? true,
                 data.Mode ?? ScoreMode.BasicScoring,
                 data.Chip ?? YololChip.Professional,
-                parseOk,
+                new(parseOk),
                 ChallengeStatus.TestMode
             );
 
@@ -212,8 +212,14 @@ namespace YololCompetition.Modules
             await foreach (var challenge in _challenges.GetChallenges(includeUnstarted: true).Where(a => a.EndTime == null))
             {
                 none = false;
-                await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`) {(challenge.Status == ChallengeStatus.TestMode ? "**TEST MODE**" : "")}");
-                await Task.Delay(10);
+                if (!challenge.Intermediate.IsOk)
+                {
+                    await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`) - Intermediate code is broken!");
+                    await ReplyAsync($"```{challenge.Intermediate.Err}```");
+                }
+                else
+                    await ReplyAsync($" - {challenge.Name} (`{((uint)challenge.Id).BalderHash()}`) {(challenge.Status == ChallengeStatus.TestMode ? "**TEST MODE**" : "")}");
+                await Task.Delay(25);
             }
 
             if (none)

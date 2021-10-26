@@ -86,8 +86,10 @@ namespace YololCompetition.Services.Challenge
 
         public async Task<Challenge?> StartNext()
         {
-            var pending = (Challenge?)await GetPending(1).FirstOrDefaultAsync();
+            var pending = await GetPending(1).FirstOrDefaultAsync();
             if (pending == null)
+                return null;
+            if (pending.Intermediate.IsOk)
                 return null;
 
             // End time of the challenge should be Challenge Duration + start time of today to account for if Referee was down on the day it was supposed to start the challenge.

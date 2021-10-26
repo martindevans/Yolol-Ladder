@@ -42,6 +42,9 @@ namespace YololCompetition.Services.Verification
             if (challenge.Chip == YololChip.Unknown)
                 throw new InvalidOperationException("Cannot submit to a challenge with `YololChip.Unknown` (challenge is broken - contact Martin#2468)");
 
+            if (!challenge.Intermediate.IsOk)
+                throw new InvalidOperationException("Cannot submit to a challenge with broken intermediate code (challenge is broken - contact Martin#2468)");
+
             // Check input program fits within 20x70
             var lines = yolol.Split("\n");
             if (lines.Length > 20 || lines.Any(l => l.Length > 70))
@@ -63,7 +66,7 @@ namespace YololCompetition.Services.Verification
             // Prepare a machine state for execution.
             // Two states are needed - one for user code and one for code supplied by the challenge
             var stateUser = _executor.Prepare(parsed.Ok, $":{challenge.CheckIndicator}");
-            var stateChallenge = _executor.Prepare(challenge.Intermediate);
+            var stateChallenge = _executor.Prepare(challenge.Intermediate.Ok);
 
             // Retrieve the test cases for the challenge
             var (inputs, outputs) = GetTests(challenge);

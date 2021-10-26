@@ -6,6 +6,7 @@ using System.Threading;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using Yolol.Execution;
+using Yolol.Grammar;
 using YololCompetition.Extensions;
 using YololCompetition.Serialization.Json;
 
@@ -68,7 +69,7 @@ namespace YololCompetition.Services.Challenge
         public ScoreMode ScoreMode { get; }
         public YololChip Chip { get; }
 
-        public Yolol.Grammar.AST.Program Intermediate { get; }
+        public Parser.Result<Yolol.Grammar.AST.Program, Parser.ParseError> Intermediate { get; }
 
         public Challenge(
             ulong id,
@@ -82,7 +83,7 @@ namespace YololCompetition.Services.Challenge
             bool shuffle,
             ScoreMode scoreMode,
             YololChip chip,
-            Yolol.Grammar.AST.Program intermediate,
+            Parser.Result<Yolol.Grammar.AST.Program, Parser.ParseError> intermediate,
             ChallengeStatus status
         )
         {
@@ -137,7 +138,7 @@ namespace YololCompetition.Services.Challenge
             }
 
             var code = reader["IntermediateCode"].ToString() ?? "";
-            var parse = Yolol.Grammar.Parser.ParseProgram(code);
+            var parse = Parser.ParseProgram(code);
             if (!parse.IsOk)
                 throw new InvalidOperationException($"Failed to parse program stored in DB:\n{parse.Err}");
 
@@ -156,7 +157,7 @@ namespace YololCompetition.Services.Challenge
                 Convert.ToBoolean(ulong.Parse(reader["Shuffle"].ToString()!)),
                 (ScoreMode)int.Parse(reader["ScoreMode"].ToString()!),
                 (YololChip)int.Parse(reader["Chip"].ToString()!),
-                parse.Ok,
+                parse,
                 (ChallengeStatus)int.Parse(reader["Status"].ToString()!)
             );
         }
