@@ -63,7 +63,7 @@ namespace YololCompetition.Services.Schedule
                     var currentTime = DateTime.UtcNow;
                     var startTime = currentTime.Date + TimeSpan.FromMinutes(_config.ChallengeStartTime);  //Gets the time today that the challenge would be starting if it were starting today
                     var searchTime = currentTime - TimeSpan.FromDays(1);
-                    var recent = await _challenges.GetChallengesByEndTime(searchTime.UnixTimeStamp()).FirstOrDefaultAsync();
+                    var recent = await _challenges.GetChallengesByEndTime(searchTime.UnixTimestamp()).FirstOrDefaultAsync();
 
                     if (recent == null)
                     {

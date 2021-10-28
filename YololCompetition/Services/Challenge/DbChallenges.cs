@@ -171,13 +171,13 @@ namespace YololCompetition.Services.Challenge
             return Challenge.Read(reader);
         }
 
-        public async IAsyncEnumerable<Challenge> GetChallengesByEndTime(ulong endUnixTime)
+        public IAsyncEnumerable<Challenge> GetChallengesByEndTime(ulong endUnixTime)
         {
             DbCommand PrepareQuery(IDatabase db)
             {
                 var cmd = db.CreateCommand();
                 cmd.CommandText = "SELECT * FROM Challenges WHERE EndUnixTime >= @EndTime ORDER BY EndUnixTime";
-                cmd.parameters.Add(new SqliteParameter("@EndTime", DbType.UInt64) { Value = endUnixTime });
+                cmd.Parameters.Add(new SqliteParameter("@EndTime", DbType.UInt64) { Value = endUnixTime });
                 return cmd;
             }
 

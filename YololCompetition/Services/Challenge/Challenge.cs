@@ -139,9 +139,6 @@ namespace YololCompetition.Services.Challenge
 
             var code = reader["IntermediateCode"].ToString() ?? "";
             var parse = Parser.ParseProgram(code);
-            if (!parse.IsOk)
-                throw new InvalidOperationException($"Failed to parse program stored in DB:\n{parse.Err}");
-
             var inputsStr = reader["Inputs"].ToString()!;
             var outputsStr = reader["Outputs"].ToString()!;
 
