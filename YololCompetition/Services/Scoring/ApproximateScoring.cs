@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using F23.StringSimilarity;
 using Yolol.Execution;
 using Yolol.Grammar;
 using YololCompetition.Extensions;
@@ -70,7 +71,8 @@ namespace YololCompetition.Services.Scoring
 
             double AccuracyScoreStrings(string key, string expected, string actual)
             {
-                var error = expected.Levenshtein(actual);
+                var d = new Damerau();
+                var error = d.Distance(expected, actual);
                 if (error < 1)
                     return AccuracyPoints * ExactMultiplier;
 
@@ -83,9 +85,7 @@ namespace YololCompetition.Services.Scoring
                     _hintError = error;
                 }
 
-                return error >= expected.Length
-                     ? 0
-                     : AccuracyPoints / (error + 1);
+                return AccuracyPoints / Math.Pow(error + 1, 1.25);
             }
         }
 

@@ -198,7 +198,7 @@ namespace YololCompetition.Services.Schedule
 
             var (othersCount, othersScore) = await solutions.Skip(10).Select(a => (1, a.Solution.Score)).AggregateAsync((0u, 0L), (a, b) => ((uint)(a.Item1 + b.Item1), a.Item1 + b.Score));
 
-            EmbedBuilder embed = new EmbedBuilder {
+            EmbedBuilder embed = new() {
                 Title = $"Competition `{challenge.Name}` Complete!",
                 Color = Color.Blue,
                 Footer = new EmbedFooterBuilder().WithText("A Cylon Project")

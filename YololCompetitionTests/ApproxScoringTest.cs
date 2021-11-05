@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using F23.StringSimilarity;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using YololCompetition.Extensions;
 
 namespace YololCompetitionTests
@@ -42,6 +43,17 @@ namespace YololCompetitionTests
             Assert.AreEqual(3, (int)"abc".Levenshtein("123"));
             Assert.AreEqual(2, (int)"abc".Levenshtein("12c"));
             Assert.AreEqual(3, (int)"abc".Levenshtein("123abc"));
+            Assert.AreEqual(2, (int)"abc".Levenshtein("acb"));
+        }
+
+        [TestMethod]
+        public void Damerau()
+        {
+            var d = new Damerau();
+            Assert.AreEqual(3, d.Distance("abc", "123"));
+            Assert.AreEqual(2, d.Distance("abc", "12c"));
+            Assert.AreEqual(3, d.Distance("abc", "123abc"));
+            Assert.AreEqual(1, d.Distance("abc", "acb"));
         }
     }
 }

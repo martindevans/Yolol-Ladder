@@ -121,7 +121,7 @@ namespace YololCompetition.Services.Challenge
 
             output.Add(new SqliteParameter("@EndUnixTime", DbType.UInt64) { Value = EndTime?.UnixTimestamp() });
 
-            output.Add(new SqliteParameter("@IntermediateCode", DbType.String) { Value = Intermediate.ToString() });
+            output.Add(new SqliteParameter("@IntermediateCode", DbType.String) { Value = Intermediate.Ok.ToString() });
 
             output.Add(new SqliteParameter("@Status", DbType.UInt64) { Value = (int)Status });
         }
