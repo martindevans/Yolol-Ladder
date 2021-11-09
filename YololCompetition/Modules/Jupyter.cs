@@ -7,10 +7,8 @@ using YololCompetition.Services.Jupyter;
 
 namespace YololCompetition.Modules
 {
-    [Hidden]
     [UsedImplicitly]
-    //[RequireContext(ContextType.DM | ContextType.Group)]
-    [Group("jupyter")]
+    [Group("yolol")]
     public class Jupyter
         : InteractiveBase
     {
@@ -21,11 +19,13 @@ namespace YololCompetition.Modules
             _executor = executor;
         }
 
-        [Command("start")]
+        [Command("interactive")]
+        [Priority(100)]
         public async Task NewContext()
         {
             var ctx = new JupyterContext(_executor);
             await ReplyAsync("Starting interactive Yolol session. Type `exit` to terminate session.");
+            await ReplyAsync("Type code in triple backticks. Every new message will add to the program. Edit old messages to update the program.");
             await ctx.Run(this);
         }
     }

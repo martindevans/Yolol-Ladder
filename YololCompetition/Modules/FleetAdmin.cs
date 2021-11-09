@@ -14,15 +14,13 @@ namespace YololCompetition.Modules
         : BaseModule
     {
         private readonly Configuration _config;
-        private readonly IFleetBattleQueue _queue;
         private readonly IFleetStorage _fleets;
         private readonly IFleetRankings _rankings;
         private readonly IFleetBattleQueue _battles;
 
-        public FleetAdmin(Configuration config, IFleetBattleQueue queue, IFleetStorage fleets, IFleetRankings rankings, IFleetBattleQueue battles)
+        public FleetAdmin(Configuration config, IFleetStorage fleets, IFleetRankings rankings, IFleetBattleQueue battles)
         {
             _config = config;
-            _queue = queue;
             _fleets = fleets;
             _rankings = rankings;
             _battles = battles;
@@ -67,10 +65,11 @@ namespace YololCompetition.Modules
         {
             var fleets = await _rankings.GetTopTanks(128);
 
+            var count = 0;
             foreach (var fleet in fleets)
-                await _battles.Enqueue(fleet.Fleet);
+                count += await _battles.Enqueue(fleet.Fleet);
 
-            await ReplyAsync("Enqueued battles");
+            await ReplyAsync($"Enqueued {count} battles");
         }
     }
 }

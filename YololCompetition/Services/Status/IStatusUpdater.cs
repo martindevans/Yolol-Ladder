@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace YololCompetition.Services.Status
+﻿namespace YololCompetition.Services.Status
 {
     public interface IStatusUpdater
     {

@@ -39,7 +39,7 @@ namespace YololCompetition.Extensions
                             let o = string.Join(" ", item.Second.Select(a => $":{a.Key}={a.Value.ToHumanString()}"))
                             select $"Inputs: `{i}`, Outputs: `{o}`\n").Take(5);
 
-            var exampleBuilder = new StringBuilder("There are hundreds of test cases which your program must produce. Here are some examples:\n");
+            var exampleBuilder = new StringBuilder("There are thousands of test cases which your program must produce. Here are some examples:\n");
             foreach (var example in examples)
                 if (exampleBuilder.Length + example.Length < 1000)
                     exampleBuilder.Append(example);

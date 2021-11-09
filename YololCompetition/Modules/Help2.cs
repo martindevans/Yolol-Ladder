@@ -6,7 +6,6 @@ using Discord;
 using Discord.Commands;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
-using MoreLinq.Extensions;
 
 namespace YololCompetition.Modules
 {
@@ -95,7 +94,7 @@ namespace YololCompetition.Modules
             return from kvp in await FindModules()
                    let module = kvp.Key
                    from command in kvp.Value
-                   let distance = command.Aliases.Append(tail: command.Name).Distinct().Select(a => a.Levenshtein(search)).Min()
+                   let distance = command.Aliases.Append(command.Name).Distinct().Select(a => a.Levenshtein(search)).Min()
                    group command by distance
                    into grp
                    orderby grp.Key
@@ -107,7 +106,7 @@ namespace YololCompetition.Modules
             //Find modules with at least one command we can execute, ordered by levenshtein distance to name or alias
             return from moduleKvp in await FindModules()
                    let module = moduleKvp.Key
-                   from moduleName in module.Aliases.Append(tail: module.Name).Concat(module.Attributes.OfType<HelpGroupAttribute>().Select(g => g.GroupId))
+                   from moduleName in module.Aliases.Append(module.Name)
                    where !string.IsNullOrEmpty(moduleName)
                    let nameLev = moduleName.ToLower().Levenshtein(search.ToLower())
                    orderby nameLev

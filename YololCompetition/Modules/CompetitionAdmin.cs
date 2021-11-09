@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Newtonsoft.Json;
@@ -18,6 +17,7 @@ using YololCompetition.Extensions;
 using YololCompetition.Services.Parsing;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Verification;
+using System.Net.Http;
 
 namespace YololCompetition.Modules
 {
@@ -68,13 +68,13 @@ namespace YololCompetition.Modules
             await ReplyAsync("What is the challenge URL (raw JSON)?");
             var url = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
 
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var result))
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var datasetUri))
             {
                 await ReplyAsync("Invalid URL format");
                 return;
             }
 
-            if (result.Host != "gist.githubusercontent.com")
+            if (datasetUri.Host != "gist.githubusercontent.com")
             {
                 await ReplyAsync("URL must begin with `gist.githubusercontent.com`");
                 return;
@@ -83,8 +83,8 @@ namespace YololCompetition.Modules
             Data? data;
             try
             {
-                using var wc = new WebClient();
-                var json = wc.DownloadString(result);
+                using var hc = new HttpClient();
+                var json = await hc.GetStringAsync(datasetUri);
                 data = JsonConvert.DeserializeObject<Data>(json, new JsonSerializerSettings {
                     Converters = new JsonConverter[] {
                         new YololValueConverter()
@@ -94,7 +94,7 @@ namespace YololCompetition.Modules
             }
             catch (Exception e)
             {
-                await ReplyAsync("Failed: " + e.Message.Substring(0, Math.Min(1000, e.Message.Length)));
+                await ReplyAsync($"Failed: {e.Message[..Math.Min(1000, e.Message.Length)]}");
                 return;
             }
 

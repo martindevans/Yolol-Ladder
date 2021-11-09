@@ -13,13 +13,11 @@ namespace YololCompetition.Services.Fleet
         : IFleetBattleQueue
     {
         private readonly IDatabase _db;
-        private readonly IFleetStorage _fleets;
         private readonly IFleetRankings _ranks;
 
-        public DbFleetBattleQueue(IDatabase db, IFleetStorage fleets, IFleetRankings ranks)
+        public DbFleetBattleQueue(IDatabase db, IFleetRankings ranks)
         {
             _db = db;
-            _fleets = fleets;
             _ranks = ranks;
 
             try
@@ -37,16 +35,26 @@ namespace YololCompetition.Services.Fleet
             }
         }
 
-        public async Task Enqueue(Fleet fleet)
+        public async Task<int> Enqueue(Fleet fleet)
         {
+            var count = 0;
+
             // Schedule a fight against all of the top fleets
             foreach (var item in await _ranks.GetTopTanks(64))
+            {
                 await Enqueue(item.Fleet, fleet);
+                count++;
+            }
 
             // Schedule another fight against the very best fleets, this will
             // solidify the ranking of this new fleet if it's a contender for a top spot
             foreach (var item in await _ranks.GetTopTanks(4))
+            {
                 await Enqueue(item.Fleet, fleet);
+                count++;
+            }
+
+            return count;
         }
 
         private async Task Enqueue(Fleet a, Fleet b)

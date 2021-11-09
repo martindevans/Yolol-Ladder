@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -58,8 +58,8 @@ namespace YololCompetition.Modules
                 return;
             }
 
-            using var client = new WebClient();
-            var bytes = await client.DownloadDataTaskAsync(file.Url);
+            using var client = new HttpClient();
+            var bytes = await client.GetByteArrayAsync(file.Url);
 
             // Sanity check that this is a valid fleet
             using (var archive = new System.IO.Compression.ZipArchive(new MemoryStream(bytes), System.IO.Compression.ZipArchiveMode.Read))

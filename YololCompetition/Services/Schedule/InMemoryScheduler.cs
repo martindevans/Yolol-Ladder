@@ -6,6 +6,7 @@ using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Solutions;
 using System.Linq;
 using System.Text;
+using BalderHash.Extensions;
 using Discord.WebSocket;
 using Nito.AsyncEx;
 using YololCompetition.Extensions;
@@ -28,7 +29,7 @@ namespace YololCompetition.Services.Schedule
         private readonly ITrueskillUpdater _skillUpdate;
         private readonly Configuration _config;
 
-        private readonly AsyncAutoResetEvent _poker = new AsyncAutoResetEvent();
+        private readonly AsyncAutoResetEvent _poker = new();
 
         public SchedulerState State { get; private set; }
 
@@ -93,7 +94,7 @@ namespace YololCompetition.Services.Schedule
                         {
 
                             //If its after the start time today, push it til tomorrow
-                            startTime = startTime + TimeSpan.FromDays(1); 
+                            startTime += TimeSpan.FromDays(1); 
                         }
 
                         Console.WriteLine("Challenge ended within last 24 hours, waiting for next start time");
@@ -201,7 +202,7 @@ namespace YololCompetition.Services.Schedule
             EmbedBuilder embed = new() {
                 Title = $"Competition `{challenge.Name}` Complete!",
                 Color = Color.Blue,
-                Footer = new EmbedFooterBuilder().WithText("A Cylon Project")
+                Footer = new EmbedFooterBuilder().WithText($"{((uint)challenge.Id).BalderHash()} - A Cylon Project ({DateTime.UtcNow.Ticks.GetHashCode()})")
             };
             if (top.Length == 0)
             {

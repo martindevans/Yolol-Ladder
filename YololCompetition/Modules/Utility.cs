@@ -81,7 +81,6 @@ namespace YololCompetition.Modules
         private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
         {
             var (program, error) = await _parser.Parse(input);
-
             if (program != null)
                 return program;
 

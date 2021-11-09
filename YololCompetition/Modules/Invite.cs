@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using JetBrains.Annotations;
 using YololCompetition.Services.Subscription;
 
@@ -13,13 +12,11 @@ namespace YololCompetition.Modules
     {
         private readonly ISubscription _subscriptions;
         private readonly Configuration _config;
-        private readonly DiscordSocketClient _client;
 
-        public Invite(ISubscription subscriptions, Configuration config, DiscordSocketClient client)
+        public Invite(ISubscription subscriptions, Configuration config)
         {
             _subscriptions = subscriptions;
             _config = config;
-            _client = client;
         }
 
         [Command("invite"), Summary("Invite this bot to another server")]
@@ -27,8 +24,9 @@ namespace YololCompetition.Modules
         {
             await ReplyAsync(embed: new EmbedBuilder()
                 .WithTitle("Invite Yolol-Ladder")
-                .WithDescription($"Once Yolol-Ladder joins your server a user with the `ManageChannels` should call `{_config.Prefix}subscribe` in a channel to begin receiving competition alerts in that channel")
+                .WithDescription($"Once Yolol-Ladder joins your server a user with the `ManageChannels` permission should call `{_config.Prefix}subscribe` in a channel to begin receiving competition alerts in that channel")
                 .WithUrl("https://discordapp.com/api/oauth2/authorize?client_id=700054559170756719&permissions=18496&scope=bot")
+                .WithFooter("A Cylon Project")
                 .Build()
             );
         }

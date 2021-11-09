@@ -5,7 +5,7 @@ namespace YololCompetition.Services.Fleet
 {
     public interface IFleetBattleQueue
     {
-        Task Enqueue(Fleet fleet);
+        Task<int> Enqueue(Fleet fleet);
 
         Task<IReadOnlyList<Battle>> Queue(uint limit = uint.MaxValue);
 

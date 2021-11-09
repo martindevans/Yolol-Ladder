@@ -4,7 +4,7 @@ namespace YololCompetition.Extensions
 {
     public static class DateTimeExtensions
     {
-        private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1);
+        private static readonly DateTime UnixEpoch = new(1970, 1, 1);
 
         public static ulong UnixTimestamp(this DateTime time)
         {

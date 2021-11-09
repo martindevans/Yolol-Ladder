@@ -1,5 +1,6 @@
 ﻿using System;
 using Yolol.Execution;
+using Type = Yolol.Execution.Type;
 
 namespace YololCompetition.Extensions
 {
@@ -9,20 +10,13 @@ namespace YololCompetition.Extensions
 
         public static string ToHumanString(this Value value)
         {
-            if (value.Type == Yolol.Execution.Type.Number)
-                return value.Number.ToString();
-            else if (value.Type == Yolol.Execution.Type.String)
+            return value switch
             {
-                if (value.String.Length > StrLengthLimit)
-                {
-                    var trimmed = value.String.Length - StrLengthLimit;
-                    return value.String.ToString().Substring(0, StrLengthLimit) + $" ...({trimmed} more characters trimmed)";
-                }
-                else
-                    return $"\"{value.String}\"";
-            }
-            else
-                throw new FormatException($"Cannot format value of type `{value.Type}`");
+                { Type: Type.Number } => value.Number.ToString(),
+                { Type: Type.String, String: { Length: <= StrLengthLimit } } => $"\"{value.String}\"",
+                { Type: Type.String } => $"\"{value.ToString()[..StrLengthLimit]}\" ...({value.String.Length - StrLengthLimit} more characters trimmed)",
+                _ => throw new FormatException($"Cannot format value of type `{value.Type}`"),
+            };
         }
     }
 }

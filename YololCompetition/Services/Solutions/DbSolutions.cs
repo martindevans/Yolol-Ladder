@@ -5,7 +5,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
-using YololCompetition.Services.Broadcast;
 using YololCompetition.Services.Database;
 
 namespace YololCompetition.Services.Solutions

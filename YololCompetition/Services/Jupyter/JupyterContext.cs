@@ -29,13 +29,13 @@ namespace YololCompetition.Services.Jupyter
 
         private readonly IYololExecutor _executor;
 
-        private readonly ConcurrentDictionary<ulong, bool> _inputMessagesSet = new ConcurrentDictionary<ulong, bool>();
-        private readonly ConcurrentQueue<SocketMessage> _edits = new ConcurrentQueue<SocketMessage>();
-        private readonly ConcurrentQueue<ulong> _deletions = new ConcurrentQueue<ulong>();
+        private readonly ConcurrentDictionary<ulong, bool> _inputMessagesSet = new();
+        private readonly ConcurrentQueue<SocketMessage> _edits = new();
+        private readonly ConcurrentQueue<ulong> _deletions = new();
 
-        private readonly List<MessageResponse> _messages = new List<MessageResponse>();
+        private readonly List<MessageResponse> _messages = new();
 
-        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private CancellationTokenSource _cts = new();
 
         public JupyterContext(IYololExecutor executor)
         {
