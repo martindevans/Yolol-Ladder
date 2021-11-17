@@ -7,7 +7,7 @@ namespace YololCompetition.Services.Execute
     public class DefaultValueDeviceNetwork
         : IDeviceNetwork, IEnumerable<(string, Value)>
     {
-        private readonly Dictionary<string, IVariable> _saved = new Dictionary<string, IVariable>();
+        private readonly Dictionary<string, IVariable> _saved = new();
 
         public IVariable Get(string name)
         {

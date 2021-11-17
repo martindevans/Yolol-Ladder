@@ -65,8 +65,9 @@ namespace YololCompetition.Services.Verification
 
             // Prepare a machine state for execution.
             // Two states are needed - one for user code and one for code supplied by the challenge
-            var stateUser = _executor.Prepare(parsed.Ok, $":{challenge.CheckIndicator}");
-            var stateChallenge = _executor.Prepare(challenge.Intermediate.Ok);
+            var executionsContexts = _executor.Prepare(new[] { parsed.Ok, challenge.Intermediate.Ok }, $":{challenge.CheckIndicator}").ToList();
+            var stateUser = executionsContexts[0];
+            var stateChallenge = executionsContexts[1];
 
             // Retrieve the test cases for the challenge
             var (inputs, outputs) = GetTests(challenge);
@@ -87,9 +88,6 @@ namespace YololCompetition.Services.Verification
                 if (failure != null)
                     return (null, failure);
 
-                // Copy all externals user->challenge
-                stateUser.CopyTo(stateChallenge, true);
-
                 // Set the challenge inputs _and_ outputs into the challenge state
                 SetInputs(input, stateChallenge, "input_");
                 SetInputs(outputs[i], stateChallenge, "output_");
@@ -99,9 +97,6 @@ namespace YololCompetition.Services.Verification
                 failure = RunToDone(stateChallenge, MaxTestIters, 0, 0, ref overflow);
                 if (failure != null)
                     return (null, new Failure(FailureType.ChallengeCodeFailed, failure.Hint));
-
-                // Copy all externals challenge->user
-                stateChallenge.CopyTo(stateUser, true);
 
                 // Check if the challenge code has forced a failure
                 var forceFail = stateChallenge.TryGet(new VariableName(":fail"));

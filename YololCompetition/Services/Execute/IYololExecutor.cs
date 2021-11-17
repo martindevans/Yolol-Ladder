@@ -9,9 +9,17 @@ using YololCompetition.Extensions;
 
 namespace YololCompetition.Services.Execute
 {
+    public static class IYololExecutorExtensions
+    {
+        public static IExecutionState Prepare(this IYololExecutor executor, Yolol.Grammar.AST.Program program, string done = ":done")
+        {
+            return executor.Prepare(new[] { program }, done).Single();
+        }
+    }
+
     public interface IYololExecutor
     {
-        IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done = ":done");
+        IEnumerable<IExecutionState> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done");
     }
 
     public interface IExecutionState

@@ -12,9 +12,12 @@ namespace YololCompetition.Services.Execute
     public class YololInterpretExecutor
         : IYololExecutor
     {
-        public IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done)
+        public IEnumerable<IExecutionState> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done")
         {
-            return new InterpreterState(program, done);
+            var network = new DefaultValueDeviceNetwork();
+
+            foreach (var program in programs)
+                yield return new InterpreterState(program, done, network);
         }
 
         private class InterpreterState
@@ -37,10 +40,10 @@ namespace YololCompetition.Services.Execute
 
             public bool TerminateOnPcOverflow { get; set; }
 
-            public InterpreterState(Yolol.Grammar.AST.Program program, string done)
+            public InterpreterState(Yolol.Grammar.AST.Program program, string done, DefaultValueDeviceNetwork network)
             {
                 _program = program;
-                _network = new DefaultValueDeviceNetwork();
+                _network = network;
                 _state = new MachineState(_network);
                 _done = _state.GetVariable(done);
             }

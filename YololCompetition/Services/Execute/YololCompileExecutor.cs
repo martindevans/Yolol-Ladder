@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Yolol.Execution;
 using Yolol.Grammar;
 using Yolol.IL;
@@ -15,12 +16,23 @@ namespace YololCompetition.Services.Execute
     {
         private const int MaxStringLength = 1024;
 
-        public IExecutionState Prepare(Yolol.Grammar.AST.Program program, string done)
+        public IEnumerable<IExecutionState> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done")
         {
             var externalsMap = new ExternalsMap();
-            var compiled = program.Compile(externalsMap, Math.Max(20, program.Lines.Count), MaxStringLength, null, true);
 
-            return new ExecutionState(compiled, externalsMap, done);
+            // Compile all programs first
+            var compiled = (from program in programs
+                let c = program.Compile(externalsMap, Math.Max(20, program.Lines.Count), MaxStringLength, null, true)
+                select c
+            ).ToList();
+
+            // Create array to hold externals (common to all contexts)
+            var externals = new Value[externalsMap.Count];
+            Array.Fill(externals, new Value((Number)0));
+
+            // Build an execution state for all programs
+            foreach (var item in compiled)
+                yield return new ExecutionState(item, externalsMap, done, externals);
         }
 
         private class ExecutionState
@@ -45,7 +57,7 @@ namespace YololCompetition.Services.Execute
 
             public bool TerminateOnPcOverflow { get; set; }
 
-            public ExecutionState(CompiledProgram program, ExternalsMap externalsMap, string done)
+            public ExecutionState(CompiledProgram program, ExternalsMap externalsMap, string done, Value[] externals)
             {
                 _program = program;
                 _externalsMap = externalsMap;
@@ -53,8 +65,10 @@ namespace YololCompetition.Services.Execute
 
                 _internals = new Value[_program.InternalsMap.Count];
                 Array.Fill(_internals, new Value((Number)0));
-                _externals = new Value[externalsMap.Count];
-                Array.Fill(_externals, new Value((Number)0));
+                
+                if (externals.Length != externalsMap.Count)
+                    throw new ArgumentException(nameof(externals));
+                _externals = externals;
             }
 
             public string? Run(uint lineExecutionLimit, TimeSpan timeout)

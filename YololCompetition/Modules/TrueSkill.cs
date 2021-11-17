@@ -40,7 +40,7 @@ namespace YololCompetition.Modules
                 await _updater.ApplyChallengeResults(challenge.Id);
 
                 // Display updated ranks
-                StringBuilder s = new StringBuilder($"{challenge.Name}\n");
+                StringBuilder s = new($"{challenge.Name}\n");
                 s.Append(string.Join("\n",
                     await _skill.GetTopRanks(int.MaxValue)
                           .OrderByDescending(a => a.Rating.ConservativeEstimate)
