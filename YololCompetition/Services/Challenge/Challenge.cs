@@ -69,7 +69,7 @@ namespace YololCompetition.Services.Challenge
         public ScoreMode ScoreMode { get; }
         public YololChip Chip { get; }
 
-        public Parser.Result<Yolol.Grammar.AST.Program, Parser.ParseError> Intermediate { get; }
+        public Parser.Result<Yolol.Grammar.AST.Program, Parser.ParseError> Intermediate { get; set; }
 
         public Challenge(
             ulong id,

@@ -59,7 +59,7 @@ namespace YololCompetition.Services.Challenge
         public async Task Update(Challenge challenge)
         {
             await using var cmd = _database.CreateCommand();
-            cmd.CommandText = "UPDATE Challenges SET Difficulty = @Difficulty, EndUnixTime = @EndUnixTime WHERE ID = @ID";
+            cmd.CommandText = "UPDATE Challenges SET Difficulty = @Difficulty, EndUnixTime = @EndUnixTime, IntermediateCode = @IntermediateCode WHERE ID = @ID";
             challenge.Write(cmd.Parameters);
             await cmd.ExecuteNonQueryAsync();
         }

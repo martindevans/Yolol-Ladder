@@ -18,6 +18,7 @@ using YololCompetition.Services.Parsing;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Verification;
 using System.Net.Http;
+using Yolol.Grammar;
 
 namespace YololCompetition.Modules
 {
@@ -271,6 +272,42 @@ namespace YololCompetition.Modules
         {
             await _challenges.EndCurrentChallenge();
             await _scheduler.Poke();
+        }
+
+        [Command("replace-challenge-code")]
+        public async Task ReplaceChallengeCode(string id, [Remainder] string input)
+        {
+            var c = await _challenges.FuzzyFindChallenge(id, true).Take(5).ToArrayAsync();
+            if (c.Length > 1)
+            {
+                await ReplyAsync("Found more than one challenge matching that search string, please be more specific");
+                return;
+            }
+            
+            if (c.Length == 0)
+            {
+                await ReplyAsync("Could not find a challenge matching that searching string");
+                return;
+            }
+
+            var code = input.ExtractYololCodeBlock();
+            if (code == null)
+            {
+                await ReplyAsync(@"Failed to parse a yolol program from message - ensure you have enclosed your solution in triple backticks \`\`\`like this\`\`\`");
+                return;
+            }
+
+            var (program, error) = await _parser.Parse(input);
+            if (program == null)
+            {
+                await ReplyAsync(error);
+                return;
+            }
+
+            var challenge = c[0];
+            challenge.Intermediate = new(program);
+            await _challenges.Update(challenge);
+            await ReplyAsync("Updated");
         }
 
         [Command("set-current-difficulty"), Summary("Change difficulty rating of current challenges")]
