@@ -67,7 +67,7 @@ namespace YololCompetition.Services.Execute
                 Array.Fill(_internals, new Value((Number)0));
                 
                 if (externals.Length != externalsMap.Count)
-                    throw new ArgumentException(nameof(externals));
+                    throw new ArgumentException("Incorrect number of externals", nameof(externals));
                 _externals = externals;
             }
 
