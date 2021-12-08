@@ -107,12 +107,12 @@ namespace YololCompetition.Services.Jupyter
                 }
 
                 // Setup a new state
-                var state = _executor.Prepare(result.Ok);
+                var state = await _executor.Prepare(result.Ok);
                 state.TerminateOnPcOverflow = true;
                 prevState?.CopyTo(state);
 
                 // Execute for 2000 ticks
-                var err = state.Run(2000, TimeSpan.FromMilliseconds(150));
+                var err = await state.Run(2000, TimeSpan.FromMilliseconds(150));
 
                 // Print out result
                 if (err != null)

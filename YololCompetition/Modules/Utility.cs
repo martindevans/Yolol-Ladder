@@ -57,18 +57,18 @@ namespace YololCompetition.Modules
                 await ReplyAsync($"Successfully parsed program! ```{result.Ok}```");
         }
 
-        [Command("yolol"), Summary("Run some Yolol code. The program will run for 100000 iterations or until `done` is set to a true value.")]
+        [Command("yolol"), Summary("Run some Yolol code. The program will run for 1000000 iterations or until `done` is set to a true value.")]
         [RateLimit("6F6429AE-BFF5-480C-953E-FE3A70726A01", 1, "Please wait a short while before running more code")]
         public async Task RunYolol([Remainder] string input)
         {
-            await RunYolol(input, _executor, 100000);
+            await RunYolol(input, _executor, 1000000);
         }
 
-        [Command("yolol-il"), Hidden, Summary("Run some Yolol code (using the IL engine). The program will run for 100000 iterations or until `done` is set to a true value.")]
+        [Command("yolol-il"), Hidden, Summary("Run some Yolol code (using the IL engine). The program will run for 1000000 iterations or until `done` is set to a true value.")]
         [RateLimit("6F6429AE-BFF5-480C-953E-FE3A70726A01", 1, "Please wait a short while before running more code")]
         public async Task RunYololIL([Remainder] string input)
         {
-            await RunYolol(input, new YololCompileExecutor(), 100000);
+            await RunYolol(input, new YololCompileExecutor(), 1000000);
         }
 
         [Command("yolol-legacy"), Hidden, Summary("Run some Yolol code (using the legacy interpreter). The program will run for 2000 iterations or until `done` is set to a true value.")]
@@ -76,6 +76,13 @@ namespace YololCompetition.Modules
         public async Task RunYololEmu([Remainder] string input)
         {
             await RunYolol(input, new YololInterpretExecutor(), 2000);
+        }
+
+        [Command("yolol-yogi"), Hidden, Summary("Run some Yolol code (using the yogi vm). The program will run for 20000 iterations or until `done` is set to a true value.")]
+        [RateLimit("6F6429AE-BFF5-480C-953E-FE3A70726A01", 1, "Please wait a short while before running more code")]
+        public async Task RunYololYogi([Remainder] string input)
+        {
+            await RunYolol(input, new YogiExecutor(), 20000);
         }
 
         private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
@@ -98,7 +105,7 @@ namespace YololCompetition.Modules
             // Prep execution state
             var compileTimer = new Stopwatch();
             compileTimer.Start();
-            var state = executor.Prepare(result);
+            var state = await executor.Prepare(result);
             compileTimer.Stop();
 
             // Run for N lines, 500ms or until `:done!=0`
@@ -106,17 +113,12 @@ namespace YololCompetition.Modules
             exeTimer.Start();
             var err = state.Run(lines, TimeSpan.FromMilliseconds(500));
 
-            // Print out error if execution terminated for some reason
-            if (err != null)
-            {
-                await ReplyAsync(err);
-                return;
-            }
-
             // Print out the final machine state
             var embed = state.ToEmbed(embed => {
                 embed.AddField("Setup", $"{compileTimer.ElapsedMilliseconds}ms", true);
                 embed.AddField("Execute", $"{exeTimer.ElapsedMilliseconds}ms", true);
+                if (err != null)
+                    embed.AddField("Error", $"{err}", false);
             });
             await ReplyAsync(embed: embed.Build());
         }

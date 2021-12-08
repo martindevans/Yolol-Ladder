@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Yolol.Execution;
 using Yolol.Grammar;
 using Yolol.IL;
@@ -16,7 +17,7 @@ namespace YololCompetition.Services.Execute
     {
         private const int MaxStringLength = 1024;
 
-        public IEnumerable<IExecutionState> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done")
+        public async Task<IEnumerable<IExecutionState>> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done")
         {
             var externalsMap = new ExternalsMap();
 
@@ -31,8 +32,8 @@ namespace YololCompetition.Services.Execute
             Array.Fill(externals, new Value((Number)0));
 
             // Build an execution state for all programs
-            foreach (var item in compiled)
-                yield return new ExecutionState(item, externalsMap, done, externals);
+            return from item in compiled
+                   select new ExecutionState(item, externalsMap, done, externals);
         }
 
         private class ExecutionState
@@ -71,19 +72,20 @@ namespace YololCompetition.Services.Execute
                 _externals = externals;
             }
 
-            public string? Run(uint lineExecutionLimit, TimeSpan timeout)
+            public async Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout)
             {
                 var timer = new Stopwatch();
                 timer.Start();
 
-                var limit = Math.Min(10000, (int)lineExecutionLimit);
+                // Run lines in chunks of 10k, checking the timeout between each chunk
+                var limit = Math.Min(1000, (int)lineExecutionLimit);
                 var doneKey = _externalsMap.ChangeSetKey(new VariableName(":done"));
 
                 // Run lines until completion indicator is set or execution time limit is exceeded
                 var executed = 0;
                 try
                 {
-                    while (!Done && executed < lineExecutionLimit)
+                    while (!Done && executed < lineExecutionLimit - 1)
                     {
                         executed += _program.Run(_internals, _externals, Math.Min(limit, (int)(lineExecutionLimit - executed)), doneKey);
 
@@ -138,21 +140,6 @@ namespace YololCompetition.Services.Execute
                     yield return new KeyValuePair<VariableName, Value>(key, _internals[value]);
                 foreach (var (key, value) in _externalsMap)
                     yield return new KeyValuePair<VariableName, Value>(key, _externals[value]);
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
-
-            public void CopyTo(IExecutionState other, bool externalsOnly = false)
-            {
-                if (!externalsOnly)
-                    foreach (var (name, index) in _program.InternalsMap)
-                        other.Set(name, _internals[index]);
-
-                foreach (var (name, index) in _externalsMap)
-                    other.Set(name, _externals[index]);
             }
         }
     }

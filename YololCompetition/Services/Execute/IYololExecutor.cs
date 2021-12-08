@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Discord;
 using Yolol.Execution;
 using Yolol.Grammar;
@@ -11,15 +13,15 @@ namespace YololCompetition.Services.Execute
 {
     public static class IYololExecutorExtensions
     {
-        public static IExecutionState Prepare(this IYololExecutor executor, Yolol.Grammar.AST.Program program, string done = ":done")
+        public static async Task<IExecutionState> Prepare(this IYololExecutor executor, Yolol.Grammar.AST.Program program, string done = ":done")
         {
-            return executor.Prepare(new[] { program }, done).Single();
+            return (await executor.Prepare(new[] { program }, done)).Single();
         }
     }
 
     public interface IYololExecutor
     {
-        IEnumerable<IExecutionState> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done");
+        Task<IEnumerable<IExecutionState>> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done");
     }
 
     public interface IExecutionState
@@ -51,7 +53,7 @@ namespace YololCompetition.Services.Execute
         /// <param name="lineExecutionLimit">Max lines to run</param>
         /// <param name="timeout">Max time to execute for</param>
         /// <returns>The error which ended execution, or else null</returns>
-        public string? Run(uint lineExecutionLimit, TimeSpan timeout);
+        public Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout);
 
         /// <summary>
         /// Try to get the value of a given variable
@@ -67,12 +69,10 @@ namespace YololCompetition.Services.Execute
         /// <param name="value"></param>
         void Set(VariableName name, Value value);
 
-        /// <summary>
-        /// Copy all the variable values from this state to another state
-        /// </summary>
-        /// <param name="other"></param>
-        /// <param name="externalsOnly"></param>
-        void CopyTo(IExecutionState other, bool externalsOnly = false);
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 
     public static class IExecutionStateExtensions
@@ -114,6 +114,16 @@ namespace YololCompetition.Services.Execute
 
             if (builder.Length > 0)
                 embed.AddField($"{title} {(counter == 0 ? "" : counter.ToString())}", builder.ToString(), false);
+        }
+
+        public static void CopyTo(this IExecutionState from, IExecutionState to, bool externalsOnly = false)
+        {
+            foreach (var (name, value) in from)
+            {
+                if (!name.IsExternal && externalsOnly)
+                    continue;
+                to.Set(name, value);
+            }
         }
     }
 }

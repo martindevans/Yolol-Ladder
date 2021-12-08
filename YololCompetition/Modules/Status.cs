@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -52,6 +54,31 @@ namespace YololCompetition.Modules
                         .Build();
 
             await ReplyAsync("", false, embed);
+        }
+
+        [Command("version"), Hidden, Summary("Print bot version info")]
+        public async Task Version()
+        {
+            var embed = new EmbedBuilder();
+            embed.WithTitle("Referee Version");
+
+            var interesting = new[] {
+                "System.Runtime",
+                "Discord.Net.Core",
+                "Yolol",
+                "Yolol.Analysis",
+                "Yolol.IL",
+                "ShipCombatCore",
+            };
+
+            var assemblies = from assembly in Assembly.GetExecutingAssembly().GetReferencedAssemblies()
+                             where interesting.Contains(assembly.Name)
+                             select assembly;
+
+            foreach (var referenced in assemblies)
+                embed.AddField($"{referenced.Name}", $"{referenced.Version}");
+
+            await ReplyAsync(embed: embed.Build());
         }
 
         [Command("ping"), Summary("Respond with `Pong`"), Alias("test")]

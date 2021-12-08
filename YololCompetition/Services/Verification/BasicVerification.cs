@@ -65,7 +65,7 @@ namespace YololCompetition.Services.Verification
 
             // Prepare a machine state for execution.
             // Two states are needed - one for user code and one for code supplied by the challenge
-            var executionsContexts = _executor.Prepare(new[] { parsed.Ok, challenge.Intermediate.Ok }, $":{challenge.CheckIndicator}").ToList();
+            var executionsContexts = (await _executor.Prepare(new[] { parsed.Ok, challenge.Intermediate.Ok }, $":{challenge.CheckIndicator}")).ToList();
             var stateUser = executionsContexts[0];
             var stateChallenge = executionsContexts[1];
 
@@ -84,7 +84,7 @@ namespace YololCompetition.Services.Verification
                 var input = SetInputs(i < inputs.Count ? inputs[i] : new Dictionary<string, Value>(), stateUser);
 
                 // Run the user code until completion
-                var failure = RunToDone(stateUser, MaxTestIters, i, inputs.Count, ref overflowIters);
+                (var failure, overflowIters) = await RunToDone(stateUser, MaxTestIters, i, inputs.Count, overflowIters);
                 if (failure != null)
                     return (null, failure);
 
@@ -93,8 +93,7 @@ namespace YololCompetition.Services.Verification
                 SetInputs(outputs[i], stateChallenge, "output_");
 
                 // Run the challenge code
-                var overflow = (long)MaxItersOverflow;
-                failure = RunToDone(stateChallenge, MaxTestIters, 0, 0, ref overflow);
+                (failure, _) = await RunToDone(stateChallenge, MaxTestIters, 0, 0, MaxItersOverflow);
                 if (failure != null)
                     return (null, new Failure(FailureType.ChallengeCodeFailed, failure.Hint));
 
@@ -130,33 +129,33 @@ namespace YololCompetition.Services.Verification
             return values;
         }
 
-        private static Failure? RunToDone(IExecutionState state, uint maxTestIters, int testIndex, int testCount, ref long overflowIters)
+        private static async Task<(Failure? fail, long overflowIters)> RunToDone(IExecutionState state, uint maxTestIters, int testIndex, int testCount, long overflowIters)
         {
             // Clear completion indicator
             state.Done = false;
 
             // Run for max allowed number of lines
-            var err1 = state.Run(maxTestIters, TimeSpan.FromMilliseconds(600));
+            var err1 = await state.Run(maxTestIters, TimeSpan.FromMilliseconds(600));
             if (err1 != null)
-                return new Failure(FailureType.Other, err1);
+                return (new Failure(FailureType.Other, err1), overflowIters);
 
             // This test case didn't finish yet, run it some more with the overflow pool
             if (!state.Done)
             {
                 var executed = state.TotalLinesExecuted;
-                var err2 = state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(600));
+                var err2 = await state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(600));
                 if (err2 != null)
-                    return new Failure(FailureType.Other, err2);
+                    return (new Failure(FailureType.Other, err2), overflowIters);
 
                 // Shrink the overflow pool by however many ticks that just used
                 overflowIters -= (uint)(state.TotalLinesExecuted - executed);
 
                 //Once the overflow pool is empty too, fail
                 if (overflowIters <= 0 || !state.Done)
-                    return new Failure(FailureType.RuntimeTooLong, $"Completed {testIndex}/{testCount} tests.");
+                    return (new Failure(FailureType.RuntimeTooLong, $"Completed {testIndex}/{testCount} tests."), overflowIters);
             }
 
-            return null;
+            return (null, overflowIters);
         }
 
         private static Failure? CheckChipLevel(YololChip level, Yolol.Grammar.AST.Program program)

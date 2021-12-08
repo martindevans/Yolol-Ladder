@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Yolol.Execution;
 using Yolol.Grammar;
 using Type = Yolol.Execution.Type;
@@ -12,12 +13,12 @@ namespace YololCompetition.Services.Execute
     public class YololInterpretExecutor
         : IYololExecutor
     {
-        public IEnumerable<IExecutionState> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done")
+        public async Task<IEnumerable<IExecutionState>> Prepare(IEnumerable<Yolol.Grammar.AST.Program> programs, string done = ":done")
         {
             var network = new DefaultValueDeviceNetwork();
 
-            foreach (var program in programs)
-                yield return new InterpreterState(program, done, network);
+            return from program in programs
+                   select new InterpreterState(program, done, network);
         }
 
         private class InterpreterState
@@ -48,7 +49,7 @@ namespace YololCompetition.Services.Execute
                 _done = _state.GetVariable(done);
             }
 
-            public string? Run(uint lineExecutionLimit, TimeSpan timeout)
+            public async Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout)
             {
                 var timer = new Stopwatch();
                 timer.Start();
@@ -114,17 +115,6 @@ namespace YololCompetition.Services.Execute
                 v.Value = value;
             }
 
-            public void CopyTo(IExecutionState other, bool externalsOnly = false)
-            {
-                foreach (var (name, value) in this)
-                {
-                    if (!name.IsExternal && externalsOnly)
-                        continue;
-
-                    other.Set(name, value);
-                }
-            }
-
             public IEnumerator<KeyValuePair<VariableName, Value>> GetEnumerator()
             {
                 foreach (var (key, value) in _state)
@@ -132,11 +122,6 @@ namespace YololCompetition.Services.Execute
 
                 foreach (var (key, value) in _network)
                     yield return new KeyValuePair<VariableName, Value>(new VariableName(":" + key), value);
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
             }
         }
     }
