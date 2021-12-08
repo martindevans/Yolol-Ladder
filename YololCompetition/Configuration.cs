@@ -23,5 +23,8 @@ namespace YololCompetition
 
         [Option("start-time", Required = false, HelpText = "What time of the day to start a challenge in UTC (in minutes)", Default = (uint)1140)]
         public uint ChallengeStartTime { get; set; }
+
+        [Option("yogi-path", Required = false, HelpText = "What time of the day to start a challenge in UTC (in minutes)")]
+        public string? YogiPath { get; set; }
     }
 }

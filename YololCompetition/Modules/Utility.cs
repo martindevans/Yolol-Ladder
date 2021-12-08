@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
@@ -16,11 +17,13 @@ namespace YololCompetition.Modules
     {
         private readonly IYololExecutor _executor;
         private readonly IYololParser _parser;
+        private readonly string? _yogi;
 
-        public Utility(IYololExecutor executor, IYololParser parser)
+        public Utility(IYololExecutor executor, IYololParser parser, Configuration config)
         {
             _executor = executor;
             _parser = parser;
+            _yogi = config.YogiPath;
         }
 
         [Command("chars"), Summary("Count the letters in a string")]
@@ -79,10 +82,16 @@ namespace YololCompetition.Modules
         }
 
         [Command("yolol-yogi"), Hidden, Summary("Run some Yolol code (using the yogi vm). The program will run for 20000 iterations or until `done` is set to a true value.")]
-        [RateLimit("6F6429AE-BFF5-480C-953E-FE3A70726A01", 1, "Please wait a short while before running more code")]
+        [RateLimit("6F6429AE-BFF5-480C-953E-FE3A70726A01", 4, "Please wait a short while before running more code")]
         public async Task RunYololYogi([Remainder] string input)
         {
-            await RunYolol(input, new YogiExecutor(), 20000);
+            if (_yogi == null || !File.Exists(_yogi))
+            {
+                await ReplyAsync("Cannot find `Yogi` executable (Contact `Martin#2468` or `rad dude broham#2970`)");
+                return;
+            }
+
+            await RunYolol(input, new YogiExecutor(_yogi), 20000);
         }
 
         private async Task<Yolol.Grammar.AST.Program?> Parse(string input)
@@ -111,7 +120,7 @@ namespace YololCompetition.Modules
             // Run for N lines, 500ms or until `:done!=0`
             var exeTimer = new Stopwatch();
             exeTimer.Start();
-            var err = state.Run(lines, TimeSpan.FromMilliseconds(500));
+            var err = await state.Run(lines, TimeSpan.FromMilliseconds(500));
 
             // Print out the final machine state
             var embed = state.ToEmbed(embed => {

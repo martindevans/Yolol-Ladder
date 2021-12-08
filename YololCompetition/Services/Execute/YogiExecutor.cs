@@ -8,6 +8,7 @@ using Yolol.Execution;
 using Yolol.Grammar;
 using Newtonsoft.Json;
 using System.Linq;
+using JetBrains.Annotations;
 
 namespace YololCompetition.Services.Execute
 {
@@ -33,7 +34,7 @@ namespace YololCompetition.Services.Execute
         private class YogiExecutionState
             : IExecutionState
         {
-            private Dictionary<VariableName, Value> _state = new();
+            private readonly Dictionary<VariableName, Value> _state = new();
 
             private readonly Yolol.Grammar.AST.Program _program;
             private readonly VariableName _done;
@@ -55,30 +56,47 @@ namespace YololCompetition.Services.Execute
 
             public async Task<string?> Run(uint lineExecutionLimit, TimeSpan timeout)
             {
-                //todo: pass in:
-                // - Yolol code
-                // - variable values
-                // - program counter
-                // - terminate on PC overflow
-
+                var terminate = TerminateOnPcOverflow ? "--term-pc-of" : "";
                 var stdOut = new StringBuilder();
-                var result = await Cli.Wrap(_exePath)
-                    .WithArguments($"--stop-flag {_done} --max-steps {lineExecutionLimit} --max-sec {timeout.TotalSeconds}")
-                    .WithStandardInputPipe(PipeSource.FromString(_program.ToString()))
-                    .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOut))
-                    .ExecuteAsync();
 
-                //todo: get back:
-                // - parser error
-                // - compile error
-                // - program counter
-                // - lines executed
+                try
+                {
+                    await Cli.Wrap(_exePath)
+                        .WithArguments($"--stop-flag {_done} --max-steps {lineExecutionLimit} --max-sec {timeout.TotalSeconds} --start-pc {ProgramCounter} {terminate}")
+                        .WithStandardInputPipe(PipeSource.FromString(CreateStdIn()))
+                        .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOut))
+                        .ExecuteAsync();
+                }
+                catch (Exception ex)
+                {
+                    return ex.ToString();
+                }
 
                 var parsed = JsonConvert.DeserializeObject<YogiExecutionResult>(stdOut.ToString());
+                if (parsed == null)
+                    return "Deserialised null execution state";
+                if (parsed.Error != null)
+                    return parsed.Error;
+                if (parsed.Vars == null)
+                    return "Execution state contains no Vars";
 
-                // TotalLinesExecuted += ???
+                TotalLinesExecuted += parsed.ElapsedLines;
+                ProgramCounter = parsed.CurrentLine;
+                foreach (var item in parsed.Vars)
+                    Set(item.VariableName, item.Value);
 
-                throw new NotImplementedException();
+                return null;
+            }
+
+            private string CreateStdIn()
+            {
+                var vars = (from v in _state
+                            select new VarData(v.Key, v.Value)).ToArray();
+
+                var json = JsonConvert.SerializeObject(vars);
+                var code = _program.ToString();
+
+                return $"{json}\0{code}";
             }
 
             public void Set(VariableName name, Value value)
@@ -99,9 +117,92 @@ namespace YololCompetition.Services.Execute
             }
         }
 
+#pragma warning disable 0649
+
         private class YogiExecutionResult
         {
+            [JsonProperty(PropertyName = "error")]
+            [UsedImplicitly]
+            public string? Error { get; set; }
 
+            [JsonProperty(PropertyName = "vars")]
+            [UsedImplicitly]
+            public List<VarData> Vars;
+
+            [JsonProperty(PropertyName = "elapsed_lines")]
+            [UsedImplicitly]
+            public uint ElapsedLines;
+
+            [JsonProperty(PropertyName = "current_line")]
+            [UsedImplicitly]
+            public int CurrentLine;
+
+            //pub elapsed_s: f32,
+            //pub mean_lps: f32,
+            //pub stddev_lps: f32,
+            //pub current_line: usize,
+
+            public YogiExecutionResult()
+            {
+                Vars = new List<VarData>();
+                ElapsedLines = 0;
+                CurrentLine = 0;
+            }
         }
+
+        private class VarData
+        {
+            [JsonProperty(PropertyName = "name")]
+            [UsedImplicitly]
+            public string? Name;
+
+            [JsonProperty(PropertyName = "global")]
+            [UsedImplicitly]
+            public bool Global;
+
+            [JsonProperty(PropertyName = "value")]
+            [UsedImplicitly]
+            public DataValue? DataValue;
+
+            [JsonIgnore] public VariableName VariableName => new((Global ? ":" : "") + Name);
+            [JsonIgnore] public Value Value => DataValue?.Value ?? Number.Zero;
+
+            public VarData()
+            {
+            }
+
+            public VarData(VariableName name, Value value)
+            {
+                Name = name.Name.TrimStart(':');
+                Global = name.IsExternal;
+                DataValue = new DataValue(value);
+            }
+        }
+
+        private class DataValue
+        {
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+            [UsedImplicitly]
+            public string? Number;
+
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+            [UsedImplicitly]
+            public string? String;
+
+            [JsonIgnore] public Value Value => Number != null ? (Number)decimal.Parse(Number) : new Value(new YString(String ?? ""));
+
+            public DataValue()
+            {
+            }
+
+            public DataValue(Value value)
+            {
+                if (value.Type == Yolol.Execution.Type.Number)
+                    Number = value.ToString();
+                else
+                    String = value.ToString();
+            }
+        }
+#pragma warning restore 0649
     }
 }
