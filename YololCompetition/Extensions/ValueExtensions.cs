@@ -24,7 +24,7 @@ namespace YololCompetition.Extensions
                 var right = value[^32..];
                 var count = left.Length + right.Length;
 
-                return $"{left} ...({value.Length - count} characters omitted)... {right}";
+                return $"\"{left}...({value.Length - count} characters omitted)...{right}\"";
             }
         }
     }

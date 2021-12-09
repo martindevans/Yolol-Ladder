@@ -84,7 +84,8 @@ namespace YololCompetition.Services.Verification
                 var input = SetInputs(i < inputs.Count ? inputs[i] : new Dictionary<string, Value>(), stateUser);
 
                 // Run the user code until completion
-                (var failure, overflowIters) = await RunToDone(stateUser, MaxTestIters, i, inputs.Count, overflowIters);
+                Failure? failure;
+                (failure, overflowIters) = await RunToDone(stateUser, MaxTestIters, i, inputs.Count, overflowIters);
                 if (failure != null)
                     return (null, failure);
 
