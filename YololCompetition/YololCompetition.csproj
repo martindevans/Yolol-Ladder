@@ -34,9 +34,9 @@
     <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
     <PackageReference Include="ShipCombatCore" Version="33.0.0" />
     <PackageReference Include="System.Linq.Async" Version="5.1.0" />
-    <PackageReference Include="Yolol" Version="14.8.8" />
+    <PackageReference Include="Yolol" Version="14.8.12" />
     <PackageReference Include="Yolol.Analysis" Version="8.0.0" />
-    <PackageReference Include="Yolol.IL" Version="17.0.8" />
+    <PackageReference Include="Yolol.IL" Version="18.0.0" />
   </ItemGroup>
 
   <!--<Target Name="ChangeAliasesOfReactiveExtensions" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
