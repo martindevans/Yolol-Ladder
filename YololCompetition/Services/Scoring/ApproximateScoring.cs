@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BlazorYololEmulator.Shared;
 using F23.StringSimilarity;
 using Yolol.Execution;
 using Yolol.Grammar;
@@ -20,7 +21,7 @@ namespace YololCompetition.Services.Scoring
         // Getting a better answer than that is worth this much:
         public const double ExactMultiplier = 7.5f;
 
-        public override Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state)
+        public override Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state, SerializedState? debugState)
         {
             // Check that the machine state is exactly correct for every expected output
             foreach (var (key, expected) in expectedOutputs)
@@ -41,7 +42,7 @@ namespace YololCompetition.Services.Scoring
                     case (_, _):
                         var ii = InputString();
                         var oo = OutputString();
-                        return new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `:{key}={actual.ToHumanString()}`");
+                        return new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `:{key}={actual.ToHumanString()}`", debugState);
                 }
             }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,11 +44,13 @@ namespace YololCompetition.Services.Execute
             public ulong TotalLinesExecuted { get; private set; }
             public bool TerminateOnPcOverflow { get; set; }
 
+            public string Code => _program.ToString();
+
             public YogiExecutionState(string exePath, Yolol.Grammar.AST.Program program, string done)
             {
-                _program = program;
                 _done = new VariableName(done);
                 _exePath = exePath;
+                _program = program;
 
                 Set(_done, Number.Zero);
             }
@@ -94,9 +95,8 @@ namespace YololCompetition.Services.Execute
                             select new VarData(v.Key, v.Value)).ToArray();
 
                 var json = JsonConvert.SerializeObject(vars);
-                var code = _program.ToString();
 
-                return $"{json}\0{code}";
+                return $"{json}\0{Code}";
             }
 
             public void Set(VariableName name, Value value)

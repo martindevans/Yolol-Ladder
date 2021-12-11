@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -24,7 +23,7 @@ namespace YololCompetition.Services.Execute
             // Compile all programs first
             var compiled = (from program in programs
                 let c = program.Compile(externalsMap, Math.Max(20, program.Lines.Count), MaxStringLength, null, true)
-                select c
+                select (c, program)
             ).ToList();
 
             // Create array to hold externals (common to all contexts)
@@ -33,18 +32,21 @@ namespace YololCompetition.Services.Execute
 
             // Build an execution state for all programs
             return from item in compiled
-                   select new ExecutionState(item, externalsMap, done, externals);
+                   select new ExecutionState(item.c, item.program, externalsMap, done, externals);
         }
 
         private class ExecutionState
             : IExecutionState
         {
             private readonly CompiledProgram _program;
+            private readonly Yolol.Grammar.AST.Program _ast;
             private readonly ExternalsMap _externalsMap;
             private readonly VariableName _done;
 
             private readonly Value[] _externals;
             private readonly Value[] _internals;
+
+            public string Code => _ast.ToString();
 
             public bool Done
             {
@@ -58,9 +60,10 @@ namespace YololCompetition.Services.Execute
 
             public bool TerminateOnPcOverflow { get; set; }
 
-            public ExecutionState(CompiledProgram program, ExternalsMap externalsMap, string done, Value[] externals)
+            public ExecutionState(CompiledProgram program, Yolol.Grammar.AST.Program ast, ExternalsMap externalsMap, string done, Value[] externals)
             {
                 _program = program;
+                _ast = ast;
                 _externalsMap = externalsMap;
                 _done = new VariableName(done);
 

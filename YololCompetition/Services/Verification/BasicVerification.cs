@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using BlazorYololEmulator.Shared;
 using Yolol.Execution;
 using Yolol.Grammar;
 using YololCompetition.Services.Scoring;
@@ -16,10 +17,10 @@ namespace YololCompetition.Services.Verification
         : IVerification
     {
         // How many extra iters (across all tests) may be used
-        public const int MaxItersOverflow = 10000;
+        private const int MaxItersOverflow = 10000;
 
         // Max lines executed per test case
-        public const uint MaxTestIters = 1000;
+        private const uint MaxTestIters = 1000;
 
         private readonly IYololExecutor _executor;
 
@@ -48,12 +49,12 @@ namespace YololCompetition.Services.Verification
             // Check input program fits within 20x70
             var lines = yolol.Split("\n");
             if (lines.Length > 20 || lines.Any(l => l.Length > 70))
-                return (null, new Failure(FailureType.ProgramTooLarge, null));
+                return (null, new Failure(FailureType.ProgramTooLarge, null, null));
 
             // parse the program
             var parsed = Parser.ParseProgram(yolol);
             if (!parsed.IsOk)
-                return (null, new Failure(FailureType.ParseFailed, parsed.Err.ToString()));
+                return (null, new Failure(FailureType.ParseFailed, parsed.Err.ToString(), null));
 
             // Verify that code is allowed on the given chip level
             if (challenge.Chip != YololChip.Professional)
@@ -82,10 +83,12 @@ namespace YololCompetition.Services.Verification
             {
                 // Set inputs in user execution state
                 var input = SetInputs(i < inputs.Count ? inputs[i] : new Dictionary<string, Value>(), stateUser);
+                var output = outputs[i];
+                var savedState = stateUser.Serialize(output);
 
                 // Run the user code until completion
                 Failure? failure;
-                (failure, overflowIters) = await RunToDone(stateUser, MaxTestIters, i, inputs.Count, overflowIters);
+                (failure, overflowIters) = await RunToDone(stateUser, MaxTestIters, i, inputs.Count, overflowIters, savedState);
                 if (failure != null)
                     return (null, failure);
 
@@ -94,17 +97,17 @@ namespace YololCompetition.Services.Verification
                 SetInputs(outputs[i], stateChallenge, "output_");
 
                 // Run the challenge code
-                (failure, _) = await RunToDone(stateChallenge, MaxTestIters, 0, 0, MaxItersOverflow);
+                (failure, _) = await RunToDone(stateChallenge, MaxTestIters, 0, 0, MaxItersOverflow, savedState);
                 if (failure != null)
-                    return (null, new Failure(FailureType.ChallengeCodeFailed, failure.Hint));
+                    return (null, new Failure(FailureType.ChallengeCodeFailed, failure.Hint, savedState));
 
                 // Check if the challenge code has forced a failure
                 var forceFail = stateChallenge.TryGet(new VariableName(":fail"));
                 if (forceFail?.Type == Yolol.Execution.Type.String && forceFail.Value.String.Length != 0)
-                    return (null, new Failure(FailureType.ChallengeForceFail, forceFail.Value.String.ToString()));
+                    return (null, new Failure(FailureType.ChallengeForceFail, forceFail.Value.String.ToString(), savedState));
 
                 // Check this test case with the current scoring mode
-                var scoreFailure = scoreMode.CheckCase(input, outputs[i], stateUser);
+                var scoreFailure = scoreMode.CheckCase(input, outputs[i], stateUser, savedState);
                 if (scoreFailure != null)
                     return (null, scoreFailure);
             }
@@ -130,7 +133,7 @@ namespace YololCompetition.Services.Verification
             return values;
         }
 
-        private static async Task<(Failure? fail, long overflowIters)> RunToDone(IExecutionState state, uint maxTestIters, int testIndex, int testCount, long overflowIters)
+        private static async Task<(Failure? fail, long overflowIters)> RunToDone(IExecutionState state, uint maxTestIters, int testIndex, int testCount, long overflowIters, SerializedState startState)
         {
             // Clear completion indicator
             state.Done = false;
@@ -138,7 +141,7 @@ namespace YololCompetition.Services.Verification
             // Run for max allowed number of lines
             var err1 = await state.Run(maxTestIters, TimeSpan.FromMilliseconds(600));
             if (err1 != null)
-                return (new Failure(FailureType.Other, err1), overflowIters);
+                return (new Failure(FailureType.Other, err1, startState), overflowIters);
 
             // This test case didn't finish yet, run it some more with the overflow pool
             if (!state.Done)
@@ -146,14 +149,14 @@ namespace YololCompetition.Services.Verification
                 var executed = state.TotalLinesExecuted;
                 var err2 = await state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(600));
                 if (err2 != null)
-                    return (new Failure(FailureType.Other, err2), overflowIters);
+                    return (new Failure(FailureType.Other, err2, startState), overflowIters);
 
                 // Shrink the overflow pool by however many ticks that just used
                 overflowIters -= (uint)(state.TotalLinesExecuted - executed);
 
                 //Once the overflow pool is empty too, fail
                 if (overflowIters <= 0 || !state.Done)
-                    return (new Failure(FailureType.RuntimeTooLong, $"Completed {testIndex}/{testCount} tests."), overflowIters);
+                    return (new Failure(FailureType.RuntimeTooLong, $"Completed {testIndex}/{testCount} tests.", startState), overflowIters);
             }
 
             return (null, overflowIters);
@@ -161,7 +164,7 @@ namespace YololCompetition.Services.Verification
 
         private static Failure? CheckChipLevel(YololChip level, Yolol.Grammar.AST.Program program)
         {
-            if (level == YololChip.Unknown || level == YololChip.Professional)
+            if (level is YololChip.Unknown or YololChip.Professional)
                 return null;
 
             var statements = from line in program.Lines
@@ -171,7 +174,7 @@ namespace YololCompetition.Services.Verification
             var check = new ChipLevelChecker(level);
             foreach (var statement in statements)
                 if (!check.Visit(statement))
-                    return new Failure(FailureType.InvalidProgramForChipType, null);
+                    return new Failure(FailureType.InvalidProgramForChipType, null, null);
 
             return null;
         }

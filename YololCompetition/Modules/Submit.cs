@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using BlazorYololEmulator.Shared;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
 using JetBrains.Annotations;
+using Yolol.Execution;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Broadcast;
@@ -25,14 +28,16 @@ namespace YololCompetition.Modules
         private readonly IVerification _verification;
         private readonly IBroadcast _broadcast;
         private readonly DiscordSocketClient _client;
+        private readonly Configuration _config;
 
-        public Submit(ISolutions solutions, IChallenges challenges, IVerification verification, IBroadcast broadcast, DiscordSocketClient client)
+        public Submit(ISolutions solutions, IChallenges challenges, IVerification verification, IBroadcast broadcast, DiscordSocketClient client, Configuration config)
         {
             _solutions = solutions;
             _challenges = challenges;
             _verification = verification;
             _broadcast = broadcast;
             _client = client;
+            _config = config;
         }
 
         private async Task SubmitSolution(Challenge challenge, string program, bool save)
@@ -56,10 +61,10 @@ namespace YololCompetition.Modules
                     FailureType.ChallengeCodeFailed => $"Challenge code crashed! Please contact Martin#2468. {failure.Hint}",
                     FailureType.ChallengeForceFail => $"{failure.Hint}",
                     FailureType.Other => failure.Hint,
-                    _ => throw new ArgumentOutOfRangeException()
+                    _ => throw new InvalidOperationException($"Unknown failure type: {failure.Type}")
                 };
 
-                await ReplyWithHint("Verification Failed!", message);
+                await ReplyWithHint("Verification Failed!", message, failure.TestCase);
                 return;
             }
 
@@ -152,7 +157,7 @@ namespace YololCompetition.Modules
             await _broadcast.Broadcast(embed.Build()).LastAsync();
         }
 
-        private async Task ReplyWithHint(string prefix, string? hint)
+        private async Task ReplyWithHint(string prefix, string? hint, SerializedState? failureCase)
         {
             if (hint != null && prefix.Length + hint.Length > 1000)
             {
@@ -170,6 +175,15 @@ namespace YololCompetition.Modules
             else
             {
                 await ReplyAsync($"{prefix} {hint}");
+            }
+
+            if (failureCase != null && _config.OnlineDebuggerUrl != null)
+            {
+                var uri = new UriBuilder(_config.OnlineDebuggerUrl)
+                {
+                    Query = $"state={failureCase.Serialize()}"
+                };
+                await ReplyAsync($"Open Online Debugger: {uri}");
             }
         }
 

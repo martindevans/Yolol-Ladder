@@ -4,6 +4,7 @@
 
 namespace YololCompetition
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class Configuration
     {
         [Option('t', "token-var", Required = true, HelpText = "Environment var the token is stored in")]
@@ -24,7 +25,10 @@ namespace YololCompetition
         [Option("start-time", Required = false, HelpText = "What time of the day to start a challenge in UTC (in minutes)", Default = (uint)1140)]
         public uint ChallengeStartTime { get; set; }
 
-        [Option("yogi-path", Required = false, HelpText = "What time of the day to start a challenge in UTC (in minutes)")]
+        [Option("yogi-path", Required = false, HelpText = "File path to the binary for the Yogi execution engine")]
         public string? YogiPath { get; set; }
+
+        [Option("online-debugger-url", Required = false, HelpText = "Base URL to an online debugger")]
+        public string? OnlineDebuggerUrl { get; set; }
     }
 }

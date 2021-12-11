@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BlazorYololEmulator.Shared;
 using Yolol.Execution;
 using Yolol.Grammar;
 using YololCompetition.Extensions;
@@ -50,7 +51,7 @@ namespace YololCompetition.Services.Scoring
             }
         }
 
-        public virtual Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state)
+        public virtual Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state, SerializedState? debugState)
         {
             // Check that the machine state is exactly correct for every expected output
             foreach (var (key, value) in expectedOutputs)
@@ -60,7 +61,7 @@ namespace YololCompetition.Services.Scoring
                 {
                     var ii = string.Join(",", inputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
                     var oo = string.Join(",", expectedOutputs.Select(b => $"`:{b.Key}={b.Value.ToHumanString()}`"));
-                    return new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `:{key}={v.ToHumanString()}`");
+                    return new Failure(FailureType.IncorrectResult, $"For inputs {ii} expected outputs {oo}, got `:{key}={v.ToHumanString()}`", debugState);
                 }
             }
 

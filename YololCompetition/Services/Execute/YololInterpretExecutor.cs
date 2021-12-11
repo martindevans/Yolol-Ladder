@@ -29,6 +29,8 @@ namespace YololCompetition.Services.Execute
             private readonly MachineState _state;
             private readonly IVariable _done;
 
+            public string Code => _program.ToString();
+
             private int _programCounter;
             public int ProgramCounter => _programCounter + 1;
 

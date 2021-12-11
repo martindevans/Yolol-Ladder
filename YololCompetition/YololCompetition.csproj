@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="BalderHash" Version="1.0.0" />
+    <PackageReference Include="BlazorYololEmulator.Shared" Version="2.0.1" />
     <PackageReference Include="CliWrap" Version="3.3.3" />
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Discord.Addons.Interactive" Version="2.0.0" />
@@ -34,7 +35,7 @@
     <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
     <PackageReference Include="ShipCombatCore" Version="33.0.0" />
     <PackageReference Include="System.Linq.Async" Version="5.1.0" />
-    <PackageReference Include="Yolol" Version="14.8.12" />
+    <PackageReference Include="Yolol" Version="14.8.13" />
     <PackageReference Include="Yolol.Analysis" Version="8.0.0" />
     <PackageReference Include="Yolol.IL" Version="18.0.0" />
   </ItemGroup>

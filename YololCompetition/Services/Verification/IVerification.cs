@@ -1,4 +1,5 @@
-﻿    using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+    using BlazorYololEmulator.Shared;
 
 namespace YololCompetition.Services.Verification
 {
@@ -32,13 +33,14 @@ namespace YololCompetition.Services.Verification
     public class Failure
     {
         public FailureType Type { get; }
-
         public string? Hint { get; }
+        public SerializedState? TestCase { get; }
 
-        public Failure(FailureType type, string? hint)
+        public Failure(FailureType type, string? hint, SerializedState? testCase)
         {
             Type = type;
             Hint = hint;
+            TestCase = testCase;
         }
     }
 

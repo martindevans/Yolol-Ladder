@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BlazorYololEmulator.Shared;
 using Discord;
 using Yolol.Execution;
 using Yolol.Grammar;
@@ -46,6 +47,11 @@ namespace YololCompetition.Services.Execute
         /// Get/Set if overflowing (running off line 20) terminates execution
         /// </summary>
         public bool TerminateOnPcOverflow { get; set; }
+
+        /// <summary>
+        /// The raw code this execution state represents
+        /// </summary>
+        public string Code { get; }
 
         /// <summary>
         /// Execute the program for a maximum amount of lines, time or until `:done` is non-zero
@@ -116,6 +122,7 @@ namespace YololCompetition.Services.Execute
                 embed.AddField($"{title} {(counter == 0 ? "" : counter.ToString())}", builder.ToString(), false);
         }
 
+
         public static void CopyTo(this IExecutionState from, IExecutionState to, bool externalsOnly = false)
         {
             foreach (var (name, value) in from)
@@ -124,6 +131,16 @@ namespace YololCompetition.Services.Execute
                     continue;
                 to.Set(name, value);
             }
+        }
+
+
+        public static SerializedState Serialize(this IExecutionState state, IReadOnlyDictionary<string, Value>? set = null)
+        {
+            var values = set?.ToDictionary(a => a.Key.ToLowerInvariant(), a => a.Value) ?? new();
+            foreach (var (k, v) in state)
+                values[k.Name.ToLowerInvariant()] = v;
+
+            return new SerializedState(state.Code, values, state.ProgramCounter);
         }
     }
 }

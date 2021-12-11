@@ -18,12 +18,14 @@ namespace YololCompetition.Modules
         private readonly IYololExecutor _executor;
         private readonly IYololParser _parser;
         private readonly string? _yogi;
+        private readonly string? _debuggerUrl;
 
         public Utility(IYololExecutor executor, IYololParser parser, Configuration config)
         {
             _executor = executor;
             _parser = parser;
             _yogi = config.YogiPath;
+            _debuggerUrl = config.OnlineDebuggerUrl;
         }
 
         [Command("chars"), Summary("Count the letters in a string")]
@@ -120,14 +122,23 @@ namespace YololCompetition.Modules
             // Run for N lines, 500ms or until `:done!=0`
             var exeTimer = new Stopwatch();
             exeTimer.Start();
+            var saved = state.Serialize();
             var err = await state.Run(lines, TimeSpan.FromMilliseconds(500));
 
             // Print out the final machine state
-            var embed = state.ToEmbed(embed => {
+            var embed = state.ToEmbed(embed => 
+            {
                 embed.AddField("Setup", $"{compileTimer.ElapsedMilliseconds}ms", true);
                 embed.AddField("Execute", $"{exeTimer.ElapsedMilliseconds}ms", true);
+
                 if (err != null)
                     embed.AddField("Error", $"{err}", false);
+
+                if (_debuggerUrl != null)
+                {
+                    var base64 = saved.Serialize();
+                    embed.WithUrl($"{_debuggerUrl}?state={base64}");
+                }
             });
             await ReplyAsync(embed: embed.Build());
         }

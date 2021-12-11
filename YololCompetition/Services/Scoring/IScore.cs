@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using BlazorYololEmulator.Shared;
 using Yolol.Execution;
 using YololCompetition.Services.Execute;
 using YololCompetition.Services.Verification;
@@ -13,7 +14,8 @@ namespace YololCompetition.Services.Scoring
         /// <param name="inputs"></param>
         /// <param name="expectedOutputs"></param>
         /// <param name="state"></param>
-        Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state);
+        /// <param name="debugState"></param>
+        Failure? CheckCase(IReadOnlyDictionary<string, Value> inputs, IReadOnlyDictionary<string, Value> expectedOutputs, IExecutionState state, SerializedState? debugState);
 
         /// <summary>
         /// Return the final score for this challenge
