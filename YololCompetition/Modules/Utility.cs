@@ -4,6 +4,8 @@ using System.IO;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
+using Yolol.Analysis.ControlFlowGraph;
+using Yolol.Analysis.ControlFlowGraph.Extensions;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Execute;
@@ -141,6 +143,25 @@ namespace YololCompetition.Modules
                 }
             });
             await ReplyAsync(embed: embed.Build());
+        }
+
+        [Command("cfg"), Hidden, Summary("Print out the CFG of some Yolol code.")]
+        public async Task PrintCfg([Remainder] string message)
+        {
+            var result = await Parse(message);
+            if (result == null)
+                return;
+
+            var builder = new Builder(result, Math.Max(20, result.Lines.Count));
+            var cfg = builder.Build();
+            var dot = cfg.ToDot();
+
+            await using var stream = new MemoryStream(dot.Length);
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(dot);
+            await writer.FlushAsync();
+            stream.Position = 0;
+            await Context.Channel.SendFileAsync(stream, "hint.txt", "Message is too long!");
         }
     }
 }

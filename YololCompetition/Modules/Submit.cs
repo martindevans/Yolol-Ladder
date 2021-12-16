@@ -183,7 +183,12 @@ namespace YololCompetition.Modules
                 {
                     Query = $"state={failureCase.Serialize()}"
                 };
-                await ReplyAsync($"Open Online Debugger: {uri}");
+
+                await ReplyAsync(embed: new EmbedBuilder()
+                    .WithTitle("Open Debugger")
+                    .WithUrl(uri.ToString())
+                    .Build()
+                );
             }
         }
 
