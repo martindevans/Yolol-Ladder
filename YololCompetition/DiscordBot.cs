@@ -3,7 +3,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
+using ExecuteResult = Discord.Commands.ExecuteResult;
+using IResult = Discord.Commands.IResult;
 
 namespace YololCompetition
 {
@@ -11,16 +14,18 @@ namespace YololCompetition
     {
         private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
+        private readonly InteractionService _interactions;
         private readonly Configuration _config;
         private readonly IServiceProvider _services;
 
         private const int MaxWaitTimeMs = 3500;
         private readonly SemaphoreSlim _commandConcurrencyLimit = new(50);
 
-        public DiscordBot(DiscordSocketClient client, CommandService commands, Configuration config, IServiceProvider services)
+        public DiscordBot(DiscordSocketClient client, CommandService commands, InteractionService interactions, Configuration config, IServiceProvider services)
         {
             _client = client;
             _commands = commands;
+            _interactions = interactions;
             _config = config;
             _services = services;
         }
@@ -36,6 +41,7 @@ namespace YololCompetition
             // Hook the MessageReceived Event into our Command Handler
             _client.MessageReceived += HandleMessage;
             _commands.CommandExecuted += CommandExecuted;
+            _client.SlashCommandExecuted += a => _interactions.ExecuteCommandAsync(new InteractionContext(_client, a, a.Channel), _services);
 
             // Log the bot in
             await _client.LogoutAsync();
@@ -115,9 +121,20 @@ namespace YololCompetition
                 if (msg is not SocketUserMessage message)
                     return;
 
+                // Ignore messages from self
+                if (message.Author.Id == _client.CurrentUser.Id)
+                    return;
+
                 // Check if the message starts with the command prefix character
                 var prefixPos = 0;
                 var hasPrefix = message.HasCharPrefix(_config.Prefix, ref prefixPos);
+
+                // Skip non-prefixed messages
+                if (!hasPrefix)
+                {
+                    HandleNonCommand(msg);
+                    return;
+                }
 
                 if (_commandConcurrencyLimit.CurrentCount == 0)
                     await msg.Channel.SendMessageAsync("Bot is busy - waiting in queue.");
@@ -126,17 +143,6 @@ namespace YololCompetition
                 if (!await _commandConcurrencyLimit.WaitAsync(MaxWaitTimeMs))
                 {
                     await msg.Channel.SendMessageAsync("Bot is too busy. Please try again later.");
-                    return;
-                }
-
-                // Ignore messages from self
-                if (message.Author.Id == _client.CurrentUser.Id)
-                    return;
-
-                // Skip non-prefixed messages
-                if (!hasPrefix)
-                {
-                    HandleNonCommand(msg);
                     return;
                 }
 

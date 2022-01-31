@@ -63,7 +63,7 @@ namespace YololCompetition.Services.Execute
                 try
                 {
                     await Cli.Wrap(_exePath)
-                        .WithArguments($"--stop-flag {_done} --max-steps {lineExecutionLimit} --max-sec {timeout.TotalSeconds} --start-pc {ProgramCounter} {terminate}")
+                        .WithArguments($"--stop-flag \"{_done}\" --max-steps {lineExecutionLimit} --max-sec {timeout.TotalSeconds} --start-pc {ProgramCounter} {terminate}")
                         .WithStandardInputPipe(PipeSource.FromString(CreateStdIn()))
                         .WithStandardOutputPipe(PipeTarget.ToStringBuilder(stdOut))
                         .ExecuteAsync();

@@ -19,14 +19,13 @@
   <ItemGroup>
     <PackageReference Include="BalderHash" Version="1.0.0" />
     <PackageReference Include="BlazorYololEmulator.Shared" Version="2.0.3" />
-    <PackageReference Include="CliWrap" Version="3.3.3" />
+    <PackageReference Include="CliWrap" Version="3.4.1" />
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
-    <PackageReference Include="Discord.Addons.Interactive" Version="2.0.0" />
-    <PackageReference Include="Discord.Net" Version="2.4.0" />
+    <PackageReference Include="Discord.Net" Version="3.2.1" />
     <PackageReference Include="F23.StringSimilarity" Version="4.1.0" />
-    <PackageReference Include="Humanizer.Core" Version="2.13.14" />
+    <PackageReference Include="Humanizer.Core" Version="2.14.1" />
     <PackageReference Include="JetBrains.Annotations" Version="2021.3.0" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     <PackageReference Include="morelinq" Version="3.3.2" />
@@ -35,9 +34,9 @@
     <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
     <PackageReference Include="ShipCombatCore" Version="33.0.0" />
     <PackageReference Include="System.Linq.Async" Version="5.1.0" />
-    <PackageReference Include="Yolol" Version="14.9.0" />
+    <PackageReference Include="Yolol" Version="14.13.0" />
     <PackageReference Include="Yolol.Analysis" Version="8.0.0" />
-    <PackageReference Include="Yolol.IL" Version="18.1.0" />
+    <PackageReference Include="Yolol.IL" Version="18.1.2" />
   </ItemGroup>
 
   <!--<Target Name="ChangeAliasesOfReactiveExtensions" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">

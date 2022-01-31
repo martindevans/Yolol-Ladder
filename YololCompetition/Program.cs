@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using CommandLine;
-using Discord.Addons.Interactive;
+using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Moserware.Skills;
@@ -14,6 +16,7 @@ using YololCompetition.Services.Cron;
 using YololCompetition.Services.Database;
 using YololCompetition.Services.Execute;
 using YololCompetition.Services.Fleet;
+using YololCompetition.Services.Interactive;
 using YololCompetition.Services.Leaderboard;
 using YololCompetition.Services.Schedule;
 using YololCompetition.Services.Solutions;
@@ -24,6 +27,7 @@ using YololCompetition.Services.Parsing;
 using YololCompetition.Services.Rates;
 using YololCompetition.Services.Status;
 using YololCompetition.Services.Trueskill;
+using RunMode = Discord.Commands.RunMode;
 
 namespace YololCompetition
 {
@@ -46,8 +50,17 @@ namespace YololCompetition
             var commands = provider.GetRequiredService<CommandService>();
             await commands.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
 
+            var interactions = provider.GetRequiredService<InteractionService>();
+            await interactions.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
+
             var bot = provider.GetRequiredService<DiscordBot>();
             await bot.Start();
+
+#if DEBUG
+            await interactions.RegisterCommandsToGuildAsync(537765528991825920);
+#else
+            await interactions.RegisterCommandsGloballyAsync(true);
+#endif
 
             var messages = provider.GetRequiredService<IMessages>();
             messages.StartMessageWatch();
@@ -57,6 +70,9 @@ namespace YololCompetition
 
             var status = provider.GetRequiredService<IStatusUpdater>();
             status.Start();
+
+            var interactive = provider.GetRequiredService<IInteractive>();
+            interactive.Start();
 
             Console.WriteLine("Bot Started");
             await provider.GetRequiredService<IScheduler>().Start();
@@ -75,20 +91,30 @@ namespace YololCompetition
             var di = new ServiceCollection();
             di.AddSingleton<IServiceCollection>(di);
 
+            var client = new DiscordSocketClient(new DiscordSocketConfig
+            {
+                AlwaysDownloadUsers = true,
+                MessageCacheSize = 0,
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.DirectMessages
+            });
+            di.AddSingleton(client);
+            di.AddSingleton(new InteractionService(client.Rest, new InteractionServiceConfig
+            {
+                DefaultRunMode = Discord.Interactions.RunMode.Async
+            }));
+
             di.AddSingleton(new CommandService(new CommandServiceConfig {
                 CaseSensitiveCommands = false,
                 DefaultRunMode = RunMode.Async,
                 ThrowOnError = true
             }));
-            di.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig {
-                AlwaysDownloadUsers = true,
-                MessageCacheSize = 0,
-            }));
+
             di.AddSingleton<DiscordBot>();
+
             di.AddSingleton<IScheduler, InMemoryScheduler>();
             di.AddSingleton<ICron, InMemoryCron>();
             di.AddSingleton<IRateLimit, InMemoryRateLimits>();
-            di.AddSingleton<InteractiveService>();
+            di.AddSingleton<IInteractive, InteractiveService>();
 
             //di.AddTransient<IYololExecutor, YololInterpretExecutor>();
             di.AddTransient<IYololExecutor, YololCompileExecutor>();

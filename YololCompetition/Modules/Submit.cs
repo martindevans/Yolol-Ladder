@@ -193,7 +193,7 @@ namespace YololCompetition.Modules
         }
 
         [Command("submit"), Summary("Submit a new competition entry. Code must be enclosed in triple backticks.")]
-        [RateLimit("b7083f80-8979-450f-a6ff-e7e5886b038b", 5, "Please wait a short while before submitting another solution")]
+        [RateLimit("b7083f80-8979-450f-a6ff-e7e5886b038b", 4, "Please wait a short while before submitting another solution")]
         public async Task SubmitSolution([Remainder] string input)
         {
             var challenge = await _challenges.GetCurrentChallenge();
@@ -207,7 +207,7 @@ namespace YololCompetition.Modules
         }
 
         [Command("submitto"), Summary("Submit an entry to a previous competition. Code must be enclosed in triple backticks.")]
-        [RateLimit("b7083f80-8979-450f-a6ff-e7e5886b038b", 5, "Please wait a short while before submitting another solution")]
+        [RateLimit("b7083f80-8979-450f-a6ff-e7e5886b038b", 4, "Please wait a short while before submitting another solution")]
         public async Task SubmitSolution(string id, [Remainder] string input)
         {
             var c = await _challenges.FuzzyFindChallenge(id, true).Take(5).ToArrayAsync();

@@ -8,56 +8,66 @@ using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Schedule;
 using System.Linq;
-using System.Text;
 using BalderHash.Extensions;
 using Discord;
-using Discord.Addons.Interactive;
 using Discord.WebSocket;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Parsing;
 using YololCompetition.Services.Solutions;
 using YololCompetition.Services.Verification;
 using System.Net.Http;
-using Yolol.Grammar;
+using System.Text;
+using JetBrains.Annotations;
+using YololCompetition.Services.Interactive;
 
 namespace YololCompetition.Modules
 {
     [RequireOwner]
+    [UsedImplicitly]
     public class CompetitionAdmin
-        : InteractiveBase
+        : ModuleBase
     {
         private readonly IChallenges _challenges;
         private readonly IScheduler _scheduler;
         private readonly IVerification _verification;
         private readonly DiscordSocketClient _client;
         private readonly IYololParser _parser;
+        private readonly IInteractive _interactive;
         private readonly ISolutions _solutions;
 
-        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ISolutions solutions, IVerification verification, DiscordSocketClient client, IYololParser parser)
+        public CompetitionAdmin(IChallenges challenges, IScheduler scheduler, ISolutions solutions, IVerification verification, DiscordSocketClient client, IYololParser parser, IInteractive interactive)
         {
             _challenges = challenges;
             _scheduler = scheduler;
             _verification = verification;
             _client = client;
             _parser = parser;
+            _interactive = interactive;
             _solutions = solutions;
+        }
+
+        private async Task<string> NextMessageAsync()
+        {
+#pragma warning disable CS8602
+            return (await _interactive.NextMessageAsync(Context.User, Context.Channel, TimeSpan.FromMilliseconds(-1)).ConfigureAwait(false)).Content;
+#pragma warning restore CS8602
         }
 
         [Command("create"), Summary("Create a new challenge")]
         public async Task Create()
         {
             await ReplyAsync("What is the challenge title?");
-            var title = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var title = await NextMessageAsync();
 
             await ReplyAsync("What is the challenge description?");
-            var desc = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var desc = await NextMessageAsync();
 
             var levels = string.Join(',', Enum.GetNames(typeof(ChallengeDifficulty)));
             await ReplyAsync($"What is the challenge difficulty ({levels})?");
-            var difficulty = Enum.Parse<ChallengeDifficulty>((await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content);
+            var difficulty = Enum.Parse<ChallengeDifficulty>(await NextMessageAsync());
 
             await ReplyAsync("What's the Challenge code?");
-            var code = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var code = await NextMessageAsync();
             var (parseOk, parseErr) = await _parser.Parse(code);
             if (parseOk == null || parseErr != null)
             {
@@ -67,7 +77,7 @@ namespace YololCompetition.Modules
             }
 
             await ReplyAsync("What is the challenge URL (raw JSON)?");
-            var url = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var url = await NextMessageAsync();
 
             if (!Uri.TryCreate(url, UriKind.Absolute, out var datasetUri))
             {
@@ -86,7 +96,8 @@ namespace YololCompetition.Modules
             {
                 using var hc = new HttpClient();
                 var json = await hc.GetStringAsync(datasetUri);
-                data = JsonConvert.DeserializeObject<Data>(json, new JsonSerializerSettings {
+                data = JsonConvert.DeserializeObject<Data>(json, new JsonSerializerSettings
+                {
                     Converters = new JsonConverter[] {
                         new YololValueConverter()
                     },
@@ -118,7 +129,7 @@ namespace YololCompetition.Modules
             }
 
             await ReplyAsync("Do you want to create this challenge (yes/no)?");
-            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var confirm = await NextMessageAsync();
             if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
             {
                 await ReplyAsync("Cancelled creating challenge!");
@@ -169,7 +180,7 @@ namespace YololCompetition.Modules
                 await Task.Delay(10);
             }
             await ReplyAsync("Promote those challenges (yes/no)?");
-            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var confirm = await NextMessageAsync();
             if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
             {
                 await ReplyAsync("Not promoting anything");
@@ -251,7 +262,7 @@ namespace YololCompetition.Modules
                 await Task.Delay(10);
             }
             await ReplyAsync("Delete those challenges (yes/no)?");
-            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var confirm = await NextMessageAsync();
             if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
             {
                 await ReplyAsync("Not deleting anything");
@@ -439,7 +450,7 @@ namespace YololCompetition.Modules
             await ReplyAsync($" - {c.Name} (`{((uint)c.Id).BalderHash()}`)");
 
             await ReplyAsync("Rescore this challenge (yes/no)?");
-            var confirm = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var confirm = await NextMessageAsync();
             if (!confirm.Equals("yes", StringComparison.OrdinalIgnoreCase))
             {
                 await ReplyAsync("Not rescoring anything");
@@ -461,7 +472,7 @@ namespace YololCompetition.Modules
                 try
                 {
                     var (success, failure) = await _verification.Verify(c, s.Solution.Yolol);
-                    
+
                     if (success != null)
                     {
                         totalTicks += success.Iterations;
@@ -509,7 +520,7 @@ namespace YololCompetition.Modules
             await ReplyAsync(report.ToString());
 
             await ReplyAsync("Apply rescoring to this challenge (yes/no)?");
-            var confirm2 = (await NextMessageAsync(timeout: TimeSpan.FromMilliseconds(-1))).Content;
+            var confirm2 = await NextMessageAsync();
             if (!confirm2.Equals("yes", StringComparison.OrdinalIgnoreCase))
             {
                 await ReplyAsync("Not applying rescoring");

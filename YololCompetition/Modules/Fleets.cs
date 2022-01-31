@@ -9,6 +9,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using YololCompetition.Attributes;
 using YololCompetition.Services.Fleet;
 
 namespace YololCompetition.Modules
@@ -31,6 +32,7 @@ namespace YololCompetition.Modules
             _rankings = rankings;
         }
 
+        [RateLimit("f83fcb29-7294-4d15-8c93-a324d31dd74d", 15, "Please wait a short while before submitting another fleet")]
         [Command("submit"), Summary("Submit a new fleet to the space battle.")]
         public async Task SubmitFleet([Remainder] string name)
         {
