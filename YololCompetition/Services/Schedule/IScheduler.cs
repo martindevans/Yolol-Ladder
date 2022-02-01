@@ -19,7 +19,5 @@ namespace YololCompetition.Services.Schedule
         public Task Poke();
 
         SchedulerState State { get; }
-
-        public DateTime? EndTime { get; }
     }
 }
