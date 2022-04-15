@@ -66,8 +66,6 @@ namespace YololCompetition.Modules
             }
             else
                 throw new InvalidOperationException("Unknown leaderboard type");
-
-            
         }
 
         [Command("leaderboard"), Summary("Display the top Yolol programmers for a specific challenge")]

@@ -14,6 +14,7 @@ namespace YololCompetition.Services.Database
             _dbConnection = new SqliteConnection(config.DatabaseConnectionString);
             _dbConnection.Open();
 
+            // Enable write-ahead logging
             try
             {
                 using var cmd = _dbConnection.CreateCommand();

@@ -281,7 +281,7 @@ namespace YololCompetition.Modules
         [Command("terminate-current-challenge"), Summary("Immediately terminate current challenge without scoring")]
         public async Task AbruptEnd()
         {
-            await _challenges.EndCurrentChallenge();
+            await _challenges.EndCurrentChallenge(terminate: true);
             await _scheduler.Poke();
         }
 

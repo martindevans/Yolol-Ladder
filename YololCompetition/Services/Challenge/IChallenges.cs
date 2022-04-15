@@ -18,7 +18,7 @@ namespace YololCompetition.Services.Challenge
 
         Task<int> SetToPending(ulong challengeId);
 
-        Task EndCurrentChallenge();
+        Task EndCurrentChallenge(bool terminate = false);
 
         Task ChangeChallengeDifficulty(Challenge challenge, ChallengeDifficulty difficulty);
 
@@ -38,6 +38,8 @@ namespace YololCompetition.Services.Challenge
         Complete = 3,
 
         TestMode = 4,
+
+        Terminated = 5
     }
 
     public static class IChallengesExtensions

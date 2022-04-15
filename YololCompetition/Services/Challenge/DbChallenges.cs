@@ -112,9 +112,14 @@ namespace YololCompetition.Services.Challenge
             return await cmd.ExecuteNonQueryAsync();
         }
 
-        public async Task EndCurrentChallenge()
+        public async Task EndCurrentChallenge(bool terminate)
         {
-            _database.Exec("UPDATE Challenges SET Status = 3 WHERE Status = 2");
+            var status = terminate ? ChallengeStatus.Terminated : ChallengeStatus.Complete;
+
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = "UPDATE Challenges SET Status = @NewStatus WHERE Status = 2";
+            cmd.Parameters.Add(new SqliteParameter("@NewStatus", DbType.UInt64) { Value = (int)status });
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public async Task ChangeChallengeDifficulty(Challenge challenge, ChallengeDifficulty difficulty)
@@ -169,12 +174,17 @@ namespace YololCompetition.Services.Challenge
             return Challenge.Read(reader);
         }
 
+        /// <summary>
+        /// Get all challenges which will end after the given timestamp
+        /// </summary>
+        /// <param name="endUnixTime"></param>
+        /// <returns></returns>
         public IAsyncEnumerable<Challenge> GetChallengesByEndTime(ulong endUnixTime)
         {
             DbCommand PrepareQuery(IDatabase db)
             {
                 var cmd = db.CreateCommand();
-                cmd.CommandText = "SELECT * FROM Challenges WHERE EndUnixTime >= @EndTime ORDER BY EndUnixTime";
+                cmd.CommandText = "SELECT * FROM Challenges WHERE EndUnixTime >= @EndTime AND Status != 5 ORDER BY EndUnixTime";
                 cmd.Parameters.Add(new SqliteParameter("@EndTime", DbType.UInt64) { Value = endUnixTime });
                 return cmd;
             }
