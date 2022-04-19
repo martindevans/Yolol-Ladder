@@ -119,7 +119,7 @@ namespace YololCompetition.Services.Challenge
             var o = JsonConvert.SerializeObject(Outputs, JsonConfig);
             output.Add(new SqliteParameter("@Outputs", DbType.String) { Value = o });
 
-            output.Add(new SqliteParameter("@EndUnixTime", DbType.UInt64) { Value = EndTime?.UnixTimestamp() });
+            output.Add(new SqliteParameter("@EndUnixTime", DbType.UInt64) { Value = (object?)EndTime?.UnixTimestamp() ?? DBNull.Value });
 
             output.Add(new SqliteParameter("@IntermediateCode", DbType.String) { Value = Intermediate.Ok.ToString() });
 
