@@ -140,7 +140,7 @@ namespace YololCompetition.Services.Execute
             foreach (var (k, v) in state)
                 values[k.Name.ToLowerInvariant()] = v;
 
-            return new SerializedState(state.Code, values, state.ProgramCounter);
+            return new SerializedState(state.Code, values, state.ProgramCounter - 1);
         }
     }
 }
