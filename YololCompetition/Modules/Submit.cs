@@ -54,7 +54,8 @@ namespace YololCompetition.Modules
             {
                 var message = failure.Type switch {
                     FailureType.ParseFailed => $"Code is not valid Yolol code:\n```{failure.Hint}```",
-                    FailureType.RuntimeTooLong => $"Program took too long to produce a result. {failure.Hint}",
+                    FailureType.RuntimeTooLongTicks => $"Program took too many ticks to produce a result. {failure.Hint}",
+                    FailureType.RuntimeTooLongMilliseconds => $"Program took too long to produce a result. {failure.Hint}",
                     FailureType.IncorrectResult => $"Program produced an incorrect value! {failure.Hint}",
                     FailureType.ProgramTooLarge => "Program is too large - it must be 20 lines by 70 characters per line",
                     FailureType.InvalidProgramForChipType => $"Program used a feature which is not available on this level of Yolol chip. {failure.Hint}",
@@ -182,13 +183,16 @@ namespace YololCompetition.Modules
                 var uri = new UriBuilder(_config.OnlineDebuggerUrl)
                 {
                     Query = $"state={failureCase.Serialize()}"
-                };
+                }.ToString();
 
-                await ReplyAsync(embed: new EmbedBuilder()
-                    .WithTitle("Open Debugger")
-                    .WithUrl(uri.ToString())
-                    .Build()
-                );
+                if (uri.Length < 2000)
+                {
+                    await ReplyAsync(embed: new EmbedBuilder()
+                        .WithTitle("Open Debugger")
+                        .WithUrl(uri.ToString())
+                        .Build()
+                    );
+                }
             }
         }
 

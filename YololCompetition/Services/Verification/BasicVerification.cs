@@ -16,8 +16,14 @@ namespace YololCompetition.Services.Verification
     public class BasicVerification
         : IVerification
     {
+        // max milliseconds to use for evaluation of a single test case
+        private const ulong TimeoutMillisecondsSingle = 1000;
+
+        // max milliseconds to use for evaluation of a submission
+        private const ulong TimeoutMillisecondsAll = 30000;
+
         // How many extra iters (across all tests) may be used
-        private const int MaxItersOverflow = 10000;
+        private const int MaxItersOverflow = 100000;
 
         // Max lines executed per test case
         private const uint MaxTestIters = 1000;
@@ -86,6 +92,13 @@ namespace YololCompetition.Services.Verification
                 var output = outputs[i];
                 var savedState = stateUser.Serialize(output);
 
+                // Check realtime timeout
+                if (timer.Elapsed.TotalMilliseconds > TimeoutMillisecondsAll)
+                {
+                    Console.WriteLine($"Timed out verification: {stateUser.TotalLinesExecuted} ticks, {timer.ElapsedMilliseconds}ms runtime");
+                    return (null, new Failure(FailureType.RuntimeTooLongMilliseconds, $"Execution Timed Out (executed {i} test cases in {timer.Elapsed.TotalMilliseconds}ms)", savedState));
+                }
+
                 // Run the user code until completion
                 Failure? failure;
                 (failure, overflowIters) = await RunToDone(stateUser, MaxTestIters, i, inputs.Count, overflowIters, savedState);
@@ -139,7 +152,7 @@ namespace YololCompetition.Services.Verification
             state.Done = false;
 
             // Run for max allowed number of lines
-            var err1 = await state.Run(maxTestIters, TimeSpan.FromMilliseconds(600));
+            var err1 = await state.Run(maxTestIters, TimeSpan.FromMilliseconds(TimeoutMillisecondsSingle));
             if (err1 != null)
                 return (new Failure(FailureType.Other, err1, startState), overflowIters);
 
@@ -147,7 +160,7 @@ namespace YololCompetition.Services.Verification
             if (!state.Done)
             {
                 var executed = state.TotalLinesExecuted;
-                var err2 = await state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(600));
+                var err2 = await state.Run((uint)overflowIters, TimeSpan.FromMilliseconds(TimeoutMillisecondsSingle));
                 if (err2 != null)
                     return (new Failure(FailureType.Other, err2, startState), overflowIters);
 
@@ -156,7 +169,7 @@ namespace YololCompetition.Services.Verification
 
                 //Once the overflow pool is empty too, fail
                 if (overflowIters <= 0 || !state.Done)
-                    return (new Failure(FailureType.RuntimeTooLong, $"Completed {testIndex}/{testCount} tests.", startState), overflowIters);
+                    return (new Failure(FailureType.RuntimeTooLongTicks, $"Completed {testIndex}/{testCount} tests.", startState), overflowIters);
             }
 
             return (null, overflowIters);

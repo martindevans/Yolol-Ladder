@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using CommandLine;
@@ -31,7 +30,7 @@ using RunMode = Discord.Commands.RunMode;
 
 namespace YololCompetition
 {
-    public class Program
+    public static class Program
     {
         public static async Task Main(string[] args)
         {

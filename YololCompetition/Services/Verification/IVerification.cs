@@ -49,11 +49,13 @@ namespace YololCompetition.Services.Verification
         Other,
 
         ParseFailed,
-        RuntimeTooLong,
+        RuntimeTooLongTicks,
+        RuntimeTooLongMilliseconds,
         IncorrectResult,
         ProgramTooLarge,
         InvalidProgramForChipType,
         ChallengeCodeFailed,
-        ChallengeForceFail
+        ChallengeForceFail,
+        
     }
 }
