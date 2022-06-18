@@ -10,7 +10,7 @@ namespace YololCompetition.Services.Verification
 
     public class Success
     {
-        public uint Score { get; }
+        public int Score { get; }
 
         public uint Iterations { get; }
 
@@ -20,7 +20,7 @@ namespace YololCompetition.Services.Verification
 
         public uint TotalTests { get; }
 
-        public Success(uint score, uint iterations, uint length, string? hint, uint totalTests)
+        public Success(int score, uint iterations, uint length, string? hint, uint totalTests)
         {
             Score = score;
             Iterations = iterations;

@@ -9,7 +9,7 @@ namespace YololCompetition.Services.Solutions
 
         Task<Solution?> GetSolution(ulong userId, ulong challengeId);
 
-        IAsyncEnumerable<RankedSolution> GetSolutions(ulong challengeId, uint limit, uint minScore = uint.MinValue, uint maxScore = uint.MaxValue);
+        IAsyncEnumerable<RankedSolution> GetSolutions(ulong challengeId, uint limit, int minScore = int.MinValue, int maxScore = int.MaxValue);
 
         Task<RankedSolution?> GetRank(ulong challengeId, ulong userId);
 
@@ -43,10 +43,10 @@ namespace YololCompetition.Services.Solutions
     {
         public ulong ChallengeId { get; }
         public ulong UserId { get; }
-        public uint Score { get; }
+        public int Score { get; }
         public string Yolol { get; }
 
-        public Solution(ulong challenge, ulong user, uint score, string yolol)
+        public Solution(ulong challenge, ulong user, int score, string yolol)
         {
             ChallengeId = challenge;
             UserId = user;

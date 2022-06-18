@@ -1,12 +1,22 @@
 ﻿using F23.StringSimilarity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using YololCompetition.Extensions;
+using YololCompetition.Services.Scoring;
+using YololCompetition.Services.Verification;
 
 namespace YololCompetitionTests
 {
     [TestClass]
     public class ApproxScoringTest
     {
+        [TestMethod]
+        public void ScoreTest()
+        {
+            var scorer = new BasicScoring();
+            var score = scorer.FinalizeScore(1000, 1000 * 2000, 1400);
+            Assert.AreEqual(-100000, score);
+        }
+
         //[TestMethod]
         //public void ApproxScore()
         //{

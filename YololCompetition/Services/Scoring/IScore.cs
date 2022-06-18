@@ -24,7 +24,7 @@ namespace YololCompetition.Services.Scoring
         /// <param name="totalTicks">Total ticks used</param>
         /// <param name="codeChars">Total number of characters used</param>
         /// <returns></returns>
-        uint FinalizeScore(uint totalTests, uint totalTicks, int codeChars);
+        int FinalizeScore(uint totalTests, uint totalTicks, int codeChars);
 
         /// <summary>
         /// Get a hint to give to the player about how their score could be better

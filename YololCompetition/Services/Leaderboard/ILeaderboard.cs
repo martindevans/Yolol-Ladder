@@ -7,9 +7,9 @@ namespace YololCompetition.Services.Leaderboard
     {
         public ulong Id { get; }
         public uint Rank { get; }
-        public uint Score { get; }
+        public int Score { get; }
 
-        public RankInfo(ulong id, uint rank, uint score)
+        public RankInfo(ulong id, uint rank, int score)
         {
             Id = id;
             Rank = rank;

@@ -60,7 +60,7 @@ namespace YololCompetition.Services.Solutions
                   .FirstOrDefaultAsync();
         }
 
-        public IAsyncEnumerable<RankedSolution> GetSolutions(ulong challengeId, uint limit, uint minScore = uint.MinValue, uint maxScore = uint.MaxValue)
+        public IAsyncEnumerable<RankedSolution> GetSolutions(ulong challengeId, uint limit, int minScore = int.MinValue, int maxScore = int.MaxValue)
         {
             DbCommand PrepareQuery(IDatabase db)
             {
@@ -68,8 +68,8 @@ namespace YololCompetition.Services.Solutions
                 cmd.CommandText = "SELECT DENSE_RANK() OVER (ORDER BY -Score) Rank, * FROM Solutions WHERE ChallengeId = @ChallengeId AND Score >= @MinScore AND Score <= @MaxScore ORDER BY -Score LIMIT @Limit";
                 cmd.Parameters.Add(new SqliteParameter("@ChallengeId", DbType.UInt64) { Value = challengeId });
                 cmd.Parameters.Add(new SqliteParameter("@Limit", DbType.UInt32) { Value = limit });
-                cmd.Parameters.Add(new SqliteParameter("@MinScore", DbType.UInt32) { Value = minScore });
-                cmd.Parameters.Add(new SqliteParameter("@MaxScore", DbType.UInt32) { Value = maxScore });
+                cmd.Parameters.Add(new SqliteParameter("@MinScore", DbType.Int32) { Value = minScore });
+                cmd.Parameters.Add(new SqliteParameter("@MaxScore", DbType.Int32) { Value = maxScore });
                 return cmd;
             }
 
@@ -116,7 +116,7 @@ namespace YololCompetition.Services.Solutions
             return new Solution(
                 ulong.Parse(reader["ChallengeId"].ToString()!),
                 ulong.Parse(reader["UserId"].ToString()!),
-                uint.Parse(reader["Score"].ToString()!),
+                int.Parse(reader["Score"].ToString()!),
                 reader["Yolol"].ToString()!
             );
         }

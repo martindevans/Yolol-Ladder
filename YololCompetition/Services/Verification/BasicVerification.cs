@@ -23,7 +23,7 @@ namespace YololCompetition.Services.Verification
         private const ulong TimeoutMillisecondsAll = 30000;
 
         // How many extra iters (across all tests) may be used
-        private const int MaxItersOverflow = 1000000;
+        private const int MaxItersOverflow = int.MaxValue;
 
         // Max lines executed per test case
         private const uint MaxTestIters = 1000;

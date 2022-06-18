@@ -90,7 +90,7 @@ namespace YololCompetition.Services.Scoring
             }
         }
 
-        public override uint FinalizeScore(uint totalTests, uint totalTicks, int codeChars)
+        public override int FinalizeScore(uint totalTests, uint totalTicks, int codeChars)
         {
             if (_hint != null)
                 _hint += $" Total error: {_totalError:#.000}.";

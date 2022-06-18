@@ -78,7 +78,7 @@ namespace YololCompetition.Services.Leaderboard
             return new RankInfo(
                 ulong.Parse(reader["UserId"].ToString()!),
                 uint.Parse(reader["Rank"].ToString()!),
-                uint.Parse(reader["Score"].ToString()!)
+                int.Parse(reader["Score"].ToString()!)
             );
         }
     }

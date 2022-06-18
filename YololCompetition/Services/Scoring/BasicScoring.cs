@@ -25,7 +25,7 @@ namespace YololCompetition.Services.Scoring
 
         public virtual string? Hint { get; } = null;
 
-        public virtual uint FinalizeScore(uint totalTests, uint totalTicks, int codeChars)
+        public virtual int FinalizeScore(uint totalTests, uint totalTicks, int codeChars)
         {
             // Throw an exception if any arithmetic inside this block over/underflows
             checked
@@ -40,14 +40,14 @@ namespace YololCompetition.Services.Scoring
                 var avgTicks = (double)totalTicks / totalTests;
 
                 // Subtract off points per tick used
-                score -= Math.Clamp(avgTicks * PointsPerTick, 0, MaxTicksScore);
+                score -= avgTicks * PointsPerTick;
 
                 // Add bonus points from other sources
                 score += _bonusPoints;
                 score += _bonusCasePoints / totalTests;
 
                 //Truncate to an integer score
-                return (uint)score;
+                return (int)Math.Round(score);
             }
         }
 

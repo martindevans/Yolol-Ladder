@@ -89,7 +89,9 @@ namespace YololCompetition.Modules
         private async Task DisplayChallengeLeaderboard(Challenge challenge)
         {
             // Get the top N solutions
-            var top5 = await _solutions.GetSolutions(challenge.Id, 20).Select(a => new RankInfo(a.Solution.UserId, a.Rank, a.Solution.Score)).ToListAsync();
+            var topn = await _solutions.GetSolutions(challenge.Id, 20)
+                .Select(a => new RankInfo(a.Solution.UserId, a.Rank, a.Solution.Score))
+                .ToListAsync();
 
             // Get your own rank
             var self = await _solutions.GetRank(challenge.Id, Context.User.Id);
@@ -97,7 +99,7 @@ namespace YololCompetition.Modules
             if (self.HasValue)
                 selfRank = new RankInfo(self.Value.Solution.UserId, self.Value.Rank, self.Value.Solution.Score);
 
-            await ReplyAsync(embed: await FormatLeaderboard(top5, selfRank, challenge));
+            await ReplyAsync(embed: await FormatLeaderboard(topn, selfRank, challenge));
 
         }
 
@@ -147,7 +149,7 @@ namespace YololCompetition.Modules
                 builder.AppendLine(await FormatRankInfo(extra.Value));
             }
 
-            if (!seenExtra && count == 0)
+            if (!extra.HasValue && count == 0)
                 builder.AppendLine("Leaderboard is empty!");
 
             embed.WithDescription(builder.ToString());
