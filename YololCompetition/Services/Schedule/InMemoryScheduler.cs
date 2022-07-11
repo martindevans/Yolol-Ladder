@@ -71,7 +71,6 @@ namespace YololCompetition.Services.Schedule
                         var next = await _challenges.StartNext();
                         if (next == null)
                         {
-                            Console.WriteLine("No challenges available, waiting for a while...");
                             State = SchedulerState.WaitingNoChallengesInPool;
                             await Task.Delay(TimeSpan.FromMinutes(1));
                             continue;
