@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using Newtonsoft.Json;
 using Yolol.Execution;
-using YololCompetition.Serialization.Json;
 using YololCompetition.Services.Challenge;
 using YololCompetition.Services.Schedule;
 using System.Linq;
@@ -18,6 +17,7 @@ using YololCompetition.Services.Verification;
 using System.Net.Http;
 using System.Text;
 using JetBrains.Annotations;
+using Yolol.Cylon.JSON;
 using YololCompetition.Services.Interactive;
 
 namespace YololCompetition.Modules

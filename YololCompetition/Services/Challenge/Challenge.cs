@@ -5,10 +5,10 @@ using System.Data.Common;
 using System.Threading;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
+using Yolol.Cylon.JSON;
 using Yolol.Execution;
 using Yolol.Grammar;
 using YololCompetition.Extensions;
-using YololCompetition.Serialization.Json;
 
 namespace YololCompetition.Services.Challenge
 {

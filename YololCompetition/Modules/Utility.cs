@@ -4,8 +4,12 @@ using System.IO;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Yolol.Analysis.ControlFlowGraph;
 using Yolol.Analysis.ControlFlowGraph.Extensions;
+using Yolol.Cylon.JSON;
+using Yolol.Cylon.Serialisation;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Execute;
@@ -44,6 +48,18 @@ namespace YololCompetition.Modules
                 return;
 
             var output = result.PrintAst();
+            await ReplyAsync(output);
+        }
+
+        [Command("ast-json"), Summary("Print of the Abstract Syntax Tree of some code in JSON format")]
+        public async Task PrintAstJson([Remainder] string message)
+        {
+            var result = await Parse(message);
+            if (result == null)
+                return;
+
+            var json = new AstSerializer().Serialize(result);
+            var output = json.ToString(Formatting.Indented, new YololValueConverter());
             await ReplyAsync(output);
         }
 
