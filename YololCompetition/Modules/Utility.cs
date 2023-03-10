@@ -10,6 +10,7 @@ using Yolol.Analysis.ControlFlowGraph;
 using Yolol.Analysis.ControlFlowGraph.Extensions;
 using Yolol.Cylon.JSON;
 using Yolol.Cylon.Serialisation;
+using Yolol.Grammar.AST.Expressions.Unary;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Execute;
@@ -60,7 +61,13 @@ namespace YololCompetition.Modules
 
             var json = new AstSerializer().Serialize(result);
             var output = json.ToString(Formatting.Indented, new YololValueConverter());
-            await ReplyAsync(output);
+
+            await using var stream = new MemoryStream(output.Length);
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(output);
+            await writer.FlushAsync();
+            stream.Position = 0;
+            await Context.Channel.SendFileAsync(stream, "ast.json", "Message is too long!");
         }
 
         [Command("check"), Summary("Attempt to parse some Yolol code, report syntax errors")]
