@@ -94,7 +94,7 @@ namespace YololCompetition
             {
                 AlwaysDownloadUsers = true,
                 MessageCacheSize = 0,
-                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.DirectMessages
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.DirectMessages | GatewayIntents.MessageContent
             });
             di.AddSingleton(client);
             di.AddSingleton(new InteractionService(client.Rest, new InteractionServiceConfig

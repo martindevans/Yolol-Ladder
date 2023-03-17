@@ -24,7 +24,7 @@ namespace YololCompetition.Services.Messages
         private readonly IChallenges _challenges;
         private readonly DiscordSocketClient _client;
 
-        private readonly ConcurrentDictionary<(ulong, ulong), IUserMessage> _messageCache = new ConcurrentDictionary<(ulong, ulong), IUserMessage>();
+        private readonly ConcurrentDictionary<(ulong, ulong), IUserMessage> _messageCache = new();
         
         public DbMessages(IDatabase database, ICron cron, IChallenges challenges, DiscordSocketClient client)
         {

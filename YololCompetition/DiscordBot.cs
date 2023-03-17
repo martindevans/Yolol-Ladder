@@ -45,7 +45,8 @@ namespace YololCompetition
 
             // Log the bot in
             await _client.LogoutAsync();
-            await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable(_config.TokenEnvVar));
+            var token = Environment.GetEnvironmentVariable(_config.TokenEnvVar);
+            await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
             // Wait until connected
@@ -53,6 +54,7 @@ namespace YololCompetition
                 await Task.Delay(1);
 
             // Wait until client is `Ready`
+            Console.WriteLine("Waiting for ready event...");
             await ready.Task;
 
             // Set nickname in all guilds
@@ -154,11 +156,8 @@ namespace YololCompetition
             }
         }
 
-        private void HandleNonCommand(SocketMessage msg)
+        private static void HandleNonCommand(SocketMessage _)
         {
-            var rng = new Random(unchecked((int)msg.Id));
-            if (msg.Author.Id == 601092364181962762ul && msg.Content == "I'm back online!" && rng.NextDouble() < 0.25f)
-                msg.AddReactionAsync(new Emoji("👋"));
         }
 
         private static void PostCommandResult(IResult _)
