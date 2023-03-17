@@ -54,8 +54,7 @@ namespace YololCompetition.Services.Database
 
             public async ValueTask<bool> MoveNextAsync()
             {
-                if (_reader == null)
-                    _reader = await _query.ExecuteReaderAsync();
+                _reader ??= await _query.ExecuteReaderAsync();
 
                 if (!_reader.HasRows)
                     return false;

@@ -1,4 +1,5 @@
-﻿using Yolol.Analysis.ControlFlowGraph.AST;
+﻿using System.Linq;
+using Yolol.Analysis.ControlFlowGraph.AST;
 using Yolol.Grammar.AST.Expressions;
 using Yolol.Grammar.AST.Expressions.Binary;
 using Yolol.Grammar.AST.Expressions.Unary;
@@ -39,13 +40,7 @@ namespace YololCompetition.Services.Verification
 
         protected override bool Visit(StatementList list)
         {
-            foreach (var stmt in list.Statements)
-            {
-                if (!Visit(stmt))
-                    return false;
-            }
-
-            return true;
+            return list.Statements.All(Visit);
         }
 
         protected override bool Visit(CompoundAssignment compAss)

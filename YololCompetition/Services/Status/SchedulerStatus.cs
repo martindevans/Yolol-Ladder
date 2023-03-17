@@ -37,14 +37,14 @@ namespace YololCompetition.Services.Status
                     if (duration > TimeSpan.Zero)
                     {
                         var text = $"{duration.Humanize()} left on challenge";
-                        await _client.SetActivityAsync(new Game(text, ActivityType.Playing, ActivityProperties.None, null));
+                        await _client.SetActivityAsync(new Game(text));
 
                         // Wait 2 mins or until the current challenge ends, whichever is first
                         return TimeSpan.FromTicks(Math.Min(duration.Ticks, period.Ticks));
                     }
                 }
                 
-                await _client.SetActivityAsync(new Game(IdleActivity, ActivityType.Playing, ActivityProperties.None, null));
+                await _client.SetActivityAsync(new Game(IdleActivity));
                 return period;
                 
             });

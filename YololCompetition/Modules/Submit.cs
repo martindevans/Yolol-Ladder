@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,7 +8,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
 using JetBrains.Annotations;
-using Yolol.Execution;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Broadcast;
@@ -189,7 +187,7 @@ namespace YololCompetition.Modules
                 {
                     await ReplyAsync(embed: new EmbedBuilder()
                         .WithTitle("Open Debugger")
-                        .WithUrl(uri.ToString())
+                        .WithUrl(uri)
                         .Build()
                     );
                 }

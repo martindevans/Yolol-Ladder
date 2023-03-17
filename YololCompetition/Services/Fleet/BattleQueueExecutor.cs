@@ -74,7 +74,7 @@ namespace YololCompetition.Services.Fleet
             await using (var file = File.Create(Path.Combine(_config.ReplayOutputDirectory, filename)))
             await using (var zip = new DeflateStream(file, CompressionLevel.Optimal))
             await using (var stream = new StreamWriter(zip))
-            using (var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented })
+            await using (var writer = new JsonTextWriter(stream) { Formatting = Formatting.Indented })
             {
                 report.Serialize(writer);
             }

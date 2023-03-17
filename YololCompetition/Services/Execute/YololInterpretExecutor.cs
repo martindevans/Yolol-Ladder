@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -95,12 +94,8 @@ namespace YololCompetition.Services.Execute
                                 where v.Item2.Type == Type.String
                                 select v.Item2);
 
-                    foreach (var str in strings)
-                    {
-                        if (str.String.Length < 5000)
-                            continue;
+                    if (strings.Any(str => str.String.Length >= 5000))
                         return "Max String Length Exceeded!";
-                    }
                 }
 
                 return null;

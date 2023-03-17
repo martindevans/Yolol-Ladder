@@ -61,8 +61,7 @@ namespace YololCompetition.Services.Interactive
 
             if (tcs.Task.IsCompleted)
                 return await tcs.Task;
-            else
-                return null;
+            return null;
         }
 
         private class MessageWaiter

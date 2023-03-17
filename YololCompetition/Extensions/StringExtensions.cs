@@ -17,10 +17,9 @@ namespace YololCompetition.Extensions
 
         public static string LimitLength(this string str, int max)
         {
-            if (str.Length < max)
-                return str;
-
-            return str[..max];
+            return str.Length < max
+                 ? str
+                 : str[..max];
         }
 
         private static readonly Levenshtein _levenshtein = new();

@@ -172,7 +172,7 @@ namespace YololCompetition.Services.Schedule
 
                 // If there was only one user in the top rank, award them a bonus
                 if (count == 1 && score == maxScore)
-                    await _leaderboard.AddScore((rank.Single()).Solution.UserId, (uint)challenge.Difficulty);
+                    await _leaderboard.AddScore(rank.Single().Solution.UserId, (uint)challenge.Difficulty);
 
                 // Award at least one point to every entrant
                 if (score > 1)
@@ -182,16 +182,18 @@ namespace YololCompetition.Services.Schedule
             // Find the smallest solution, if there's only one of them (i.e. no tie for smallest) award a bonus point
             var smallestGroup = solutions.GroupBy(a => a.Solution.Yolol.Length).Aggregate((a, b) => a.Key < b.Key ? a : b);
             if (smallestGroup.Count() == 1)
-                await _leaderboard.AddScore((smallestGroup.First()).Solution.UserId, (uint)challenge.Difficulty);
+                await _leaderboard.AddScore(smallestGroup.First().Solution.UserId, (uint)challenge.Difficulty);
         }
 
         private async Task NotifyEnd(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutions)
         {
-            var top = await solutions.Take(10).ToArrayAsync();
+            var solutionsArr = await solutions.ToListAsync();
+
+            var top = solutionsArr.Take(10).ToArray();
             if (top.Length == 0)
                 return;
 
-            var (othersCount, othersScore) = await solutions.Skip(10).Select(a => (1, a.Solution.Score)).AggregateAsync((0u, 0L), (a, b) => ((uint)(a.Item1 + b.Item1), a.Item1 + b.Score));
+            var (othersCount, othersScore) = solutionsArr.Skip(10).Select(a => (1, a.Solution.Score)).Aggregate((0u, 0L), (a, b) => ((uint)(a.Item1 + b.Item1), a.Item1 + b.Score));
 
             EmbedBuilder embed = new() {
                 Title = $"Competition `{challenge.Name}` Complete!",

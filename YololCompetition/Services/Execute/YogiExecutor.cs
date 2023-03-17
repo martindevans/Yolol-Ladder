@@ -127,7 +127,7 @@ namespace YololCompetition.Services.Execute
 
             [JsonProperty(PropertyName = "vars")]
             [UsedImplicitly]
-            public List<VarData> Vars;
+            public List<VarData>? Vars;
 
             [JsonProperty(PropertyName = "elapsed_lines")]
             [UsedImplicitly]

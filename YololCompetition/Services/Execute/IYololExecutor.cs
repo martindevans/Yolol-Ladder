@@ -111,7 +111,7 @@ namespace YololCompetition.Services.Execute
                 if (builder.Length + str.Length > 1000)
                 {
                     var c = counter++;
-                    embed.AddField($"{title} {(c == 0 ? "" : c.ToString())}", builder.ToString(), false);
+                    embed.AddField($"{title} {(c == 0 ? "" : c.ToString())}", builder.ToString());
                     builder.Clear();
                 }
 
@@ -119,7 +119,7 @@ namespace YololCompetition.Services.Execute
             }
 
             if (builder.Length > 0)
-                embed.AddField($"{title} {(counter == 0 ? "" : counter.ToString())}", builder.ToString(), false);
+                embed.AddField($"{title} {(counter == 0 ? "" : counter.ToString())}", builder.ToString());
         }
 
 

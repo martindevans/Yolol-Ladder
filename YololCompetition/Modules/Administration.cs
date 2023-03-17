@@ -24,7 +24,7 @@ namespace YololCompetition.Modules
             _client = client;
         }
 
-        [Command("kill"), RequireOwner, Summary("Immediately kill the bot")]
+        [Command("kill"), RequireOwner, Summary("Immediately kill the bot"), UsedImplicitly]
         public async Task Kill(int exitCode = 1)
         {
             try
@@ -45,7 +45,7 @@ namespace YololCompetition.Modules
             }
         }
 
-        [Command("simd"), RequireOwner]
+        [Command("simd"), RequireOwner, UsedImplicitly]
         public async Task Simd()
         {
             var embed = new EmbedBuilder().WithTitle("SIMD Support").WithDescription(
@@ -69,7 +69,7 @@ namespace YololCompetition.Modules
             await ReplyAsync(embed: embed);
         }
 
-        [Command("dump-subscriptions"), RequireOwner, Summary("Print out all subscriptions")]
+        [Command("dump-subscriptions"), RequireOwner, Summary("Print out all subscriptions"), UsedImplicitly]
         public async Task DumpSubs()
         {
             var subs = _subscriptions.GetSubscriptions();
@@ -96,7 +96,7 @@ namespace YololCompetition.Modules
                 await ReplyAsync(output.ToString());
         }
 
-        [Command("dump-guilds"), RequireOwner, Summary("Print out all guilds this bot is in")]
+        [Command("dump-guilds"), RequireOwner, Summary("Print out all guilds this bot is in"), UsedImplicitly]
         public async Task DumpGuilds()
         {
             var output = new StringBuilder();

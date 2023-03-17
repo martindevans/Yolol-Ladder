@@ -100,16 +100,6 @@ namespace YololCompetition
                         Console.WriteLine(exr.Exception);
                     await context.Channel.SendMessageAsync($"Command Failed! {result.ErrorReason}");
                     break;
-
-                case CommandError.UnknownCommand:
-                case CommandError.ParseFailed:
-                case CommandError.BadArgCount:
-                case CommandError.ObjectNotFound:
-                case CommandError.MultipleMatches:
-                case CommandError.Unsuccessful:
-                case null:
-                default:
-                    break;
             }
         }
 
@@ -171,7 +161,7 @@ namespace YololCompetition
                 msg.AddReactionAsync(new Emoji("👋"));
         }
 
-        private static void PostCommandResult(IResult result)
+        private static void PostCommandResult(IResult _)
         {
             //var s = result.IsSuccess;
             //var e = result.Error;

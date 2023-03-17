@@ -5,12 +5,10 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Yolol.Analysis.ControlFlowGraph;
 using Yolol.Analysis.ControlFlowGraph.Extensions;
 using Yolol.Cylon.JSON;
 using Yolol.Cylon.Serialisation;
-using Yolol.Grammar.AST.Expressions.Unary;
 using YololCompetition.Attributes;
 using YololCompetition.Extensions;
 using YololCompetition.Services.Execute;
@@ -157,7 +155,7 @@ namespace YololCompetition.Modules
                 embed.AddField("Execute", $"{exeTimer.ElapsedMilliseconds}ms", true);
 
                 if (err != null)
-                    embed.AddField("Error", $"{err}", false);
+                    embed.AddField("Error", $"{err}");
 
                 if (_debuggerUrl != null)
                 {

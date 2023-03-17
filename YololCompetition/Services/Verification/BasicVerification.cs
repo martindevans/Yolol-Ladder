@@ -185,9 +185,8 @@ namespace YololCompetition.Services.Verification
                              select stmt;
 
             var check = new ChipLevelChecker(level);
-            foreach (var statement in statements)
-                if (!check.Visit(statement))
-                    return new Failure(FailureType.InvalidProgramForChipType, null, null);
+            if (statements.Any(statement => !check.Visit(statement)))
+                return new Failure(FailureType.InvalidProgramForChipType, null, null);
 
             return null;
         }
@@ -202,10 +201,8 @@ namespace YololCompetition.Services.Verification
                     shuffled.Select(a => a.Second).ToArray()
                 );
             }
-            else
-            {
-                return (challenge.Inputs, challenge.Outputs);
-            }
+
+            return (challenge.Inputs, challenge.Outputs);
         }
     }
 }

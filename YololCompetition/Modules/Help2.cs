@@ -37,7 +37,7 @@ namespace YololCompetition.Modules
 
             var modules = await FindModules();
             foreach (var (module, commands) in modules)
-                embed.AddField(module.Name, CommandsStr(module, commands), false);
+                embed.AddField(module.Name, CommandsStr(module, commands));
 
             await ReplyAsync(embed: embed.Build());
         }
@@ -206,7 +206,7 @@ namespace YololCompetition.Modules
                 var embed = CreateEmbed(context, prefix, $"{multi.Count} commands", "");
 
                 foreach (var item in multi)
-                    embed.AddField(FormatCommandName(item, prefix), item.Summary ?? item.Remarks ?? $"No description :confused:");
+                    embed.AddField(FormatCommandName(item, prefix), item.Summary ?? item.Remarks ?? "No description :confused:");
 
                 return embed;
             }

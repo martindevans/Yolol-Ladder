@@ -23,7 +23,7 @@ namespace YololCompetition.Services.Scoring
         private double _bonusPoints;
         private double _bonusCasePoints;
 
-        public virtual string? Hint { get; } = null;
+        public virtual string? Hint => null;
 
         public virtual int FinalizeScore(uint totalTests, uint totalTicks, int codeChars)
         {

@@ -108,8 +108,7 @@ namespace YololCompetition.Services.Schedule
             var b = currentTime.Date;
             if (Math.Abs((a - b).TotalMinutes) < 5)
                 return SchedulerState.StartingChallenge;
-            else
-                return SchedulerState.WaitingCooldown;
+            return SchedulerState.WaitingCooldown;
         }
 
         private async Task<SchedulerState> WaitingNoChallengesInPool()
@@ -196,7 +195,7 @@ namespace YololCompetition.Services.Schedule
 
                 // If there was only one user in the top rank, award them a bonus
                 if (count == 1 && score == maxScore)
-                    await _leaderboard.AddScore((rank.Single()).Solution.UserId, (uint)challenge.Difficulty);
+                    await _leaderboard.AddScore(rank.Single().Solution.UserId, (uint)challenge.Difficulty);
 
                 // Award at least one point to every entrant
                 if (score > 1)
@@ -206,7 +205,7 @@ namespace YololCompetition.Services.Schedule
             // Find the smallest solution, if there's only one of them (i.e. no tie for smallest) award a bonus point
             var smallestGroup = solutions.GroupBy(a => a.Solution.Yolol.Length).Aggregate((a, b) => a.Key < b.Key ? a : b);
             if (smallestGroup.Count() == 1)
-                await _leaderboard.AddScore((smallestGroup.First()).Solution.UserId, (uint)challenge.Difficulty);
+                await _leaderboard.AddScore(smallestGroup.First().Solution.UserId, (uint)challenge.Difficulty);
         }
 
         private async Task NotifyEnd(Challenge.Challenge challenge, IAsyncEnumerable<RankedSolution> solutionsAsync)

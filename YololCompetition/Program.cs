@@ -58,7 +58,7 @@ namespace YololCompetition
 #if DEBUG
             await interactions.RegisterCommandsToGuildAsync(537765528991825920);
 #else
-            await interactions.RegisterCommandsGloballyAsync(true);
+            await interactions.RegisterCommandsGloballyAsync();
 #endif
 
             var messages = provider.GetRequiredService<IMessages>();
